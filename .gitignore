@@ -1,0 +1,11 @@
+.env
+fly.toml
+*.ts
+*.json
+*.lock
+target
+.DS_Store
+*/.DS_Store
+*/dist
+*/node_mobules
+*/*.lock
