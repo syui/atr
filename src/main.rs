@@ -254,6 +254,7 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
     let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
     let d = String::from_utf8_lossy(&output.stdout);
     let d =  d.to_string();
+    let d: String = d.replace("'", "").replace("\n", "");
 
     let post = Post {
         did: did.to_string(),
@@ -264,18 +265,17 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
         }
     };
  
-    let j = serde_json::to_string(&post).unwrap();
     let client = reqwest::Client::new();
     let res = client
         .post(url)
-        .json(&j)
+        .json(&post)
         .header("Authorization", "Bearer ".to_owned() + &token)
         .send()
         .await?
         .text()
         .await?;
 
-    println!("{:#?}", res);
+    println!("{}", res);
     Ok(())
 }
 
@@ -307,7 +307,7 @@ async fn tt(_c: &Context) -> reqwest::Result<()> {
         .text()
         .await?;
 
-    println!("{:#?}", j);
+    println!("{}", j);
     Ok(())
 }
 
