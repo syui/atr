@@ -3,6 +3,10 @@ at clietn rust
 ```sh
 $ mkdir -p ~/.config/atr
 $ cp example.config.toml ~/.config/atr/config.toml
+$ cat ~/.config/atr/config.toml
+host = "bsky.social"
+pass = "xxx"
+user = "ai.bsky.social"
 ```
 
 ```sh
@@ -28,4 +32,11 @@ $ ./target/debug/atr t
 $ ./target/debug/atr m ~/test.png
 ```
 
-
+```sh
+# custom handle
+$ atr h te.bsky.social
+$ vim ~/.config/atr/config.toml
+user = "te.bsky.social"
+$ atr a
+$ atr t
+```

@@ -42,6 +42,13 @@ fn main() {
                 )
             )
         .command(
+            Command::new("handle")
+            .usage("atr h")
+            .description("custom handle")
+            .alias("h")
+            .action(h)
+            )
+        .command(
             Command::new("feed")
             .usage("atr f")
             .description("feed")
@@ -114,7 +121,7 @@ fn ss(c :&Context) -> reqwest::Result<()> {
     if let Ok(user) = c.string_flag("user") {
         at_user(url, user);
     } else {
-        let user = data.user + &"." + &data.host.to_string();
+        let user = data.user;
         at_user(url, user);
     }
     Ok(())
@@ -150,7 +157,7 @@ fn ff(c :&Context) -> reqwest::Result<()> {
     if let Ok(user) = c.string_flag("user") {
         at_feed(url, user, col);
     } else {
-        let user = data.user + &"." + &data.host.to_string();
+        let user = data.user;
         at_feed(url, user, col);
     }
     Ok(())
@@ -169,7 +176,8 @@ async fn aa() -> reqwest::Result<()> {
         pass: data.pass,
     };
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.session.create";
-    let handle = data.user + &"." + &data.host;
+    let handle = data.user;
+    //let handle = data.user + &"." + &data.host;
 
     let mut map = HashMap::new();
     map.insert("handle", &handle);
@@ -224,6 +232,11 @@ struct Post {
 #[derive(Serialize, Deserialize)]
 struct Cid {
     cid: String
+}
+
+#[derive(Serialize, Deserialize)]
+struct Handle {
+    handle: String
 }
 
 #[tokio::main]
@@ -337,7 +350,7 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
     };
 
     if let Ok(user) = c.string_flag("user") {
-        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &user + "." + &data.host;
+        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &user;
         let client = reqwest::Client::new();
         let j = client.get(url)
             .header("Authorization", "Bearer ".to_owned() + &token)
@@ -347,7 +360,7 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
             .await?;
         println!("{:#?}", j);
     } else {
-        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &data.user + "." + &data.host;
+        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &data.user;
         let client = reqwest::Client::new();
         let j = client.get(url)
             .header("Authorization", "Bearer ".to_owned() + &token)
@@ -417,4 +430,52 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
 fn m(c: &Context) {
     aa().unwrap();
     mm(c).unwrap();
+}
+
+#[tokio::main]
+async fn hh(c: &Context) -> reqwest::Result<()> {
+    let file = "/.config/atr/token.json";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
+    let mut file = File::open(f).unwrap();
+    let mut data = String::new();
+    file.read_to_string(&mut data).unwrap();
+
+    let json: Token = serde_json::from_str(&data).unwrap();
+    let token = json.accessJwt;
+    let did = json.did;
+    
+    let m = c.args[0].to_string();
+
+    let data = Datas::new().unwrap();
+    let data = Datas {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.handle.update";
+    println!("DNS txt : _atproto.{}, did={}.", m, did);
+
+    let handle = Handle {
+        handle: m.to_string()
+    };
+ 
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&handle)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+fn h(c: &Context) {
+    aa().unwrap();
+    hh(c).unwrap();
 }
