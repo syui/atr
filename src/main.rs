@@ -10,7 +10,7 @@ use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::Read;
 use serde::{Deserialize, Serialize};
-
+use serde_json::{json};
 fn main() {
     let args: Vec<String> = env::args().collect(); let app = App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -82,7 +82,19 @@ fn main() {
             .usage("atr p {}")
             .description("post")
             .alias("p")
-            .action(p),
+            .action(p)
+            .flag(
+                Flag::new("link", FlagType::String)
+                .description("link flag(ex: $ atr p -l)")
+                .alias("l"),
+                )
+            )
+        .command(
+            Command::new("postlink")
+            .usage("atr pl {}")
+            .description("postlink")
+            .alias("pl")
+            .action(p_link),
             )
         .command(
             Command::new("timeline")
@@ -270,7 +282,6 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
     let token = json.accessJwt;
     let did = json.did;
     
-    let m = c.args[0].to_string();
 
     let data = Datas::new().unwrap();
     let data = Datas {
@@ -286,26 +297,64 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
     let d =  d.to_string();
     let d: String = d.replace("'", "").replace("\n", "");
 
-    let post = Post {
-        did: did.to_string(),
-        collection: col.to_string(),
-        record: Record {
-            text: m.to_string(),
-            createdAt: d.to_string(),
-        }
-    };
- 
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&post)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
+    let m = c.args[0].to_string();
+    if let Ok(link) = c.string_flag("link") {
+        let e = link.chars().count();
+        let s = 0;
+        let post = Some(json!({
+            "did": did.to_string(),
+            "collection": col.to_string(),
+            "record": {
+                "text": link.to_string() + &" ".to_string() + &m.to_string(),
+                "createdAt": d.to_string(),
+                "entities": [
+                {
+                    "type": "link".to_string(),
+                    "index": {
+                        "end": e,
+                        "start": s
+                    },
+                    "value": link.to_string()
+                }
+                ]
+            },
+        }));
 
-    println!("{}", res);
+        let client = reqwest::Client::new();
+        let res = client
+            .post(url)
+            .json(&post)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        println!("{}", res);
+
+    } else {
+        let d: String = d.replace("'", "").replace("\n", "");
+        let post = Post {
+            did: did.to_string(),
+            collection: col.to_string(),
+            record: Record {
+                text: m.to_string(),
+                createdAt: d.to_string(),
+            }
+        };
+
+        let client = reqwest::Client::new();
+        let res = client
+            .post(url)
+            .json(&post)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        println!("{}", res);
+    }
     Ok(())
 }
 
@@ -531,4 +580,73 @@ async fn cc(c: &Context) -> reqwest::Result<()> {
 
 fn c(c: &Context) {
     cc(c).unwrap();
+}
+
+#[tokio::main]
+async fn pp_link(c: &Context) -> reqwest::Result<()> {
+    let file = "/.config/atr/token.json";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
+    let mut file = File::open(f).unwrap();
+    let mut data = String::new();
+    file.read_to_string(&mut data).unwrap();
+
+    let json: Token = serde_json::from_str(&data).unwrap();
+    let token = json.accessJwt;
+    let did = json.did;
+    
+    let m = c.args[0].to_string();
+
+    let data = Datas::new().unwrap();
+    let data = Datas {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
+    let col = "app.bsky.feed.post".to_string();
+    use std::process::Command;
+    let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
+    let d = String::from_utf8_lossy(&output.stdout);
+    let d =  d.to_string();
+    let d: String = d.replace("'", "").replace("\n", "");
+
+    let e = m.chars().count();
+    let s = 0;
+    let post = Some(json!({
+        "did": did.to_string(),
+        "collection": col.to_string(),
+        "record": {
+            "text": m.to_string(),
+            "createdAt": d.to_string(),
+            "entities": [
+            {
+                "type": "link".to_string(),
+                "index": {
+                    "end": e,
+                    "start": s
+                },
+                "value": m.to_string()
+            }
+            ]
+        },
+    }));
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&post)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+fn p_link(c: &Context) {
+    aa().unwrap();
+    pp_link(c).unwrap();
 }
