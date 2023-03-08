@@ -121,6 +121,23 @@ fn main() {
             .description("profile")
             .action(profile),
             )
+        .command(
+            Command::new("notify")
+            .usage("atr notify {}")
+            .description("notify")
+            .alias("n")
+            .action(n)
+            .flag(
+                Flag::new("latest", FlagType::String)
+                .description("latest flag(ex: $ atr n -l 0)")
+                .alias("l"),
+                )
+            .flag(
+                Flag::new("count", FlagType::String)
+                .description("count flag(ex: $ atr n -c 0)")
+                .alias("c"),
+                )
+            )
         ;
     app.run(args);
 }
@@ -707,4 +724,116 @@ fn mention_run(c: &Context) {
     aa().unwrap();
     pro(c).unwrap();
     mention(c).unwrap();
+}
+
+#[derive(Serialize, Deserialize)]
+struct Notify {
+    notifications: Vec<Notifications>
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+struct Notifications {
+    uri: String,
+    cid: String,
+    author: Author,
+    reason: String,
+    record: NotifyRecord,
+    isRead: bool,
+    indexedAt: String 
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+struct Author {
+    did: String,
+    declaration: Declaration,
+    handle: String,
+    avatar: Option<String>,
+    viewer: Viewer
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+struct Declaration {
+    actorType: String,
+    cid: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+struct Viewer {
+    muted: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+struct NotifyRecord {
+    createdAt: String,
+    text: Option<String>
+}
+
+#[tokio::main]
+async fn nn(c: &Context) -> reqwest::Result<()> {
+    let file = "/.config/atr/token.json";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
+    let mut file = File::open(f).unwrap();
+    let mut data = String::new();
+    file.read_to_string(&mut data).unwrap();
+
+    let json: Token = serde_json::from_str(&data).unwrap();
+    let token = json.accessJwt;
+    
+    let data = Datas::new().unwrap();
+    let data = Datas {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    if let Ok(_latest) = c.string_flag("latest") {
+        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.getCount";
+        let client = reqwest::Client::new();
+        let res = client
+            .get(url)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        println!("{}", res);
+    } else if let Ok(_count) = c.string_flag("count") {
+        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
+        let client = reqwest::Client::new();
+        let res = client
+            .get(url)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        let notify: Notify = serde_json::from_str(&res).unwrap();
+        let n = notify.notifications;
+        println!("handle : {}", n[0].author.handle);
+        println!("uri : {}", n[0].uri);
+        println!("cid : {}", n[0].cid);
+    } else {
+        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
+        let client = reqwest::Client::new();
+        let res = client
+            .get(url)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        println!("{}", res);
+    }
+    Ok(())
+}
+
+fn n(c: &Context) {
+    aa().unwrap();
+    nn(c).unwrap();
 }
