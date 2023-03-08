@@ -638,14 +638,15 @@ async fn mention(c: &Context) -> reqwest::Result<()> {
     let d =  d.to_string();
     let d: String = d.replace("'", "").replace("\n", "");
 
-    let e = handle.chars().count();
+    let at = "@".to_owned() + &handle;
+    let e = at.chars().count();
     let s = 0;
     if let Ok(post) = c.string_flag("post") {
         let p = Some(json!({
             "did": did.to_string(),
             "collection": col.to_string(),
             "record": {
-                "text": handle.to_string() + &" ".to_string() + &post.to_string(),
+                "text": at.to_string() + &" ".to_string() + &post.to_string(),
                 "createdAt": d.to_string(),
                 "entities": [
                 {
