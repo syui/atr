@@ -90,11 +90,16 @@ fn main() {
                 )
             )
         .command(
-            Command::new("postlink")
-            .usage("atr pl {}")
-            .description("postlink")
-            .alias("pl")
-            .action(p_link),
+            Command::new("mention")
+            .usage("atr mention {}")
+            .description("mention")
+            .alias("@")
+            .action(mention_run)
+            .flag(
+                Flag::new("post", FlagType::String)
+                .description("post flag(ex: $ atr @ syui.bsky.social -p text)")
+                .alias("p"),
+                )
             )
         .command(
             Command::new("timeline")
@@ -114,12 +119,7 @@ fn main() {
             Command::new("profile")
             .usage("atr profile")
             .description("profile")
-            .action(profile)
-            .flag(
-                Flag::new("user", FlagType::String)
-                .description("user flag(ex: $ atr profile -u user)")
-                .alias("u"),
-                )
+            .action(profile),
             )
         ;
     app.run(args);
@@ -266,6 +266,11 @@ struct Cid {
 #[derive(Serialize, Deserialize)]
 struct Handle {
     handle: String
+}
+
+#[derive(Serialize, Deserialize)]
+struct Did {
+    did: String
 }
 
 #[tokio::main]
@@ -415,7 +420,8 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
         pass: data.pass,
     };
 
-    if let Ok(user) = c.string_flag("user") {
+    let user = c.args[0].to_string();
+    if user.is_empty() == false {
         let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &user;
         let client = reqwest::Client::new();
         let j = client.get(url)
@@ -424,7 +430,14 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
             .await?
             .text()
             .await?;
-        println!("{:#?}", j);
+        let file = "/.config/atr/".to_owned() + &user.to_string() + &".json".to_string();
+        let mut f = shellexpand::tilde("~").to_string();
+        f.push_str(&file);
+        let mut f = fs::File::create(f).unwrap();
+        if j != "" {
+            f.write_all(&j.as_bytes()).unwrap();
+        }
+        println!("{}", j);
     } else {
         let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &data.user;
         let client = reqwest::Client::new();
@@ -434,7 +447,7 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
             .await?
             .text()
             .await?;
-        println!("{:#?}", j);
+        println!("{}", j);
     }
     Ok(())
 }
@@ -583,7 +596,7 @@ fn c(c: &Context) {
 }
 
 #[tokio::main]
-async fn pp_link(c: &Context) -> reqwest::Result<()> {
+async fn mention(c: &Context) -> reqwest::Result<()> {
     let file = "/.config/atr/token.json";
     let mut f = shellexpand::tilde("~").to_string();
     f.push_str(&file);
@@ -595,8 +608,21 @@ async fn pp_link(c: &Context) -> reqwest::Result<()> {
     let json: Token = serde_json::from_str(&data).unwrap();
     let token = json.accessJwt;
     let did = json.did;
-    
+
     let m = c.args[0].to_string();
+
+    let file = "/.config/atr/".to_owned() + &m.to_string() + &".json".to_string();
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
+    let mut file = File::open(f).unwrap();
+    let mut data = String::new();
+    file.read_to_string(&mut data).unwrap();
+
+    let udid: Did = serde_json::from_str(&data).unwrap();
+    let udid = udid.did;
+    let handle: Handle = serde_json::from_str(&data).unwrap();
+    let handle = handle.handle;
 
     let data = Datas::new().unwrap();
     let data = Datas {
@@ -612,41 +638,72 @@ async fn pp_link(c: &Context) -> reqwest::Result<()> {
     let d =  d.to_string();
     let d: String = d.replace("'", "").replace("\n", "");
 
-    let e = m.chars().count();
+    let e = handle.chars().count();
     let s = 0;
-    let post = Some(json!({
-        "did": did.to_string(),
-        "collection": col.to_string(),
-        "record": {
-            "text": m.to_string(),
-            "createdAt": d.to_string(),
-            "entities": [
-            {
-                "type": "link".to_string(),
-                "index": {
-                    "end": e,
-                    "start": s
-                },
-                "value": m.to_string()
-            }
-            ]
-        },
-    }));
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&post)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", res);
+    if let Ok(post) = c.string_flag("post") {
+        let p = Some(json!({
+            "did": did.to_string(),
+            "collection": col.to_string(),
+            "record": {
+                "text": handle.to_string() + &" ".to_string() + &post.to_string(),
+                "createdAt": d.to_string(),
+                "entities": [
+                {
+                    "type": "mention".to_string(),
+                    "index": {
+                        "end": e,
+                        "start": s
+                    },
+                    "value": udid.to_string()
+                }
+                ]
+            },
+        }));
+        let client = reqwest::Client::new();
+        let res = client
+            .post(url)
+            .json(&p)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        println!("{}", res);
+    } else {
+        let post = Some(json!({
+            "did": did.to_string(),
+            "collection": col.to_string(),
+            "record": {
+                "text": m.to_string(),
+                "createdAt": d.to_string(),
+                "entities": [
+                {
+                    "type": "mention".to_string(),
+                    "index": {
+                        "end": e,
+                        "start": s
+                    },
+                    "value": udid.to_string()
+                }
+                ]
+            },
+        }));
+        let client = reqwest::Client::new();
+        let res = client
+            .post(url)
+            .json(&post)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        println!("{}", res);
+    }
     Ok(())
 }
 
-fn p_link(c: &Context) {
+fn mention_run(c: &Context) {
     aa().unwrap();
-    pp_link(c).unwrap();
+    pro(c).unwrap();
+    mention(c).unwrap();
 }

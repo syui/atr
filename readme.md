@@ -25,8 +25,12 @@ $ atr f -u syui.bsky.social
 ```sh
 # post
 $ ./target/debug/atr p "post message"
+# post link
+$ ./target/debug/atr p "post message" -l https://syui.cf
+
 # timeline
 $ ./target/debug/atr t
+
 
 # media post
 $ ./target/debug/atr m ~/test.png
@@ -50,3 +54,10 @@ host = "bsky.social"
 
 $ atr c -i ${invite_code} -e user@example.com
 ```
+
+```sh
+# mention
+$ atr @ syui.bsky.social
+$ atr @ syui.bsky.social -p "message"
+```
+
