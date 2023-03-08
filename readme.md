@@ -40,3 +40,13 @@ user = "te.bsky.social"
 $ atr a
 $ atr t
 ```
+
+```sh
+# account create
+$ cat ~/.config/atr/config.toml
+user = "syui.bsky.social"
+pass = "xxx"
+host = "bsky.social"
+
+$ atr c -i ${invite_code} -e user@example.com
+```

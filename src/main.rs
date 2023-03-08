@@ -25,6 +25,23 @@ fn main() {
             .action(a),
             )
         .command(
+            Command::new("create")
+            .usage("atr create")
+            .description("account create(ex: $ atr c -i invite-code)")
+            .alias("c")
+            .action(c)
+            .flag(
+                Flag::new("invite", FlagType::String)
+                .description("invite flag")
+                .alias("i"),
+                )
+            .flag(
+                Flag::new("email", FlagType::String)
+                .description("email flag")
+                .alias("e"),
+                )
+            )
+        .command(
             Command::new("status")
             .usage("atr s")
             .description("status")
@@ -478,4 +495,40 @@ async fn hh(c: &Context) -> reqwest::Result<()> {
 fn h(c: &Context) {
     aa().unwrap();
     hh(c).unwrap();
+}
+
+#[tokio::main]
+async fn cc(c: &Context) -> reqwest::Result<()> {
+    let data = Datas::new().unwrap();
+    let data = Datas {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.account.create";
+    let handle = data.user;
+
+    let mut map = HashMap::new();
+    map.insert("handle", &handle);
+    map.insert("password", &data.pass);
+    if let Ok(invite) = c.string_flag("invite") {
+        if let Ok(email) = c.string_flag("email") {
+            map.insert("inviteCode", &invite);
+            map.insert("email", &email);
+            let client = reqwest::Client::new();
+            let res = client
+                .post(url)
+                .json(&map)
+                .send()
+                .await?
+                .text()
+                .await?;
+            println!("{}", res);
+        }
+    }
+    Ok(())
+}
+
+fn c(c: &Context) {
+    cc(c).unwrap();
 }
