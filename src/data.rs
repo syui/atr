@@ -27,6 +27,10 @@ impl Data {
 pub struct Notify {
     pub notifications: Vec<Notifications>
 }
+#[derive(Serialize, Deserialize)]
+pub struct Timeline {
+    pub feed: Vec<Feed>
+}
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
@@ -37,7 +41,7 @@ pub struct Notifications {
     pub reason: String,
     pub record: Record,
     pub isRead: bool,
-    pub indexedAt: String 
+    pub indexedAt: String,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -80,10 +84,25 @@ pub struct Record {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Post {
-    pub did: String,
-    pub collection: String,
-    pub record: Record
+#[allow(non_snake_case)]
+pub struct Feed {
+    pub post: Post,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Post {
+    pub did: Option<String>,
+    pub uri: String,
+    pub collection: Option<String>,
+    pub record: Record,
+    pub author: Author,
+    pub reason: Option<String>,
+    pub indexedAt: String,
+    pub replyCount: i32,
+    pub repostCount: i32,
+    pub upvoteCount: i32,
+    pub downvoteCount: i32,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -100,3 +119,4 @@ pub struct Handle {
 pub struct Did {
     pub did: String
 }
+

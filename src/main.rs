@@ -19,6 +19,7 @@ use data::Token as Token;
 use data::Did as Did;
 use data::Cid as Cid;
 use data::Handle as Handle;
+use crate::data::Timeline;
 
 use std::io;
 use std::io::Write;
@@ -139,7 +140,17 @@ fn main() {
             .usage("atr t")
             .description("timeline\n\t\t\t$ atr t")
             .alias("t")
-            .action(t),
+            .action(t)
+            .flag(
+                Flag::new("latest", FlagType::Bool)
+                .description("latest flag\n\t\t\t$ atr t -l")
+                .alias("l"),
+                )
+            .flag(
+                Flag::new("json", FlagType::Bool)
+                .description("count flag\n\t\t\t$ atr t -j")
+                .alias("c"),
+                )
             )
         .command(
             Command::new("media")
@@ -387,7 +398,7 @@ fn p(c: &Context) {
 }
 
 #[tokio::main]
-async fn tt(_c: &Context) -> reqwest::Result<()> {
+async fn tt(c: &Context) -> reqwest::Result<()> {
     let file = "/.config/atr/token.json";
     let mut f = shellexpand::tilde("~").to_string();
     f.push_str(&file);
@@ -409,13 +420,38 @@ async fn tt(_c: &Context) -> reqwest::Result<()> {
         .text()
         .await?;
 
-    println!("{}", j);
+    let timeline: Timeline = serde_json::from_str(&j).unwrap();
+    let n = timeline.feed;
+
+    let mut map = HashMap::new();
+
+    if c.bool_flag("json") {
+        println!("{}", j);
+    } else if c.bool_flag("latest") {
+        map.insert("handle", &n[0].post.author.handle);
+        map.insert("uri", &n[0].post.uri);
+        if ! n[0].post.record.text.is_none() { 
+            map.insert("text", &n[0].post.record.text.as_ref().unwrap());
+        } 
+        println!("{:?}", map);
+    } else {
+        let length = &n.len();
+        for i in 0..*length {
+            println!("@{}", n[i].post.author.handle);
+            if ! n[i].post.record.text.is_none() { 
+                println!("text : {}", n[i].post.record.text.as_ref().unwrap());
+            }
+            println!("⚡️ [{}]\t⭐️ [{}]\t🌈 [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
+            println!("{}", "---------");
+        }
+    }
+
     Ok(())
 }
 
-fn t(_c: &Context) {
+fn t(c: &Context) {
     aa().unwrap();
-    tt(_c).unwrap();
+    tt(c).unwrap();
 }
 
 #[tokio::main]
