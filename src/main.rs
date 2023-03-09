@@ -815,6 +815,7 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
         map.insert("createdAt", &n[0].record.createdAt);
         map.insert("uri", &n[0].uri);
         map.insert("cid", &n[0].cid);
+        map.insert("reason", &n[0].reason);
         if ! n[0].record.text.is_none() { 
             map.insert("text", &n[0].record.text.as_ref().unwrap());
         } 
