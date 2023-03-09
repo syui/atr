@@ -42,6 +42,13 @@ fn main() {
             .action(a),
             )
         .command(
+            Command::new("swich")
+            .usage("msr swich {}")
+            .description("account switch\n\t\t\t$ atr ss -d(setting.toml)\n\t\t\t$ atr ss -s(social.toml)")
+            .alias("ss")
+            .action(account_switch),
+            )
+        .command(
             Command::new("create")
             .usage("atr create")
             .description("create account\n\t\t\t$ atr c -i invite-code -e email")
@@ -756,9 +763,13 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
             .await?;
         let notify: Notify = serde_json::from_str(&res).unwrap();
         let n = notify.notifications;
+
         println!("handle : {}", n[0].author.handle);
+        println!("createdAt : {}", n[0].record.createdAt);
         println!("uri : {}", n[0].uri);
         println!("cid : {}", n[0].cid);
+        println!("text : {}", n[0].record.text.as_ref().unwrap());
+
     } else {
         let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
         let client = reqwest::Client::new();
@@ -777,4 +788,47 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
 fn n(c: &Context) {
     aa().unwrap();
     nn(c).unwrap();
+}
+
+fn get_domain_zsh() {
+    let data = Datas::new().unwrap();
+    let data = Datas {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    let e = "export BLUESKY_BASE=".to_owned() + &data.user.to_string() + "\n";
+    let e = e.to_string();
+    let f = shellexpand::tilde("~") + "/.config/atr/atr.zsh";
+    let f = f.to_string();
+    let r = shellexpand::tilde("~") + "/.config/atr/atr.zsh";
+    let r = r.to_string();
+    fs::remove_file(r).unwrap_or_else(|why| {
+        println!("! {:?}", why.kind());
+    });
+    let mut f = fs::File::create(f).unwrap();
+    f.write_all(e.as_bytes()).unwrap();
+}
+
+#[allow(unused_must_use)]
+fn account_switch(c: &Context)  {
+    let i = c.args[0].to_string();
+    let o = shellexpand::tilde("~") + "/.config/atr/config.toml";
+    let o = o.to_string();
+    if &i == "-d" {
+        let i = shellexpand::tilde("~") + "/.config/atr/setting.toml";
+        let i = i.to_string();
+        println!("{:#?} -> {:#?}", i, o);
+        fs::copy(i, o);
+    } else if &i == "-s" {
+        let i = shellexpand::tilde("~") + "/.config/atr/social.toml";
+        let i = i.to_string();
+        println!("{:#?} -> {:#?}", i, o);
+        fs::copy(i, o);
+    } else {
+        println!("{:#?} -> {:#?}", i, o);
+        fs::copy(i, o);
+    }
+    get_domain_zsh();
+    ss(c).unwrap();
 }
