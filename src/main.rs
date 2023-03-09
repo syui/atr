@@ -1,7 +1,6 @@
 extern crate rustc_serialize;
 pub mod data;
 use std::env;
-use data::Data as Datas;
 use seahorse::{App, Command, Context, Flag, FlagType};
 use std::fs;
 use std::io::Write;
@@ -9,16 +8,24 @@ use std::collections::HashMap;
 use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::Read;
-use serde::{Deserialize, Serialize};
+use serde::{Serialize};
 use serde_json::{json};
 use smol_str::SmolStr; // stack-allocation for small strings
 use iso8601_timestamp::Timestamp;
 
+use data::Data as Datas;
+use data::Notify as Notify;
+use data::Token as Token;
+use data::Did as Did;
+use data::Cid as Cid;
+use data::Handle as Handle;
+
+// timestamp
 #[derive(Debug, Clone, Serialize)]
 pub struct Event {
-    name: SmolStr,
-    ts: Timestamp,
-    value: i32,
+    pub name: SmolStr,
+    pub ts: Timestamp,
+    pub value: i32,
 }
 
 fn main() {
@@ -264,42 +271,6 @@ fn a(_c: &Context) {
     aa().unwrap();
 }
 
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Token {
-    did: String,
-    accessJwt: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Record {
-    text: String,
-    createdAt: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct Post {
-    did: String,
-    collection: String,
-    record: Record
-}
-
-#[derive(Serialize, Deserialize)]
-struct Cid {
-    cid: String
-}
-
-#[derive(Serialize, Deserialize)]
-struct Handle {
-    handle: String
-}
-
-#[derive(Serialize, Deserialize)]
-struct Did {
-    did: String
-}
-
 #[tokio::main]
 async fn pp(c: &Context) -> reqwest::Result<()> {
     let file = "/.config/atr/token.json";
@@ -362,14 +333,23 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
         println!("{}", res);
 
     } else {
-        let post = Post {
-            did: did.to_string(),
-            collection: col.to_string(),
-            record: Record {
-                text: m.to_string(),
-                createdAt: d.to_string(),
-            }
-        };
+        let post = Some(json!({
+            "did": did.to_string(),
+            "collection": col.to_string(),
+            "record": {
+                "text": m.to_string(),
+                "createdAt": d.to_string(),
+            },
+        }));
+
+        //let post = Post {
+        //    did: did.to_string(),
+        //    collection: col.to_string(),
+        //    record: Record {
+        //        text: m.to_string(),
+        //        createdAt: d.to_string(),
+        //    }
+        //};
 
         let client = reqwest::Client::new();
         let res = client
@@ -732,53 +712,6 @@ fn mention_run(c: &Context) {
     aa().unwrap();
     pro(c).unwrap();
     mention(c).unwrap();
-}
-
-#[derive(Serialize, Deserialize)]
-struct Notify {
-    notifications: Vec<Notifications>
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Notifications {
-    uri: String,
-    cid: String,
-    author: Author,
-    reason: String,
-    record: NotifyRecord,
-    isRead: bool,
-    indexedAt: String 
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Author {
-    did: String,
-    declaration: Declaration,
-    handle: String,
-    avatar: Option<String>,
-    viewer: Viewer
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Declaration {
-    actorType: String,
-    cid: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct Viewer {
-    muted: bool,
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-struct NotifyRecord {
-    createdAt: String,
-    text: Option<String>
 }
 
 #[tokio::main]
