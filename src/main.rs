@@ -798,6 +798,7 @@ fn get_domain_zsh() {
         pass: data.pass,
     };
     let e = "export BLUESKY_BASE=".to_owned() + &data.user.to_string() + "\n";
+    //let e = "export BLUESKY_BASE=".to_owned() + &data.user.to_string() + &".".to_string() + &data.host.to_string() + "\n";
     let e = e.to_string();
     let f = shellexpand::tilde("~") + "/.config/atr/atr.zsh";
     let f = f.to_string();
