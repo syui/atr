@@ -248,17 +248,21 @@ fn f(c: &Context) {
 
 #[tokio::main]
 async fn aa() -> reqwest::Result<()> {
+    let file = "/.config/atr/token.json";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
     let data = Datas::new().unwrap();
     let data = Datas {
         host: data.host,
         user: data.user,
         pass: data.pass,
     };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.session.create";
-    let handle = data.user;
-    //let handle = data.user + &"." + &data.host;
 
+    let handle = data.user;
     let mut map = HashMap::new();
+
+    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.session.create";
     map.insert("handle", &handle);
     map.insert("password", &data.pass);
     let client = reqwest::Client::new();
@@ -271,11 +275,6 @@ async fn aa() -> reqwest::Result<()> {
         .await?;
     let j = Json::from_str(&res).unwrap();
     let j = j.to_string();
-
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-
     let mut f = fs::File::create(f).unwrap();
     if j != "" {
         f.write_all(&j.as_bytes()).unwrap();
@@ -777,7 +776,9 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
         println!("createdAt : {}", n[0].record.createdAt);
         println!("uri : {}", n[0].uri);
         println!("cid : {}", n[0].cid);
-        println!("text : {}", n[0].record.text.as_ref().unwrap());
+        if ! n[0].record.text.is_none() { 
+            println!("text : {}", n[0].record.text.as_ref().unwrap());
+        }
 
     } else {
         let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";

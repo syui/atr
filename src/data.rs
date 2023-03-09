@@ -68,6 +68,8 @@ pub struct Viewer {
 pub struct Token {
     pub did: String,
     pub accessJwt: String,
+    pub refreshJwt: String,
+    pub handle: String,
 }
 
 #[derive(Serialize, Deserialize)]
