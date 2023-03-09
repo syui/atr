@@ -1,6 +1,7 @@
 extern crate rustc_serialize;
 pub mod data;
 use std::env;
+use std::path::Path;
 use seahorse::{App, Command, Context, Flag, FlagType};
 use std::fs;
 use std::io::Write;
@@ -820,15 +821,30 @@ fn account_switch(c: &Context)  {
         let i = shellexpand::tilde("~") + "/.config/atr/setting.toml";
         let i = i.to_string();
         println!("{:#?} -> {:#?}", i, o);
-        fs::copy(i, o);
+        let check = Path::new(&i).exists();
+        if check == false {
+            fs::copy(o, i);
+        } else {
+            fs::copy(i, o);
+        }
     } else if &i == "-s" {
         let i = shellexpand::tilde("~") + "/.config/atr/social.toml";
         let i = i.to_string();
         println!("{:#?} -> {:#?}", i, o);
-        fs::copy(i, o);
+        let check = Path::new(&i).exists();
+        if check == false {
+            fs::copy(o, i);
+        } else {
+            fs::copy(i, o);
+        }
     } else {
         println!("{:#?} -> {:#?}", i, o);
-        fs::copy(i, o);
+        let check = Path::new(&i).exists();
+        if check == false {
+            fs::copy(o, i);
+        } else {
+            fs::copy(i, o);
+        }
     }
     get_domain_zsh();
     ss(c).unwrap();
