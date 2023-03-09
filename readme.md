@@ -5,7 +5,7 @@
 ```sh
 # example
 $ curl -sLO https://github.com/syui/atr/releases/download/latest/atr-x86_64-apple-darwin
-$ mv atr* atr
+$ mv atr-* atr
 $ chmod +x atr
 $ ./atr
 ```
