@@ -4,7 +4,6 @@ use std::env;
 use std::path::Path;
 use seahorse::{App, Command, Context, Flag, FlagType};
 use std::fs;
-use std::io::Write;
 use std::collections::HashMap;
 use rustc_serialize::json::Json;
 use std::fs::File;
@@ -21,6 +20,9 @@ use data::Did as Did;
 use data::Cid as Cid;
 use data::Handle as Handle;
 
+use std::io;
+use std::io::Write;
+
 // timestamp
 #[derive(Debug, Clone, Serialize)]
 pub struct Event {
@@ -35,6 +37,12 @@ fn main() {
         .description(env!("CARGO_PKG_DESCRIPTION"))
         .version(env!("CARGO_PKG_VERSION"))
         .usage("atr [option] [x]\n\t~/.config/atr/config.toml\n\t\thost = 'bsky.social'\n\t\tuser = 'syui.bsky.social'\n\t\tpass = 'xxx'")
+        .command(
+            Command::new("start")
+            .usage("atr start")
+            .description("start first\n\t\t\t$ atr start\n\t\t\t$ ~/.config/atr/config.toml")
+            .action(first),
+            )
         .command(
             Command::new("auth")
             .usage("atr a")
@@ -848,4 +856,44 @@ fn account_switch(c: &Context)  {
     }
     get_domain_zsh();
     ss(c).unwrap();
+}
+
+#[derive(Serialize)]
+struct Setting {
+    host: String,
+    user: String,
+    pass: String,
+}
+
+#[allow(unused_must_use)]
+fn first_start(_c: &Context) -> io::Result<()> {
+    let d = shellexpand::tilde("~") + "/.config/atr";
+    let d = d.to_string();
+    let f = shellexpand::tilde("~") + "/.config/atr/config.toml";
+    let f = f.to_string();
+    println!("{}", f);
+
+    let setting = Setting {
+        host: "bsky.social".to_string(),
+        user: "".to_string(),
+        pass: "".to_string(),
+    };
+    let toml = toml::to_string(&setting).unwrap();
+
+    let check = Path::new(&d).exists();
+    if check == false {
+        fs::create_dir_all(d);
+        let mut f = fs::File::create(f.clone()).unwrap();
+        f.write_all(&toml.as_bytes()).unwrap();
+    }
+    let check = Path::new(&f).exists();
+    if check == false {
+        let mut f = fs::File::create(f.clone()).unwrap();
+        f.write_all(&toml.as_bytes()).unwrap();
+    }
+    Ok(())
+}
+
+fn first(c: &Context) {
+    first_start(c).unwrap();
 }

@@ -13,7 +13,7 @@ $ ./atr
 ### build
 
 ```sh
-# rust
+# install rust
 $ sudo pacman -S rust
 ```
 
@@ -26,8 +26,7 @@ $ ./target/debug/atr s -u syui.bsky.social
 ### signin, login
 
 ```sh
-$ mkdir -p ~/.config/atr
-$ cp example.config.toml ~/.config/atr/config.toml
+$ atr start
 $ cat ~/.config/atr/config.toml
 host = "bsky.social"
 pass = "xxx"
