@@ -161,12 +161,12 @@ fn main() {
             .alias("n")
             .action(n)
             .flag(
-                Flag::new("latest", FlagType::String)
-                .description("latest flag\n\t\t\t$ atr n -l 0")
+                Flag::new("latest", FlagType::Bool)
+                .description("latest flag\n\t\t\t$ atr n -l")
                 .alias("l"),
                 )
             .flag(
-                Flag::new("count", FlagType::String)
+                Flag::new("count", FlagType::Int)
                 .description("count flag\n\t\t\t$ atr n -c 0")
                 .alias("c"),
                 )
@@ -748,7 +748,7 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
         user: data.user,
         pass: data.pass,
     };
-    if let Ok(_latest) = c.string_flag("latest") {
+    if let Ok(_get) = c.string_flag("get") {
         let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.getCount";
         let client = reqwest::Client::new();
         let res = client
@@ -759,37 +759,45 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
             .text()
             .await?;
         println!("{}", res);
-    } else if let Ok(_count) = c.string_flag("count") {
-        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
-        let client = reqwest::Client::new();
-        let res = client
-            .get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        let notify: Notify = serde_json::from_str(&res).unwrap();
-        let n = notify.notifications;
+    } 
 
-        println!("handle : {}", n[0].author.handle);
-        println!("createdAt : {}", n[0].record.createdAt);
-        println!("uri : {}", n[0].uri);
-        println!("cid : {}", n[0].cid);
+    let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
+    let client = reqwest::Client::new();
+    let res = client
+        .get(url)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let notify: Notify = serde_json::from_str(&res).unwrap();
+    let n = notify.notifications;
+    let mut map = HashMap::new();
+
+    if c.bool_flag("latest") {
+        map.insert("handle", &n[0].author.handle);
+        map.insert("createdAt", &n[0].record.createdAt);
+        map.insert("uri", &n[0].uri);
+        map.insert("cid", &n[0].cid);
         if ! n[0].record.text.is_none() { 
-            println!("text : {}", n[0].record.text.as_ref().unwrap());
+            map.insert("text", &n[0].record.text.as_ref().unwrap());
+        } 
+        println!("{:?}", map);
+    } else if let Ok(count) = c.int_flag("count") {
+        let length = &n.len();
+        for i in 0..*length {
+            if i < count.try_into().unwrap() {
+                println!("handle : {}", n[i].author.handle);
+                println!("createdAt : {}", n[i].record.createdAt);
+                println!("uri : {}", n[i].uri);
+                println!("cid : {}", n[i].cid);
+                if ! n[i].record.text.is_none() { 
+                    println!("text : {}", n[i].record.text.as_ref().unwrap());
+                }
+                println!("{}", "---------");
+            }
         }
-
     } else {
-        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
-        let client = reqwest::Client::new();
-        let res = client
-            .get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
         println!("{}", res);
     }
     Ok(())
