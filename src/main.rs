@@ -26,18 +26,18 @@ fn main() {
         .author(env!("CARGO_PKG_AUTHORS"))
         .description(env!("CARGO_PKG_DESCRIPTION"))
         .version(env!("CARGO_PKG_VERSION"))
-        .usage("atr [option] [x]")
+        .usage("atr [option] [x]\n\t~/.config/atr/config.toml\n\t\thost = 'bsky.social'\n\t\tuser = 'syui.bsky.social'\n\t\tpass = 'xxx'")
         .command(
             Command::new("auth")
             .usage("atr a")
-            .description("auth")
+            .description("auth\n\t\t\t$ atr a\n\t\t\t$ cat ~/.config/atr/token.json")
             .alias("a")
             .action(a),
             )
         .command(
             Command::new("create")
             .usage("atr create")
-            .description("account create(ex: $ atr c -i invite-code)")
+            .description("create account\n\t\t\t$ atr c -i invite-code -e email")
             .alias("c")
             .action(c)
             .flag(
@@ -54,7 +54,7 @@ fn main() {
         .command(
             Command::new("status")
             .usage("atr s")
-            .description("status")
+            .description("status user\n\t\t\t$ atr s\n\t\t\t$ atr s -u user.bsky.social")
             .alias("s")
             .action(s)
             .flag(
@@ -71,14 +71,14 @@ fn main() {
         .command(
             Command::new("handle")
             .usage("atr h")
-            .description("custom handle")
+            .description("handle update\n\t\t\t$ atr -h example.com\n\t\t\t$ atr -h user.bsky.social")
             .alias("h")
             .action(h)
             )
         .command(
             Command::new("feed")
             .usage("atr f")
-            .description("feed")
+            .description("feed user\n\t\t\t$ atr f\n\t\t\t$ atr f -u user.bsky.social")
             .alias("f")
             .action(f)
             .flag(
@@ -90,7 +90,7 @@ fn main() {
         .command(
             Command::new("post")
             .usage("atr p {}")
-            .description("post")
+            .description("post\n\t\t\t$ atr p $text\n\t\t\t$ atr p $text -l https://syui.cf")
             .alias("p")
             .action(p)
             .flag(
@@ -102,49 +102,49 @@ fn main() {
         .command(
             Command::new("mention")
             .usage("atr mention {}")
-            .description("mention")
+            .description("mention\n\t\t\t$ atr @ syui.bsky.social -p $text")
             .alias("@")
             .action(mention_run)
             .flag(
                 Flag::new("post", FlagType::String)
-                .description("post flag(ex: $ atr @ syui.bsky.social -p text)")
+                .description("post flag\n\t\t\t$ atr @ syui.bsky.social -p text")
                 .alias("p"),
                 )
             )
         .command(
             Command::new("timeline")
             .usage("atr t")
-            .description("user timeline")
+            .description("timeline\n\t\t\t$ atr t")
             .alias("t")
             .action(t),
             )
         .command(
             Command::new("media")
             .usage("atr m {} -p text")
-            .description("media post")
+            .description("media post\n\t\t\t$ atr m ~/test.png")
             .alias("m")
             .action(m)
             )
         .command(
             Command::new("profile")
             .usage("atr profile")
-            .description("profile")
+            .description("profile\n\t\t\t$ atr profile")
             .action(profile),
             )
         .command(
             Command::new("notify")
             .usage("atr notify {}")
-            .description("notify")
+            .description("notify\n\t\t\t$ atr n")
             .alias("n")
             .action(n)
             .flag(
                 Flag::new("latest", FlagType::String)
-                .description("latest flag(ex: $ atr n -l 0)")
+                .description("latest flag\n\t\t\t$ atr n -l 0")
                 .alias("l"),
                 )
             .flag(
                 Flag::new("count", FlagType::String)
-                .description("count flag(ex: $ atr n -c 0)")
+                .description("count flag\n\t\t\t$ atr n -c 0")
                 .alias("c"),
                 )
             )
