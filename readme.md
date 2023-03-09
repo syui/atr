@@ -1,4 +1,31 @@
-at clietn rust
+`art` is cli clietn for `at` written in `r`ust.
+
+### download
+
+[download](https://github.com/syui/atr/releases)
+
+```sh
+# example
+$ curl -sLO https://github.com/syui/atr/releases/download/latest/atr-x86_64-apple-darwin
+$ mv atr* atr
+$ chmod +x atr
+$ ./atr
+```
+
+### build
+
+```sh
+# rust
+$ sudo pacman -S rust
+```
+
+```sh
+$ cargo build
+$ ./target/debug/atr s
+$ ./target/debug/atr s -u syui.bsky.social
+```
+
+### signin, login
 
 ```sh
 $ mkdir -p ~/.config/atr
@@ -6,15 +33,18 @@ $ cp example.config.toml ~/.config/atr/config.toml
 $ cat ~/.config/atr/config.toml
 host = "bsky.social"
 pass = "xxx"
-user = "ai.bsky.social"
+user = "syui.bsky.social"
 ```
 
-```sh
-# status
-$ cargo build
-$ ./target/debug/atr s
-$ ./target/debug/atr s -u syui.bsky.social
+> ~/.config/atr/config.toml
+
+```toml
+host = "bsky.social"
+pass = "xxx"
+user = "syui.bsky.social"
 ```
+
+### use
 
 ```sh
 # feed
@@ -24,23 +54,23 @@ $ atr f -u syui.bsky.social
 
 ```sh
 # post
-$ ./target/debug/atr p "post message"
+$ atr p "post message"
 # post link
-$ ./target/debug/atr p "post message" -l https://syui.cf
+$ atr p "post message" -l https://syui.cf
 
 # timeline
-$ ./target/debug/atr t
+$ atr t
 
 
 # media post
-$ ./target/debug/atr m ~/test.png
+$ atr m ~/test.png
 ```
 
 ```sh
 # custom handle
 $ atr h te.bsky.social
 $ vim ~/.config/atr/config.toml
-user = "te.bsky.social"
+user = "syui.bsky.social"
 $ atr a
 $ atr t
 ```
@@ -63,9 +93,6 @@ $ atr @ syui.bsky.social -p "message"
 
 ```sh
 # account switch
-$ cp -rf ~/.config/atr/config.toml ~/.config/atr/social.toml 
-$ cp -rf ~/.config/atr/config.toml ~/.config/atr/setting.toml 
-
 $ atr ss -d
 $ atr ss -s
 
