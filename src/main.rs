@@ -1032,8 +1032,14 @@ async fn rr(c: &Context) -> reqwest::Result<()> {
                         "text": m.to_string(),
                         "createdAt": d.to_string(),
                         "reply": {
-                            "cid": cid.to_string(),
-                            "uri": uri.to_string()
+                            "root": {
+                                "cid": cid.to_string(),
+                                "uri": uri.to_string()
+                            },
+                            "parent": {
+                                "cid": cid.to_string(),
+                                "uri": uri.to_string()
+                            }
                         }
                     },
                 }));
