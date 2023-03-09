@@ -24,3 +24,5 @@ futures = "0.3.5"
 url = { version = "2.0", features = ["serde"] }
 reqwest = { version = "*", features = ["json"] }
 rustc-serialize = "*"
+iso8601-timestamp = "0.2.10"
+smol_str = "0.1.24"

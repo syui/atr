@@ -11,6 +11,16 @@ use std::fs::File;
 use std::io::Read;
 use serde::{Deserialize, Serialize};
 use serde_json::{json};
+use smol_str::SmolStr; // stack-allocation for small strings
+use iso8601_timestamp::Timestamp;
+
+#[derive(Debug, Clone, Serialize)]
+pub struct Event {
+    name: SmolStr,
+    ts: Timestamp,
+    value: i32,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect(); let app = App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -313,11 +323,8 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
     };
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
     let col = "app.bsky.feed.post".to_string();
-    use std::process::Command;
-    let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
-    let d = String::from_utf8_lossy(&output.stdout);
-    let d =  d.to_string();
-    let d: String = d.replace("'", "").replace("\n", "");
+    let d = Timestamp::now_utc();
+    let d = d.to_string();
 
     let m = c.args[0].to_string();
     if let Ok(link) = c.string_flag("link") {
@@ -355,7 +362,6 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
         println!("{}", res);
 
     } else {
-        let d: String = d.replace("'", "").replace("\n", "");
         let post = Post {
             did: did.to_string(),
             collection: col.to_string(),
@@ -503,11 +509,15 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
     let d =  d.to_string();
     let cid: Cid = serde_json::from_str(&d).unwrap();
 
-    let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
-    let d = String::from_utf8_lossy(&output.stdout);
-    let d =  d.to_string();
-    let d: String = d.replace("'", "").replace("\n", "");
+
+    let d = Timestamp::now_utc();
+    //let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
+    //let d = String::from_utf8_lossy(&output.stdout);
+    let d = d.to_string();
+    //let d: String = d.replace("'", "").replace("\n", "");
     println!("{}", d);
+
+
     let mtype = "image/png".to_string();
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
     let con = "Content-Type: application/json";
@@ -649,11 +659,9 @@ async fn mention(c: &Context) -> reqwest::Result<()> {
     };
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
     let col = "app.bsky.feed.post".to_string();
-    use std::process::Command;
-    let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
-    let d = String::from_utf8_lossy(&output.stdout);
-    let d =  d.to_string();
-    let d: String = d.replace("'", "").replace("\n", "");
+
+    let d = Timestamp::now_utc();
+    let d = d.to_string();
 
     let at = "@".to_owned() + &handle;
     let e = at.chars().count();
