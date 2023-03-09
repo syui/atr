@@ -1,6 +1,4 @@
-`art` is cli clietn for `at` written in `r`ust.
-
-### download
+`art` is cli clietn for at written in rust.
 
 [download](https://github.com/syui/atr/releases)
 
