@@ -105,6 +105,8 @@ add-zsh-hook precmd my_bluesky
 ```
 
 ```sh
+$ atr deepl-api "xxx"
+
 # deepl translate
 $ atr tt "text" -l ja
 
