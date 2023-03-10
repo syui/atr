@@ -10,6 +10,24 @@ pub struct Data {
     pub user: String,
 }
 
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Token {
+    pub did: String,
+    pub accessJwt: String,
+    pub refreshJwt: String,
+    pub handle: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Tokens {
+    pub did: String,
+    pub access: String,
+    pub refresh: String,
+    pub handle: String,
+}
+
 impl Data {
     pub fn new() -> Result<Self, ConfigError> {
         let d = shellexpand::tilde("~") + "/.config/atr/config.toml";
@@ -21,8 +39,102 @@ impl Data {
     }
 }
 
+impl Tokens {
+    pub fn new() -> Result<Self, ConfigError> {
+        let d = shellexpand::tilde("~") + "/.config/atr/token.toml";
+        let s = Config::builder()
+            .add_source(File::with_name(&d))
+            .add_source(config::Environment::with_prefix("APP"))
+            .build()?;
+        s.try_deserialize()
+    }
+}
+
+// tokne.file
+pub fn token_file(s: &str) -> String { 
+    let file = "/.config/atr/token";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    match &*s {
+        "toml" => f + &".toml",
+        "json" => f + &".json",
+        _ => f + &"." + &s,
+    }
+}
+
+pub fn token_toml(s: &str) -> String { 
+    let s = String::from(s);
+    let tokens = Tokens::new().unwrap();
+    let tokens = Tokens {
+        did: tokens.did,
+        access: tokens.access,
+        refresh: tokens.refresh,
+        handle: tokens.handle,
+    };
+    match &*s {
+        "did" => tokens.did,
+        "access" => tokens.access,
+        "refresh" => tokens.refresh,
+        "handle" => tokens.handle,
+        _ => s,
+    }
+}
+
 // at://
 // https://atproto.com/lexicons/app-bsky-feed
+#[derive(Serialize, Deserialize)]
+pub struct BaseUrl {
+    pub profile_get: String,
+    pub describe: String,
+    pub record_list: String,
+    pub record_create: String,
+    pub session_create: String,
+    pub timeline_get: String,
+    pub upload_blob: String,
+    pub update_handle: String,
+    pub account_create: String,
+    pub notify_count: String,
+    pub notify_list: String,
+}
+
+pub fn url(s: &str) -> String {
+    let s = String::from(s);
+    let data = Data::new().unwrap();
+    let data = Data {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    let t = "https://".to_string() + &data.host.to_string() + &"/xrpc/".to_string();
+    let baseurl = BaseUrl {
+        profile_get: "app.bsky.actor.getProfile".to_string(),
+        record_create: "com.atproto.repo.createRecord".to_string(),
+        describe: "com.atproto.repo.describe".to_string(),
+        record_list: "com.atproto.repo.listRecords".to_string(),
+        session_create: "com.atproto.session.create".to_string(),
+        timeline_get: "app.bsky.feed.getTimeline".to_string(),
+        upload_blob: "com.atproto.blob.upload".to_string(),
+        account_create: "com.atproto.account.create".to_string(),
+        update_handle: "com.atproto.handle.update".to_string(),
+        notify_count: "app.bsky.notification.getCount".to_string(),
+        notify_list: "app.bsky.notification.list".to_string(),
+    };
+    match &*s {
+        "profile_get" => t.to_string() + &baseurl.profile_get,
+        "describe" => t.to_string() + &baseurl.describe,
+        "record_list" => t.to_string() + &baseurl.record_list,
+        "record_create" => t.to_string() + &baseurl.record_create,
+        "session_create" => t.to_string() + &baseurl.session_create,
+        "timeline_get" => t.to_string() + &baseurl.timeline_get,
+        "upload_blob" => t.to_string() + &baseurl.upload_blob,
+        "account_create" => t.to_string() + &baseurl.account_create,
+        "update_handle" => t.to_string() + &baseurl.update_handle,
+        "notify_list" => t.to_string() + &baseurl.notify_list,
+        "notify_count" => t.to_string() + &baseurl.notify_count,
+        _ => s,
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Notify {
     pub notifications: Vec<Notifications>
@@ -67,14 +179,7 @@ pub struct Viewer {
     pub muted: bool,
 }
 
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-pub struct Token {
-    pub did: String,
-    pub accessJwt: String,
-    pub refreshJwt: String,
-    pub handle: String,
-}
+
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
@@ -119,4 +224,5 @@ pub struct Handle {
 pub struct Did {
     pub did: String
 }
+
 

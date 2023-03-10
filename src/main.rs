@@ -20,6 +20,10 @@ use data::Did as Did;
 use data::Cid as Cid;
 use data::Handle as Handle;
 use crate::data::Timeline;
+use crate::data::url;
+use crate::data::token_file;
+use crate::data::token_toml;
+use crate::data::Tokens;
 
 use std::io;
 use std::io::Write;
@@ -202,6 +206,7 @@ fn main() {
             Command::new("profile")
             .usage("atr profile")
             .description("profile\n\t\t\t$ atr profile")
+            .alias("pro")
             .action(profile),
             )
         .command(
@@ -246,7 +251,7 @@ fn ss(c :&Context) -> reqwest::Result<()> {
         user: data.user,
         pass: data.pass,
     };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.describe";
+    let url = url(&"describe");
     if let Ok(user) = c.string_flag("user") {
         at_user(url, user);
     } else {
@@ -281,7 +286,7 @@ fn ff(c :&Context) -> reqwest::Result<()> {
         user: data.user,
         pass: data.pass,
     };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.listRecords";
+    let url = url(&"record_list");
     let col = "app.bsky.feed.post".to_string();
     if let Ok(user) = c.string_flag("user") {
         at_feed(url, user, col);
@@ -298,9 +303,7 @@ fn f(c: &Context) {
 
 #[tokio::main]
 async fn aa() -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
+    let f = token_file(&"json");
 
     let data = Datas::new().unwrap();
     let data = Datas {
@@ -312,7 +315,7 @@ async fn aa() -> reqwest::Result<()> {
     let handle = data.user;
     let mut map = HashMap::new();
 
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.session.create";
+    let url = url(&"session_create");
     map.insert("handle", &handle);
     map.insert("password", &data.pass);
     let client = reqwest::Client::new();
@@ -329,6 +332,19 @@ async fn aa() -> reqwest::Result<()> {
     if j != "" {
         f.write_all(&j.as_bytes()).unwrap();
     }
+
+    let f = token_file(&"toml");
+    let json: Token = serde_json::from_str(&res).unwrap();
+    let tokens = Tokens {
+        did: json.did.to_string(),
+        access: json.accessJwt.to_string(),
+        refresh: json.refreshJwt.to_string(),
+        handle: json.handle.to_string(),
+    };
+    let toml = toml::to_string(&tokens).unwrap();
+    let mut f = fs::File::create(f.clone()).unwrap();
+    f.write_all(&toml.as_bytes()).unwrap();
+
     Ok(())
 }
 
@@ -338,26 +354,11 @@ fn a(_c: &Context) {
 
 #[tokio::main]
 async fn pp(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-    let did = json.did;
+   
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
     
-
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
+    let url = url(&"record_create");
     let col = "app.bsky.feed.post".to_string();
     let d = Timestamp::now_utc();
     let d = d.to_string();
@@ -438,18 +439,10 @@ fn p(c: &Context) {
 
 #[tokio::main]
 async fn tt(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
+    let token = token_toml(&"access");
+    //let did = token_toml(&"did");
 
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-
-    let url = "https://bsky.social/xrpc/app.bsky.feed.getTimeline";
+    let url = url(&"timeline_get");
 
     let client = reqwest::Client::new();
     let j = client.get(url)
@@ -495,27 +488,13 @@ fn t(c: &Context) {
 
 #[tokio::main]
 async fn pro(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
 
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
+    let token = token_toml(&"access");
 
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-
-    let user = c.args[0].to_string();
-    if user.is_empty() == false {
-        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &user;
+    if c.args[0].is_empty() == false {
+        let user = c.args[0].to_string();
+        let url = url(&"profile_get") + &"?actor=" + &user;
+        println!("{}", url);
         let client = reqwest::Client::new();
         let j = client.get(url)
             .header("Authorization", "Bearer ".to_owned() + &token)
@@ -531,16 +510,6 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
             f.write_all(&j.as_bytes()).unwrap();
         }
         println!("{}", j);
-    } else {
-        let url = "https://bsky.social/xrpc/app.bsky.actor.getProfile?actor=".to_owned() + &data.user;
-        let client = reqwest::Client::new();
-        let j = client.get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        println!("{}", j);
     }
     Ok(())
 }
@@ -552,17 +521,12 @@ fn profile(c: &Context) {
 
 #[tokio::main]
 async fn mm(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
+    
+    let token = token_toml(&"access");
+
     let atoken = "Authorization: Bearer ".to_owned() + &token;
     let con = "Content-Type: image/png";
-    let did = json.did;
+    let did = token_toml(&"did");
 
     let data = Datas::new().unwrap();
     let data = Datas {
@@ -570,7 +534,8 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
         user: data.user,
         pass: data.pass,
     };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.blob.upload";
+
+    let url = url(&"upload_blob");
 
     let f = "@".to_owned() + &c.args[0].to_string();
     use std::process::Command;
@@ -584,6 +549,8 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
     println!("{}", d);
 
     let mtype = "image/png".to_string();
+
+    //let url = url(&"record_create");
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
     let con = "Content-Type: application/json";
 
@@ -605,27 +572,13 @@ fn m(c: &Context) {
 
 #[tokio::main]
 async fn hh(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-    let did = json.did;
+    
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
     
     let m = c.args[0].to_string();
 
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.handle.update";
+    let url = url(&"update_handle");
     println!("DNS txt : _atproto.{}, did={}.", m, did);
 
     let handle = Handle {
@@ -659,7 +612,8 @@ async fn cc(c: &Context) -> reqwest::Result<()> {
         user: data.user,
         pass: data.pass,
     };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.account.create";
+
+    let url = url(&"account_create");
     let handle = data.user;
 
     let mut map = HashMap::new();
@@ -689,17 +643,9 @@ fn c(c: &Context) {
 
 #[tokio::main]
 async fn mention(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
 
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-    let did = json.did;
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
 
     let m = c.args[0].to_string();
 
@@ -716,13 +662,7 @@ async fn mention(c: &Context) -> reqwest::Result<()> {
     let handle: Handle = serde_json::from_str(&data).unwrap();
     let handle = handle.handle;
 
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
+    let url = url(&"record_create");
     let col = "app.bsky.feed.post".to_string();
 
     let d = Timestamp::now_utc();
@@ -801,25 +741,13 @@ fn mention_run(c: &Context) {
 
 #[tokio::main]
 async fn nn(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
 
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
+    let token = token_toml(&"access");
+    //let did = token_toml(&"did");
 
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-    
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
     if let Ok(_get) = c.string_flag("get") {
-        let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.getCount";
+
+        let url = url(&"notify_count");
         let client = reqwest::Client::new();
         let res = client
             .get(url)
@@ -831,7 +759,7 @@ async fn nn(c: &Context) -> reqwest::Result<()> {
         println!("{}", res);
     } 
 
-    let url = "https://".to_owned() + &data.host + &"/xrpc/app.bsky.notification.list";
+    let url = url(&"notify_list");
     let client = reqwest::Client::new();
     let res = client
         .get(url)
@@ -989,26 +917,11 @@ fn first(c: &Context) {
 
 #[tokio::main]
 async fn rr(c: &Context) -> reqwest::Result<()> {
-    let file = "/.config/atr/token.json";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
 
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let json: Token = serde_json::from_str(&data).unwrap();
-    let token = json.accessJwt;
-    let did = json.did;
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
     
-
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
+    let url = url(&"record_create");
     let col = "app.bsky.feed.post".to_string();
     let d = Timestamp::now_utc();
     let d = d.to_string();
