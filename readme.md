@@ -103,3 +103,15 @@ my_bluesky() {
 autoload -Uz add-zsh-hook
 add-zsh-hook precmd my_bluesky
 ```
+
+```sh
+# deepl translate
+$ atr tt "text" -l ja
+
+$ atr p "deeplで翻訳してポストしています" -e
+Translated and posted by deepl
+
+$ atr p "Translated and posted by deepl" -j
+deeplで翻訳してポストしています
+```
+

@@ -8,7 +8,6 @@ use std::collections::HashMap;
 use rustc_serialize::json::Json;
 use std::fs::File;
 use std::io::Read;
-use serde::{Serialize};
 use serde_json::{json};
 use smol_str::SmolStr; // stack-allocation for small strings
 use iso8601_timestamp::Timestamp;
@@ -19,6 +18,7 @@ use data::Token as Token;
 use data::Did as Did;
 use data::Cid as Cid;
 use data::Handle as Handle;
+use data::Deep as Deeps;
 use crate::data::Timeline;
 use crate::data::url;
 use crate::data::token_file;
@@ -27,6 +27,10 @@ use crate::data::Tokens;
 
 use std::io;
 use std::io::Write;
+
+use reqwest::header::AUTHORIZATION;
+use reqwest::header::CONTENT_TYPE;
+use serde::{Deserialize, Serialize};
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -43,6 +47,18 @@ struct Setting {
     pass: String,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+struct DeepData {
+    translations: Vec<Translation>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Translation {
+    text: String,
+    detected_source_language : String,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect(); let app = App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -52,7 +68,7 @@ fn main() {
         .command(
             Command::new("start")
             .usage("atr start")
-            .description("start first\n\t\t\t$ atr start\n\t\t\t$ ~/.config/atr/config.toml")
+            .description("start first\n\t\t\t$ atr start\n\t\t\t$ atr start -u syui.bsky.social -p $password")
             .action(first)
             .flag(
                 Flag::new("pass", FlagType::String)
@@ -148,6 +164,16 @@ fn main() {
                 .description("link flag(ex: $ atr p -l)")
                 .alias("l"),
                 )
+            .flag(
+                Flag::new("en", FlagType::Bool)
+                .description("english flag(ex: $ atr p $text -e)")
+                .alias("e"),
+                )
+            .flag(
+                Flag::new("ja", FlagType::Bool)
+                .description("japanese flag(ex: $ atr p $text -j)")
+                .alias("j"),
+                )
             )
         .command(
             Command::new("reply")
@@ -225,6 +251,24 @@ fn main() {
                 .description("count flag\n\t\t\t$ atr n -c 0")
                 .alias("c"),
                 )
+            )
+        .command(
+            Command::new("deepl")
+            .usage("atr tt {}")
+            .description("translate message, ex: $ atr tt $text -l en")
+            .alias("tt")
+            .action(deepl_post)
+            .flag(
+                Flag::new("lang", FlagType::String)
+                .description("Lang flag")
+                .alias("l"),
+                )
+            )
+        .command(
+            Command::new("deepl-api")
+            .usage("atr deepl-api {}")
+            .description("deepl-api change, ex : $ atr deepl-api $api")
+            .action(deepl_api),
             )
         ;
     app.run(args);
@@ -364,6 +408,7 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
     let d = d.to_string();
 
     let m = c.args[0].to_string();
+
     if let Ok(link) = c.string_flag("link") {
         let e = link.chars().count();
         let s = 0;
@@ -408,15 +453,6 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
             },
         }));
 
-        //let post = Post {
-        //    did: did.to_string(),
-        //    collection: col.to_string(),
-        //    record: Record {
-        //        text: m.to_string(),
-        //        createdAt: d.to_string(),
-        //    }
-        //};
-
         let client = reqwest::Client::new();
         let res = client
             .post(url)
@@ -430,11 +466,6 @@ async fn pp(c: &Context) -> reqwest::Result<()> {
         println!("{}", res);
     }
     Ok(())
-}
-
-fn p(c: &Context) {
-    aa().unwrap();
-    pp(c).unwrap();
 }
 
 #[tokio::main]
@@ -1003,4 +1034,125 @@ async fn rr(c: &Context) -> reqwest::Result<()> {
 fn r(c: &Context) {
     aa().unwrap();
     rr(c).unwrap();
+}
+
+#[tokio::main]
+async fn deepl(message: String,lang: String) -> reqwest::Result<()> {
+    let data = Deeps::new().unwrap();
+    let data = Deeps {
+        api: data.api,
+    };
+    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
+    let mut params = HashMap::new();
+    params.insert("text", &message);
+    params.insert("target_lang", &lang);
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://api-free.deepl.com/v2/translate")
+        .header(AUTHORIZATION, api)
+        .header(CONTENT_TYPE, "json")
+        .form(&params)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let p: DeepData = serde_json::from_str(&res).unwrap();
+    let o = &p.translations[0].text;
+    //println!("{}", res);
+    println!("{}", o);
+    Ok(())
+}
+
+#[allow(unused_must_use)]
+fn deepl_post(c: &Context) {
+    let m = c.args[0].to_string();
+    if let Ok(lang) = c.string_flag("lang") {
+        deepl(m,lang.to_string());
+    } else {
+        let lang = "ja";
+        deepl(m,lang.to_string());
+    }
+}
+
+#[allow(unused_must_use)]
+fn deepl_api(c: &Context) {
+    let api = c.args[0].to_string();
+    let o = "api='".to_owned() + &api.to_string() + &"'".to_owned();
+    let o = o.to_string();
+    let l = shellexpand::tilde("~") + "/.config/atr/deepl.toml";
+    let l = l.to_string();
+    let mut l = fs::File::create(l).unwrap();
+    if o != "" {
+        l.write_all(&o.as_bytes()).unwrap();
+    }
+    println!("{:#?}", l);
+}
+
+#[tokio::main]
+async fn ppd(c: &Context, lang: &str) -> reqwest::Result<()> {
+    let m = c.args[0].to_string();
+    let lang = lang.to_string();
+
+    let data = Deeps::new().unwrap();
+    let data = Deeps {
+        api: data.api,
+    };
+    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
+    let mut params = HashMap::new();
+    params.insert("text", &m);
+    params.insert("target_lang", &lang);
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://api-free.deepl.com/v2/translate")
+        .header(AUTHORIZATION, api)
+        .header(CONTENT_TYPE, "json")
+        .form(&params)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    let p: DeepData = serde_json::from_str(&res).unwrap();
+    let o = &p.translations[0].text;
+    println!("deepl : {}", o);
+   
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
+    
+    let url = url(&"record_create");
+    let col = "app.bsky.feed.post".to_string();
+    let d = Timestamp::now_utc();
+    let d = d.to_string();
+    let post = Some(json!({
+        "did": did.to_string(),
+        "collection": col.to_string(),
+        "record": {
+            "text": o.to_string(),
+            "createdAt": d.to_string(),
+        },
+    }));
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&post)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+fn p(c: &Context) {
+    aa().unwrap();
+    if c.bool_flag("en") {
+        ppd(c, &"en").unwrap();
+    } else if c.bool_flag("ja") {
+        ppd(c, &"ja").unwrap();
+    } else {
+        pp(c).unwrap();
+    }
 }
