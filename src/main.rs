@@ -32,6 +32,13 @@ pub struct Event {
     pub value: i32,
 }
 
+#[derive(Serialize)]
+struct Setting {
+    host: String,
+    user: String,
+    pass: String,
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect(); let app = App::new(env!("CARGO_PKG_NAME"))
         .author(env!("CARGO_PKG_AUTHORS"))
@@ -42,7 +49,22 @@ fn main() {
             Command::new("start")
             .usage("atr start")
             .description("start first\n\t\t\t$ atr start\n\t\t\t$ ~/.config/atr/config.toml")
-            .action(first),
+            .action(first)
+            .flag(
+                Flag::new("pass", FlagType::String)
+                .description("pass")
+                .alias("p"),
+                )
+            .flag(
+                Flag::new("host", FlagType::String)
+                .description("host")
+                .alias("h"),
+                )
+            .flag(
+                Flag::new("user", FlagType::String)
+                .description("user")
+                .alias("u"),
+                )
             )
         .command(
             Command::new("auth")
@@ -557,14 +579,9 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
     let d =  d.to_string();
     let cid: Cid = serde_json::from_str(&d).unwrap();
 
-
     let d = Timestamp::now_utc();
-    //let output = Command::new("date").arg("-u").arg("+'%Y-%m-%dT%H:%M:%SZ'").output().expect("sh");
-    //let d = String::from_utf8_lossy(&output.stdout);
     let d = d.to_string();
-    //let d: String = d.replace("'", "").replace("\n", "");
     println!("{}", d);
-
 
     let mtype = "image/png".to_string();
     let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
@@ -921,15 +938,8 @@ fn account_switch(c: &Context)  {
     ss(c).unwrap();
 }
 
-#[derive(Serialize)]
-struct Setting {
-    host: String,
-    user: String,
-    pass: String,
-}
-
 #[allow(unused_must_use)]
-fn first_start(_c: &Context) -> io::Result<()> {
+fn first_start(c: &Context) -> io::Result<()> {
     let d = shellexpand::tilde("~") + "/.config/atr";
     let d = d.to_string();
     let f = shellexpand::tilde("~") + "/.config/atr/config.toml";
@@ -953,6 +963,22 @@ fn first_start(_c: &Context) -> io::Result<()> {
     if check == false {
         let mut f = fs::File::create(f.clone()).unwrap();
         f.write_all(&toml.as_bytes()).unwrap();
+    }
+
+    let f = shellexpand::tilde("~") + "/.config/atr/config.toml";
+    let f = f.to_string();
+
+    if let Ok(user) = c.string_flag("user") {
+        if let Ok(pass) = c.string_flag("pass") {
+            let setting = Setting {
+                host: "bsky.social".to_string(),
+                user: user.to_string(),
+                pass: pass.to_string(),
+            };
+            let toml = toml::to_string(&setting).unwrap();
+            let mut f = fs::File::create(f.clone()).unwrap();
+            f.write_all(&toml.as_bytes()).unwrap();
+        }
     }
     Ok(())
 }

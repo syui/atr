@@ -23,14 +23,12 @@ $ ./target/debug/atr s
 $ ./target/debug/atr s -u syui.bsky.social
 ```
 
-### signin, login
+### start
 
 ```sh
-$ atr start
-$ cat ~/.config/atr/config.toml
-host = "bsky.social"
-pass = "xxx"
-user = "syui.bsky.social"
+# login
+$ atr start -u syui.bsky.social -p xxx
+$ atr t
 ```
 
 > ~/.config/atr/config.toml
