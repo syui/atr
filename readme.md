@@ -107,8 +107,10 @@ add-zsh-hook precmd my_bluesky
 ```sh
 $ atr deepl-api "xxx"
 
-# deepl translate
-$ atr tt "text" -l ja
+# deepl translate [en -> ja]
+$ atr tt "test" -l ja
+# deepl translate [ja -> en]
+$ atr tt "テスト" -l en
 
 $ atr p "deeplで翻訳してポストしています" -e
 Translated and posted by deepl
@@ -116,4 +118,28 @@ Translated and posted by deepl
 $ atr p "Translated and posted by deepl" -j
 deeplで翻訳してポストしています
 ```
+
+```sh
+$ atr openai-api "xxx"
+$ atr chat "Lexicon is a schema system used to define RPC methods and record types"
+It is used in distributed systems to define the various components, such as clients, servers, and databases, and their interactions. Lexicon is often used to define the data structure for RPC methods and records, and to define the communications protocols between the various components of a distributed system.
+```
+
+```sh
+# reply
+$ atr r "reply post" -c $cid -u $uri
+
+# tets : post reply option
+$ atr p "[en -> ja] translate and post the english to japanese with deepl" -j --cid $cid --uri $uri
+$ atr p "[chatgpt] post by openai chatgpt" -c --cid $cid --uri $uri
+
+```
+
+### ref
+
+openai : https://github.com/syui/msr/tree/openai
+
+deepl : https://github.com/syui/msr/tree/deepl
+
+at : https://atproto.com/guides/lexicon
 
