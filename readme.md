@@ -129,10 +129,14 @@ It is used in distributed systems to define the various components, such as clie
 # reply
 $ atr r "reply post" -c $cid -u $uri
 
-# tets : post reply option
+# test : post reply option
 $ atr p "[en -> ja] translate and post the english to japanese with deepl" -j --cid $cid --uri $uri
 $ atr p "[chatgpt] post by openai chatgpt" -c --cid $cid --uri $uri
+```
 
+```sh
+# test : bot
+$ atr bot --chat
 ```
 
 ### ref

@@ -205,123 +205,145 @@ fn main() {
                 )
             )
             .command(
-            Command::new("reply")
-            .usage("atr r {}")
-            .description("reply\n\t\t\t$ atr r $text -u $uri -c $cid")
-            .alias("r")
-            .action(r)
-            .flag(
-                Flag::new("uri", FlagType::String)
-                .description("uri flag(ex: $ atr r -u)")
-                .alias("u"),
+                Command::new("reply")
+                .usage("atr r {}")
+                .description("reply\n\t\t\t$ atr r $text -u $uri -c $cid")
+                .alias("r")
+                .action(r)
+                .flag(
+                    Flag::new("uri", FlagType::String)
+                    .description("uri flag(ex: $ atr r -u)")
+                    .alias("u"),
+                    )
+                .flag(
+                    Flag::new("cid", FlagType::String)
+                    .description("cid flag(ex: $ atr r -u -c)")
+                    .alias("c"),
+                    )
                 )
-            .flag(
-                Flag::new("cid", FlagType::String)
-                .description("cid flag(ex: $ atr r -u -c)")
-                .alias("c"),
+            .command(
+                Command::new("mention")
+                .usage("atr mention {}")
+                .description("mention\n\t\t\t$ atr @ syui.bsky.social -p $text")
+                .alias("@")
+                .action(mention_run)
+                .flag(
+                    Flag::new("post", FlagType::String)
+                    .description("post flag\n\t\t\t$ atr @ syui.bsky.social -p text")
+                    .alias("p"),
+                    )
                 )
-            )
-        .command(
-            Command::new("mention")
-            .usage("atr mention {}")
-            .description("mention\n\t\t\t$ atr @ syui.bsky.social -p $text")
-            .alias("@")
-            .action(mention_run)
-            .flag(
-                Flag::new("post", FlagType::String)
-                .description("post flag\n\t\t\t$ atr @ syui.bsky.social -p text")
-                .alias("p"),
+            .command(
+                Command::new("timeline")
+                .usage("atr t")
+                .description("timeline\n\t\t\t$ atr t")
+                .alias("t")
+                .action(t)
+                .flag(
+                    Flag::new("latest", FlagType::Bool)
+                    .description("latest flag\n\t\t\t$ atr t -l")
+                    .alias("l"),
+                    )
+                .flag(
+                    Flag::new("json", FlagType::Bool)
+                    .description("count flag\n\t\t\t$ atr t -j")
+                    .alias("c"),
+                    )
                 )
-            )
-        .command(
-            Command::new("timeline")
-            .usage("atr t")
-            .description("timeline\n\t\t\t$ atr t")
-            .alias("t")
-            .action(t)
-            .flag(
-                Flag::new("latest", FlagType::Bool)
-                .description("latest flag\n\t\t\t$ atr t -l")
-                .alias("l"),
+            .command(
+                Command::new("media")
+                .usage("atr m {} -p text")
+                .description("media post\n\t\t\t$ atr m ~/test.png")
+                .alias("m")
+                .action(m)
                 )
-            .flag(
-                Flag::new("json", FlagType::Bool)
-                .description("count flag\n\t\t\t$ atr t -j")
-                .alias("c"),
+            .command(
+                Command::new("profile")
+                .usage("atr profile")
+                .description("profile\n\t\t\t$ atr profile")
+                .alias("pro")
+                .action(profile),
                 )
-            )
-        .command(
-            Command::new("media")
-            .usage("atr m {} -p text")
-            .description("media post\n\t\t\t$ atr m ~/test.png")
-            .alias("m")
-            .action(m)
-            )
-        .command(
-            Command::new("profile")
-            .usage("atr profile")
-            .description("profile\n\t\t\t$ atr profile")
-            .alias("pro")
-            .action(profile),
-            )
-        .command(
-            Command::new("notify")
-            .usage("atr notify {}")
-            .description("notify\n\t\t\t$ atr n")
-            .alias("n")
-            .action(n)
-            .flag(
-                Flag::new("latest", FlagType::Bool)
-                .description("latest flag\n\t\t\t$ atr n -l")
-                .alias("l"),
+            .command(
+                Command::new("notify")
+                .usage("atr notify {}")
+                .description("notify\n\t\t\t$ atr n")
+                .alias("n")
+                .action(n)
+                .flag(
+                    Flag::new("latest", FlagType::Bool)
+                    .description("latest flag\n\t\t\t$ atr n -l")
+                    .alias("l"),
+                    )
+                .flag(
+                    Flag::new("count", FlagType::Int)
+                    .description("count flag\n\t\t\t$ atr n -c 0")
+                    .alias("c"),
+                    )
                 )
-            .flag(
-                Flag::new("count", FlagType::Int)
-                .description("count flag\n\t\t\t$ atr n -c 0")
-                .alias("c"),
+            .command(
+                Command::new("deepl")
+                .usage("atr tt {}")
+                .description("translate message, ex: $ atr tt $text -l en")
+                .alias("tt")
+                .action(deepl_post)
+                .flag(
+                    Flag::new("lang", FlagType::String)
+                    .description("Lang flag")
+                    .alias("l"),
+                    )
                 )
-            )
-        .command(
-            Command::new("deepl")
-            .usage("atr tt {}")
-            .description("translate message, ex: $ atr tt $text -l en")
-            .alias("tt")
-            .action(deepl_post)
-            .flag(
-                Flag::new("lang", FlagType::String)
-                .description("Lang flag")
-                .alias("l"),
+            .command(
+                Command::new("deepl-api")
+                .usage("atr deepl-api {}")
+                .description("deepl-api change, ex : $ atr deepl-api $api")
+                .action(deepl_api),
                 )
-            )
-        .command(
-            Command::new("deepl-api")
-            .usage("atr deepl-api {}")
-            .description("deepl-api change, ex : $ atr deepl-api $api")
-            .action(deepl_api),
-            )
-        .command(
-            Command::new("openai")
-            .usage("atr chatgpt {}")
-            .description("translate message, ex: $ atr tt $text -l en")
-            .alias("chat")
-            .action(openai_post)
-            .flag(
-                Flag::new("model", FlagType::String)
-                .description("model flag")
-                .alias("m"),
+            .command(
+                Command::new("openai")
+                .usage("atr chatgpt {}")
+                .description("translate message, ex: $ atr tt $text -l en")
+                .alias("chat")
+                .action(openai_post)
+                .flag(
+                    Flag::new("model", FlagType::String)
+                    .description("model flag")
+                    .alias("m"),
+                    )
+                .flag(
+                    Flag::new("chat-ja", FlagType::Bool)
+                    .description("chatgpt japanese mode flag")
+                    )
                 )
-            .flag(
-                Flag::new("chat-ja", FlagType::Bool)
-                .description("chatgpt japanese mode flag")
+            .command(
+                Command::new("openai-api")
+                .usage("atr openai-api {}")
+                .description("openai-api change, ex : $ atr openai-api $api")
+                .action(openai_api),
                 )
-            )
-        .command(
-            Command::new("openai-api")
-            .usage("atr openai-api {}")
-            .description("openai-api change, ex : $ atr openai-api $api")
-            .action(openai_api),
-            )
-        ;
+            .command(
+                Command::new("bot")
+                .usage("atr bot {}")
+                .description("bot message")
+                .alias("b")
+                .action(bot)
+                .flag(
+                    Flag::new("chat", FlagType::Bool)
+                    .description("bot-chat flag")
+                    .alias("c"),
+                    )
+                .flag(
+                    Flag::new("deepl", FlagType::Bool)
+                    .description("bot-deepl flag")
+                    .alias("d"),
+                    )
+                .flag(
+                    Flag::new("lang", FlagType::String)
+                    .description("bot-chat flag")
+                    .alias("l"),
+                    )
+                )
+            ;
     app.run(args);
 }
 
@@ -1428,4 +1450,133 @@ fn p(c: &Context) {
     } else {
         pp(c).unwrap();
     }
+}
+
+#[allow(unused_must_use)]
+#[tokio::main]
+async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
+    let token = token_toml(&"access");
+    let url = url(&"notify_list");
+    let client = reqwest::Client::new();
+    let res = client
+        .get(url)
+        .query(&[("limit", 4)])
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let notify: Notify = serde_json::from_str(&res).unwrap();
+    let n = notify.notifications;
+
+    let length = &n.len();
+    for i in 0..*length {
+        let reason = &n[i].reason;
+        let handle = &n[i].author.handle;
+        if reason == "mention" &&  handle == "syui.cf" {
+            let _time = &n[i].record.createdAt;
+            let cid = &n[i].cid;
+            let uri = &n[i].uri;
+            if ! n[i].record.text.is_none() { 
+                let text = &n[i].record.text.as_ref().unwrap();
+                let vec: Vec<&str> = text.split_whitespace().collect();
+                if vec.len() > 2 {
+                    let com = vec[1].trim().to_string();
+                    let prompt = &vec[2..].join(" ");
+                    println!("cmd:{}, prompt:{}", com, prompt);
+                    println!("cid:{}, uri:{}", cid, uri);
+                    if com == "/chat" {
+                        println!("{}", text);
+                        let model = "text-davinci-003";
+                        let data = Opens::new().unwrap();
+                        let data = Opens {
+                            api: data.api,
+                        };
+                        let temperature = 0.7;
+                        let max_tokens = 250;
+                        let top_p = 1;
+                        let frequency_penalty = 0;
+                        let presence_penalty = 0;
+                        let stop = "[\"###\"]";
+
+                        let post = Some(json!({
+                            "prompt": &prompt.to_string(),
+                            "model": &model.to_string(),
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "top_p": top_p,
+                            "frequency_penalty": frequency_penalty,
+                            "presence_penalty": presence_penalty,
+                            "stop": stop,
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post("https://api.openai.com/v1/completions")
+                            .header("Authorization", "Bearer ".to_owned() + &data.api)
+                            .json(&post)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+                        let p: OpenData = serde_json::from_str(&res).unwrap();
+                        let o = &p.choices[0].text;
+                        let o = o.replace("\n", "");
+                        println!("chatgpt : {}", o);
+
+                        let token = token_toml(&"access");
+                        let did = token_toml(&"did");
+
+                        //let at_url = url(&"record_create");
+                        let at_url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
+                        let col = "app.bsky.feed.post".to_string();
+                        let d = Timestamp::now_utc();
+                        let d = d.to_string();
+
+                        let post = Some(json!({
+                            "did": did.to_string(),
+                            "collection": col.to_string(),
+                            "record": {
+                                "text": o.to_string(),
+                                "createdAt": d.to_string(),
+                                "reply": {
+                                    "root": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    },
+                                    "parent": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    }
+                                }
+                            },
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(at_url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+
+                        println!("{}", res);
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn bot(c: &Context) {
+    aa().unwrap();
+    if c.bool_flag("chat") {
+        bot_notify_openai(c).unwrap();
+    }
+    //if c.bool_flag("deepl") {
+    //    bot_notify_deepl(c)).unwrap();
+    //}
 }
