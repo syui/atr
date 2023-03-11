@@ -1478,7 +1478,8 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
         //    println!("{}", read);
         //}
         if reason == "mention" &&  handle == "syui.cf" && read == false {
-            let time = &n[i].record.createdAt;
+            //let time = &n[i].record.createdAt;
+            let time = &n[i].indexedAt;
             let cid = &n[i].cid;
             let uri = &n[i].uri;
             if ! n[i].record.text.is_none() { 
