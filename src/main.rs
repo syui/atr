@@ -501,10 +501,12 @@ async fn tt(c: &Context) -> reqwest::Result<()> {
         let length = &n.len();
         for i in 0..*length {
             println!("@{}", n[i].post.author.handle);
+            println!("uri : {}", n[i].post.uri);
+            println!("cid : {}", n[i].post.cid);
             if ! n[i].post.record.text.is_none() { 
                 println!("text : {}", n[i].post.record.text.as_ref().unwrap());
             }
-            println!("⚡️ [{}]\t⭐️ [{}]\t🌈 [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
+            println!("⚡️ [{}]\t🌈 [{}]\t⭐️ [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
             println!("{}", "---------");
         }
     }

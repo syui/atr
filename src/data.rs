@@ -199,6 +199,7 @@ pub struct Feed {
 pub struct Post {
     pub did: Option<String>,
     pub uri: String,
+    pub cid: String,
     pub collection: Option<String>,
     pub record: Record,
     pub author: Author,
