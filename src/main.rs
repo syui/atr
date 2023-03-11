@@ -338,9 +338,12 @@ fn main() {
                     .alias("d"),
                     )
                 .flag(
-                    Flag::new("lang", FlagType::String)
-                    .description("bot-chat flag")
-                    .alias("l"),
+                    Flag::new("ja", FlagType::Bool)
+                    .description("deepl japanese flag")
+                    )
+                .flag(
+                    Flag::new("en", FlagType::Bool)
+                    .description("deepl english flag")
                     )
                 )
             ;
@@ -1151,10 +1154,16 @@ async fn deepl(message: String,lang: String) -> reqwest::Result<()> {
     let mut params = HashMap::new();
     params.insert("text", &message);
     params.insert("target_lang", &lang);
+
+    //let parmas = Some(json!({
+    //    "text": message.to_string(),
+    //    "target_lang": lang.to_string(),
+    //}));
     let client = reqwest::Client::new();
     let res = client
         .post("https://api-free.deepl.com/v2/translate")
         .header(AUTHORIZATION, api)
+        //.json(&params)
         .header(CONTENT_TYPE, "json")
         .form(&params)
         .send()
@@ -1481,9 +1490,11 @@ fn p(c: &Context) {
     }
 }
 
+
+
 #[allow(unused_must_use)]
 #[tokio::main]
-async fn notify_openai_post(prompt: String, model: String, cid: String, uri: String) -> reqwest::Result<()> {
+pub async fn notify_openai_post(prompt: String, model: String, cid: String, uri: String) -> reqwest::Result<()> {
     let data = Opens::new().unwrap();
     let data = Opens {
         api: data.api,
@@ -1524,7 +1535,6 @@ async fn notify_openai_post(prompt: String, model: String, cid: String, uri: Str
     let did = token_toml(&"did");
 
     let url = url(&"record_create");
-    //let at_url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
     let col = "app.bsky.feed.post".to_string();
     let d = Timestamp::now_utc();
     let d = d.to_string();
@@ -1563,7 +1573,7 @@ async fn notify_openai_post(prompt: String, model: String, cid: String, uri: Str
 
 #[allow(unused_must_use)]
 #[tokio::main]
-async fn notify_read(time: String) -> reqwest::Result<()> {
+pub async fn notify_read(time: String) -> reqwest::Result<()> {
     let token = token_toml(&"access");
     let url = url(&"notify_update");
     let post = Some(json!({
@@ -1586,7 +1596,74 @@ async fn notify_read(time: String) -> reqwest::Result<()> {
 
 #[allow(unused_must_use)]
 #[tokio::main]
-async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
+pub async fn notify_deepl_post(prompt: String, lang: String, cid: String, uri: String) -> reqwest::Result<()> {
+    let lang = lang.to_string();
+    let data = Deeps::new().unwrap();
+    let data = Deeps {
+        api: data.api,
+    };
+    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
+    let mut params = HashMap::new();
+    params.insert("text", &prompt);
+    params.insert("target_lang", &lang);
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://api-free.deepl.com/v2/translate")
+        .header(AUTHORIZATION, api)
+        .header(CONTENT_TYPE, "json")
+        .form(&params)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    let p: DeepData = serde_json::from_str(&res).unwrap();
+    let o = &p.translations[0].text;
+    println!("deepl : {}", o);
+
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
+
+    let url = url(&"record_create");
+    let col = "app.bsky.feed.post".to_string();
+    let d = Timestamp::now_utc();
+    let d = d.to_string();
+
+    let post = Some(json!({
+        "did": did.to_string(),
+        "collection": col.to_string(),
+        "record": {
+            "text": o.to_string(),
+            "createdAt": d.to_string(),
+            "reply": {
+                "root": {
+                    "cid": cid.to_string(),
+                    "uri": uri.to_string()
+                },
+                "parent": {
+                    "cid": cid.to_string(),
+                    "uri": uri.to_string()
+                }
+            }
+        },
+    }));
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&post)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+#[allow(unused_must_use)]
+#[tokio::main]
+async fn bot_run(_c: &Context) -> reqwest::Result<()> {
     let token = token_toml(&"access");
     let url = url(&"notify_list");
     let client = reqwest::Client::new();
@@ -1607,7 +1684,6 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
         let handle = &n[i].author.handle;
         let read = n[i].isRead;
         if reason == "mention" &&  handle == "syui.cf" && read == false {
-            //let time = &n[i].record.createdAt;
             let time = &n[i].indexedAt;
             let cid = &n[i].cid;
             let uri = &n[i].uri;
@@ -1616,14 +1692,232 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
                 let vec: Vec<&str> = text.split_whitespace().collect();
                 if vec.len() > 2 {
                     let com = vec[1].trim().to_string();
-                    let prompt = &vec[2..].join(" ");
-                    println!("cmd:{}, prompt:{}", com, prompt);
-                    println!("cid:{}, uri:{}", cid, uri);
                     if com == "/chat" {
+                        let prompt = &vec[2..].join(" ");
+                        println!("cmd:{}, prompt:{}", com, prompt);
+                        println!("cid:{}, uri:{}", cid, uri);
                         println!("{}", text);
                         let model = "text-davinci-003";
-                        notify_openai_post(prompt.to_string(), model.to_string(), cid.to_string(), uri.to_string()).unwrap();
-                        notify_read(time.to_string()).unwrap();
+
+                        //notify_openai_post(prompt.to_string(), model.to_string(), cid.to_string(), uri.to_string());
+                        //
+                        //
+                        //
+                        let data = Opens::new().unwrap();
+                        let data = Opens {
+                            api: data.api,
+                        };
+                        let temperature = 0.7;
+                        let max_tokens = 250;
+                        let top_p = 1;
+                        let frequency_penalty = 0;
+                        let presence_penalty = 0;
+                        let stop = "[\"###\"]";
+
+                        let post = Some(json!({
+                            "prompt": &prompt.to_string(),
+                            "model": &model.to_string(),
+                            "temperature": temperature,
+                            "max_tokens": max_tokens,
+                            "top_p": top_p,
+                            "frequency_penalty": frequency_penalty,
+                            "presence_penalty": presence_penalty,
+                            "stop": stop,
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post("https://api.openai.com/v1/completions")
+                            .header("Authorization", "Bearer ".to_owned() + &data.api)
+                            .json(&post)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+                        let p: OpenData = serde_json::from_str(&res).unwrap();
+                        let o = &p.choices[0].text;
+                        let o = o.replace("\n", "");
+                        println!("chatgpt : {}", o);
+
+                        let token = token_toml(&"access");
+                        let did = token_toml(&"did");
+
+                        let url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
+                        //let url = url(&"record_create");
+                        let col = "app.bsky.feed.post".to_string();
+                        let d = Timestamp::now_utc();
+                        let d = d.to_string();
+
+                        let post = Some(json!({
+                            "did": did.to_string(),
+                            "collection": col.to_string(),
+                            "record": {
+                                "text": o.to_string(),
+                                "createdAt": d.to_string(),
+                                "reply": {
+                                    "root": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    },
+                                    "parent": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    }
+                                }
+                            },
+                        }));
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+
+                        println!("{}", res);
+                        //
+                        //
+                        //
+                        //
+
+                        //notify_read(time.to_string());
+                        //
+                        //
+                        //
+                        let token = token_toml(&"access");
+                        //let url = url(&"notify_update");
+                        let url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
+                        let post = Some(json!({
+                            "seenAt": time.to_string(),
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+                        println!("{}", res);
+                        //
+                        //
+                        //
+                        //
+
+                    }
+                    if com == "/deepl" {
+
+                        //notify_deepl_post(prompt.to_string(), lang.to_string(), cid.to_string(), uri.to_string()).unwrap();
+                        //
+                        //
+                        //
+                        //
+                        let lang = &vec[2].to_string();
+                        let prompt = &vec[3..].join(" ");
+                        println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
+                        println!("cid:{}, uri:{}", cid, uri);
+                        println!("{}", text);
+
+                        let data = Deeps::new().unwrap();
+                        let data = Deeps {
+                            api: data.api,
+                        };
+                        let api = "DeepL-Auth-Key ".to_owned() + &data.api;
+
+                        // error ?
+                        //let params = HashMap::new();
+                        //params.insert("text", &prompt);
+                        //params.insert("target_lang", &lang);
+                        //let lang = lang.to_string();
+                        let params = [("text", &prompt), ("target_lang", &lang)];
+                        
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post("https://api-free.deepl.com/v2/translate")
+                            .header(AUTHORIZATION, api)
+                            .header(CONTENT_TYPE, "json")
+                            .form(&params)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+
+                        let p: DeepData = serde_json::from_str(&res).unwrap();
+                        let o = &p.translations[0].text;
+                        println!("deepl : {}", o);
+
+                        let token = token_toml(&"access");
+                        let did = token_toml(&"did");
+
+                        let url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
+                        //let url = url(&"record_create");
+                        let col = "app.bsky.feed.post".to_string();
+                        let d = Timestamp::now_utc();
+                        let d = d.to_string();
+
+                        let post = Some(json!({
+                            "did": did.to_string(),
+                            "collection": col.to_string(),
+                            "record": {
+                                "text": o.to_string(),
+                                "createdAt": d.to_string(),
+                                "reply": {
+                                    "root": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    },
+                                    "parent": {
+                                        "cid": cid.to_string(),
+                                        "uri": uri.to_string()
+                                    }
+                                }
+                            },
+                        }));
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+
+                        println!("{}", res);
+                        //
+                        //
+                        //
+                        //
+
+                        //notify_read(time.to_string()).unwrap();
+                        //
+                        //
+                        //
+                        let token = token_toml(&"access");
+                        //let url = url(&"notify_update");
+                        let url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
+                        let post = Some(json!({
+                            "seenAt": time.to_string(),
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+                        println!("{}", res);
+                        //
+                        //
+                        //
+                        //
                     }
                 }
             }
@@ -1633,11 +1927,8 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
 }
 
 fn bot(c: &Context) {
-    aa().unwrap();
-    if c.bool_flag("chat") {
-        bot_notify_openai(c).unwrap();
+    if c.bool_flag("chat") || c.bool_flag("deepl") {
+        aa().unwrap();
+        bot_run(c).unwrap();
     }
-    //if c.bool_flag("deepl") {
-    //    bot_notify_deepl(c)).unwrap();
-    //}
 }
