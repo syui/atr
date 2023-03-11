@@ -1483,6 +1483,109 @@ fn p(c: &Context) {
 
 #[allow(unused_must_use)]
 #[tokio::main]
+async fn notify_openai_post(prompt: String, model: String, cid: String, uri: String) -> reqwest::Result<()> {
+    let data = Opens::new().unwrap();
+    let data = Opens {
+        api: data.api,
+    };
+    let temperature = 0.7;
+    let max_tokens = 250;
+    let top_p = 1;
+    let frequency_penalty = 0;
+    let presence_penalty = 0;
+    let stop = "[\"###\"]";
+
+    let post = Some(json!({
+        "prompt": &prompt.to_string(),
+        "model": &model.to_string(),
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "top_p": top_p,
+        "frequency_penalty": frequency_penalty,
+        "presence_penalty": presence_penalty,
+        "stop": stop,
+    }));
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post("https://api.openai.com/v1/completions")
+        .header("Authorization", "Bearer ".to_owned() + &data.api)
+        .json(&post)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let p: OpenData = serde_json::from_str(&res).unwrap();
+    let o = &p.choices[0].text;
+    let o = o.replace("\n", "");
+    println!("chatgpt : {}", o);
+
+    let token = token_toml(&"access");
+    let did = token_toml(&"did");
+
+    let url = url(&"record_create");
+    //let at_url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
+    let col = "app.bsky.feed.post".to_string();
+    let d = Timestamp::now_utc();
+    let d = d.to_string();
+
+    let post = Some(json!({
+        "did": did.to_string(),
+        "collection": col.to_string(),
+        "record": {
+            "text": o.to_string(),
+            "createdAt": d.to_string(),
+            "reply": {
+                "root": {
+                    "cid": cid.to_string(),
+                    "uri": uri.to_string()
+                },
+                "parent": {
+                    "cid": cid.to_string(),
+                    "uri": uri.to_string()
+                }
+            }
+        },
+    }));
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&post)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+#[allow(unused_must_use)]
+#[tokio::main]
+async fn notify_read(time: String) -> reqwest::Result<()> {
+    let token = token_toml(&"access");
+    let url = url(&"notify_update");
+    let post = Some(json!({
+        "seenAt": time.to_string(),
+    }));
+
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&post)
+        .header("Authorization", "Bearer ".to_owned() + &token)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{}", res);
+    Ok(())
+}
+
+#[allow(unused_must_use)]
+#[tokio::main]
 async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
     let token = token_toml(&"access");
     let url = url(&"notify_list");
@@ -1503,9 +1606,6 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
         let reason = &n[i].reason;
         let handle = &n[i].author.handle;
         let read = n[i].isRead;
-        //if reason == "mention" &&  handle == "syui.cf" && read == false {
-        //    println!("{}", read);
-        //}
         if reason == "mention" &&  handle == "syui.cf" && read == false {
             //let time = &n[i].record.createdAt;
             let time = &n[i].indexedAt;
@@ -1522,98 +1622,8 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
                     if com == "/chat" {
                         println!("{}", text);
                         let model = "text-davinci-003";
-                        let data = Opens::new().unwrap();
-                        let data = Opens {
-                            api: data.api,
-                        };
-                        let temperature = 0.7;
-                        let max_tokens = 250;
-                        let top_p = 1;
-                        let frequency_penalty = 0;
-                        let presence_penalty = 0;
-                        let stop = "[\"###\"]";
-
-                        let post = Some(json!({
-                            "prompt": &prompt.to_string(),
-                            "model": &model.to_string(),
-                            "temperature": temperature,
-                            "max_tokens": max_tokens,
-                            "top_p": top_p,
-                            "frequency_penalty": frequency_penalty,
-                            "presence_penalty": presence_penalty,
-                            "stop": stop,
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post("https://api.openai.com/v1/completions")
-                            .header("Authorization", "Bearer ".to_owned() + &data.api)
-                            .json(&post)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-                        let p: OpenData = serde_json::from_str(&res).unwrap();
-                        let o = &p.choices[0].text;
-                        let o = o.replace("\n", "");
-                        println!("chatgpt : {}", o);
-
-                        let token = token_toml(&"access");
-                        let did = token_toml(&"did");
-
-                        //let at_url = url(&"record_create");
-                        let at_url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
-                        let col = "app.bsky.feed.post".to_string();
-                        let d = Timestamp::now_utc();
-                        let d = d.to_string();
-
-                        let post = Some(json!({
-                            "did": did.to_string(),
-                            "collection": col.to_string(),
-                            "record": {
-                                "text": o.to_string(),
-                                "createdAt": d.to_string(),
-                                "reply": {
-                                    "root": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    },
-                                    "parent": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    }
-                                }
-                            },
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(at_url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-
-                        println!("{}", res);
-
-                        let at_url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
-                        let post = Some(json!({
-                            "seenAt": time.to_string(),
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(at_url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-
-                        println!("{}", res);
+                        notify_openai_post(prompt.to_string(), model.to_string(), cid.to_string(), uri.to_string()).unwrap();
+                        notify_read(time.to_string()).unwrap();
                     }
                 }
             }

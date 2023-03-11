@@ -95,6 +95,7 @@ pub struct BaseUrl {
     pub account_create: String,
     pub notify_count: String,
     pub notify_list: String,
+    pub notify_update: String,
 }
 
 pub fn url(s: &str) -> String {
@@ -118,6 +119,7 @@ pub fn url(s: &str) -> String {
         update_handle: "com.atproto.handle.update".to_string(),
         notify_count: "app.bsky.notification.getCount".to_string(),
         notify_list: "app.bsky.notification.list".to_string(),
+        notify_update: "app.bsky.notification.updateSeen".to_string(),
     };
     match &*s {
         "profile_get" => t.to_string() + &baseurl.profile_get,
@@ -131,6 +133,7 @@ pub fn url(s: &str) -> String {
         "update_handle" => t.to_string() + &baseurl.update_handle,
         "notify_list" => t.to_string() + &baseurl.notify_list,
         "notify_count" => t.to_string() + &baseurl.notify_count,
+        "notify_update" => t.to_string() + &baseurl.notify_update,
         _ => s,
     }
 }
