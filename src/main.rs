@@ -1473,8 +1473,12 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
     for i in 0..*length {
         let reason = &n[i].reason;
         let handle = &n[i].author.handle;
-        if reason == "mention" &&  handle == "syui.cf" {
-            let _time = &n[i].record.createdAt;
+        let read = n[i].isRead;
+        //if reason == "mention" &&  handle == "syui.cf" && read == false {
+        //    println!("{}", read);
+        //}
+        if reason == "mention" &&  handle == "syui.cf" && read == false {
+            let time = &n[i].record.createdAt;
             let cid = &n[i].cid;
             let uri = &n[i].uri;
             if ! n[i].record.text.is_none() { 
@@ -1550,6 +1554,23 @@ async fn bot_notify_openai(_c: &Context) -> reqwest::Result<()> {
                                     }
                                 }
                             },
+                        }));
+
+                        let client = reqwest::Client::new();
+                        let res = client
+                            .post(at_url)
+                            .json(&post)
+                            .header("Authorization", "Bearer ".to_owned() + &token)
+                            .send()
+                            .await?
+                            .text()
+                            .await?;
+
+                        println!("{}", res);
+
+                        let at_url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
+                        let post = Some(json!({
+                            "seenAt": time.to_string(),
                         }));
 
                         let client = reqwest::Client::new();
