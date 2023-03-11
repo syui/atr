@@ -80,7 +80,7 @@ fn main() {
         .command(
             Command::new("start")
             .usage("atr start")
-            .description("start first\n\t\t\t$ atr start\n\t\t\t$ atr start -u syui.bsky.social -p $password")
+            .description("start first\n\t\t\t$ atr start\n\t\t\t$ atr start -u $user.bsky.social -p $password")
             .action(first)
             .flag(
                 Flag::new("pass", FlagType::String)
@@ -115,7 +115,7 @@ fn main() {
         .command(
             Command::new("create")
             .usage("atr create")
-            .description("create account\n\t\t\t$ atr c -i invite-code -e email")
+            .description("create account\n\t\t\t$ atr c -i $invite_code -e $email")
             .alias("c")
             .action(c)
             .flag(
@@ -260,7 +260,7 @@ fn main() {
             .command(
                 Command::new("profile")
                 .usage("atr profile")
-                .description("profile\n\t\t\t$ atr profile")
+                .description("profile\n\t\t\t$ atr pro\n\t\t\t$ atr pro yui.bsky.social")
                 .alias("pro")
                 .action(profile),
                 )
@@ -284,7 +284,7 @@ fn main() {
             .command(
                 Command::new("deepl")
                 .usage("atr tt {}")
-                .description("translate message, ex: $ atr tt $text -l en")
+                .description("translate deepl\n\t\t\t$ atr tt $text -l en")
                 .alias("tt")
                 .action(deepl_post)
                 .flag(
@@ -296,13 +296,13 @@ fn main() {
             .command(
                 Command::new("deepl-api")
                 .usage("atr deepl-api {}")
-                .description("deepl-api change, ex : $ atr deepl-api $api")
+                .description("deepl-api\n\t\t\t$ atr deepl-api $deepl_api_key")
                 .action(deepl_api),
                 )
             .command(
                 Command::new("openai")
                 .usage("atr chatgpt {}")
-                .description("translate message, ex: $ atr tt $text -l en")
+                .description("openai-chatgpt\n\t\t\t$ atr chat $text")
                 .alias("chat")
                 .action(openai_post)
                 .flag(
@@ -318,13 +318,13 @@ fn main() {
             .command(
                 Command::new("openai-api")
                 .usage("atr openai-api {}")
-                .description("openai-api change, ex : $ atr openai-api $api")
+                .description("openai-api\n\t\t\t$ atr openai-api $openai_api_key")
                 .action(openai_api),
                 )
             .command(
                 Command::new("bot")
                 .usage("atr bot {}")
-                .description("bot message")
+                .description("bot\n\t\t\t$ atr bot --chat")
                 .alias("b")
                 .action(bot)
                 .flag(
@@ -420,6 +420,8 @@ fn f(c: &Context) {
 
 #[tokio::main]
 async fn aa() -> reqwest::Result<()> {
+
+
     let f = token_file(&"json");
 
     let data = Datas::new().unwrap();
@@ -594,14 +596,14 @@ fn t(c: &Context) {
 }
 
 #[tokio::main]
-async fn pro(c: &Context) -> reqwest::Result<()> {
+async fn pro(_c: &Context, s: bool) -> reqwest::Result<()> {
 
     let token = token_toml(&"access");
-
-    if c.args[0].is_empty() == false {
-        let user = c.args[0].to_string();
+    
+    if s == true {
+        let user = _c.args[0].to_string();
         let url = url(&"profile_get") + &"?actor=" + &user;
-        println!("{}", url);
+        //println!("{}", url);
         let client = reqwest::Client::new();
         let j = client.get(url)
             .header("Authorization", "Bearer ".to_owned() + &token)
@@ -617,13 +619,40 @@ async fn pro(c: &Context) -> reqwest::Result<()> {
             f.write_all(&j.as_bytes()).unwrap();
         }
         println!("{}", j);
+    } else {
+        let data = Datas::new().unwrap();
+        let data = Datas {
+            host: data.host,
+            user: data.user,
+            pass: data.pass,
+        };
+        let url = url(&"profile_get") + &"?actor=" + &data.user;
+        let client = reqwest::Client::new();
+        let j = client.get(url)
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await?
+            .text()
+            .await?;
+        let file = "/.config/atr/".to_owned() + &data.user.to_string() + &".json".to_string();
+        let mut f = shellexpand::tilde("~").to_string();
+        f.push_str(&file);
+        let mut f = fs::File::create(f).unwrap();
+        if j != "" {
+            f.write_all(&j.as_bytes()).unwrap();
+        }
+        println!("{}", j);
     }
     Ok(())
 }
 
-fn profile(c: &Context) {
+fn profile(_c: &Context) {
     aa().unwrap();
-    pro(c).unwrap();
+    if _c.args.len() == 0 {
+        pro(_c, false).unwrap();
+    } else {
+        pro(_c, true).unwrap();
+    }
 }
 
 #[tokio::main]
@@ -842,7 +871,7 @@ async fn mention(c: &Context) -> reqwest::Result<()> {
 
 fn mention_run(c: &Context) {
     aa().unwrap();
-    pro(c).unwrap();
+    pro(c, true).unwrap();
     mention(c).unwrap();
 }
 
