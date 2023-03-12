@@ -985,6 +985,9 @@ fn bot_run(_c: &Context) {
                             println!("{}", str_notify);
                         }
                         if com == "/sh" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
                             println!("cid:{}, uri:{}", cid, uri);
@@ -1000,10 +1003,11 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
                         }
                         if com == "/diffusion" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
                             println!("cid:{}, uri:{}", cid, uri);
@@ -1039,8 +1043,6 @@ fn bot_run(_c: &Context) {
                             let itype = "image/jpeg";
                             let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
                             println!("{}", str_rep);
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
                         }
                     }
                 }
