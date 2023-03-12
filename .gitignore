@@ -9,3 +9,4 @@ target
 */dist
 */node_mobules
 */*.lock
+json

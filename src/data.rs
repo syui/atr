@@ -49,6 +49,34 @@ impl Tokens {
         s.try_deserialize()
     }
 }
+// config.data
+pub fn cfg(s: &str) -> String { 
+    // cfg.dir
+    let dir = "/.config/atr";
+    let mut d = shellexpand::tilde("~").to_string();
+    d.push_str(&dir);
+
+    let file = "/.config/atr/config.toml";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+
+    //cfg.toml
+    let s = String::from(s);
+    let data = Data::new().unwrap();
+    let data = Data {
+        host: data.host,
+        user: data.user,
+        pass: data.pass,
+    };
+    match &*s {
+        "user" => data.user,
+        "host" => data.host,
+        "pass" => data.pass,
+        "dir" => d,
+        "file" => f,
+        _ => s,
+    }
+}
 
 // tokne.file
 pub fn token_file(s: &str) -> String { 
@@ -224,11 +252,26 @@ pub struct Handle {
     pub handle: String
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Did {
-    pub did: String
-}
+//#[derive(Serialize, Deserialize)]
+//pub struct Did {
+//    pub did: String
+//}
 
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Profile {
+    pub did: String,
+    pub handle: String,
+    //pub followCount: String,
+    //pub followersCount: String,
+    //pub postsCount: String,
+    //pub creator: String,
+    //pub indexedAt: String,
+    //pub avatar: Option<String>,
+    //pub banner: Option<String>,
+    //pub displayName: Option<String>,
+    //pub description: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]

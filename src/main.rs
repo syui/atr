@@ -2,36 +2,44 @@ extern crate rustc_serialize;
 pub mod data;
 use std::env;
 use std::path::Path;
-use seahorse::{App, Command, Context, Flag, FlagType};
+use std::io;
+use std::io::Write;
 use std::fs;
 use std::collections::HashMap;
+
+use serde::{Deserialize, Serialize};
 use rustc_serialize::json::Json;
-use std::fs::File;
-use std::io::Read;
-use serde_json::{json};
-use smol_str::SmolStr; // stack-allocation for small strings
+
+use seahorse::{App, Command, Context, Flag, FlagType};
+
+use smol_str::SmolStr;
 use iso8601_timestamp::Timestamp;
 
-use data::Data as Datas;
 use data::Notify as Notify;
 use data::Token as Token;
-use data::Did as Did;
 use data::Cid as Cid;
+use data::Profile as Profile;
 use data::Handle as Handle;
 use data::Deep as Deeps;
 use data::Open as Opens;
 use crate::data::Timeline;
 use crate::data::url;
+use crate::data::cfg;
 use crate::data::token_file;
 use crate::data::token_toml;
 use crate::data::Tokens;
 
-use std::io;
-use std::io::Write;
-
-use reqwest::header::AUTHORIZATION;
-use reqwest::header::CONTENT_TYPE;
-use serde::{Deserialize, Serialize};
+pub mod openai;
+pub mod deepl;
+pub mod at_notify_limit;
+pub mod at_notify_read;
+pub mod at_reply;
+pub mod at_post;
+pub mod at_post_link;
+pub mod at_profile;
+pub mod at_mention;
+pub mod at_timeline;
+pub mod at_handle_update;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -240,14 +248,9 @@ fn main() {
                 .alias("t")
                 .action(t)
                 .flag(
-                    Flag::new("latest", FlagType::Bool)
-                    .description("latest flag\n\t\t\t$ atr t -l")
-                    .alias("l"),
-                    )
-                .flag(
                     Flag::new("json", FlagType::Bool)
                     .description("count flag\n\t\t\t$ atr t -j")
-                    .alias("c"),
+                    .alias("j"),
                     )
                 )
             .command(
@@ -276,9 +279,18 @@ fn main() {
                     .alias("l"),
                     )
                 .flag(
-                    Flag::new("count", FlagType::Int)
-                    .description("count flag\n\t\t\t$ atr n -c 0")
+                    Flag::new("limit", FlagType::Int)
+                    .description("number limit flag\n\t\t\t$ atr n -l")
+                    .alias("n"),
+                    )
+                .flag(
+                    Flag::new("check", FlagType::Bool)
+                    .description("number limit flag\n\t\t\t$ atr n -l")
                     .alias("c"),
+                    )
+                .flag(
+                    Flag::new("clean", FlagType::Bool)
+                    .description("nofity cleanup limit flag\n\t\t\t$ atr n -l")
                     )
                 )
             .command(
@@ -286,7 +298,7 @@ fn main() {
                 .usage("atr tt {}")
                 .description("translate deepl\n\t\t\t$ atr tt $text -l en")
                 .alias("tt")
-                .action(deepl_post)
+                .action(deepl_read)
                 .flag(
                     Flag::new("lang", FlagType::String)
                     .description("Lang flag")
@@ -304,15 +316,11 @@ fn main() {
                 .usage("atr chatgpt {}")
                 .description("openai-chatgpt\n\t\t\t$ atr chat $text")
                 .alias("chat")
-                .action(openai_post)
+                .action(openai_read)
                 .flag(
                     Flag::new("model", FlagType::String)
                     .description("model flag")
                     .alias("m"),
-                    )
-                .flag(
-                    Flag::new("chat-ja", FlagType::Bool)
-                    .description("chatgpt japanese mode flag")
                     )
                 )
             .command(
@@ -346,6 +354,12 @@ fn main() {
                     .description("deepl english flag")
                     )
                 )
+            .command(
+                Command::new("test")
+                .usage("atr test{}")
+                .description("test\n\t\t\t$ atr test")
+                .action(test),
+                )
             ;
     app.run(args);
 }
@@ -365,17 +379,11 @@ async fn at_user(url: String,user :String) -> reqwest::Result<()> {
 
 #[allow(unused_must_use)]
 fn ss(c :&Context) -> reqwest::Result<()> {
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
     let url = url(&"describe");
     if let Ok(user) = c.string_flag("user") {
         at_user(url, user);
     } else {
-        let user = data.user;
+        let user = cfg(&"user");
         at_user(url, user);
     }
     Ok(())
@@ -400,18 +408,12 @@ async fn at_feed(url: String, user: String, col: String) -> reqwest::Result<()> 
 
 #[allow(unused_must_use)]
 fn ff(c :&Context) -> reqwest::Result<()> {
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
     let url = url(&"record_list");
     let col = "app.bsky.feed.post".to_string();
     if let Ok(user) = c.string_flag("user") {
         at_feed(url, user, col);
     } else {
-        let user = data.user;
+        let user = cfg(&"user");
         at_feed(url, user, col);
     }
     Ok(())
@@ -423,23 +425,14 @@ fn f(c: &Context) {
 
 #[tokio::main]
 async fn aa() -> reqwest::Result<()> {
-
-
     let f = token_file(&"json");
-
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-
-    let handle = data.user;
+    let handle = cfg(&"user");
+    let pass = cfg(&"pass");
     let mut map = HashMap::new();
 
     let url = url(&"session_create");
     map.insert("handle", &handle);
-    map.insert("password", &data.pass);
+    map.insert("password", &pass);
     let client = reqwest::Client::new();
     let res = client
         .post(url)
@@ -474,187 +467,81 @@ fn a(_c: &Context) {
     aa().unwrap();
 }
 
-#[tokio::main]
-async fn pp(c: &Context) -> reqwest::Result<()> {
-   
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-    
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
+fn pp(c: &Context) {
     let m = c.args[0].to_string();
-
-    if let Ok(link) = c.string_flag("link") {
-        let e = link.chars().count();
-        let s = 0;
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": link.to_string() + &" ".to_string() + &m.to_string(),
-                "createdAt": d.to_string(),
-                "entities": [
-                {
-                    "type": "link".to_string(),
-                    "index": {
-                        "end": e,
-                        "start": s
-                    },
-                    "value": link.to_string()
-                }
-                ]
-            },
-        }));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", res);
-
-    } else {
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": m.to_string(),
-                "createdAt": d.to_string(),
-            },
-        }));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", res);
-    }
-    Ok(())
+    let h = async {
+        if let Ok(link) = c.string_flag("link") {
+            let e = link.chars().count();
+            let s = 0;
+            let str = at_post_link::post_request(m.to_string(), link.to_string(), s, e.try_into().unwrap());
+            println!("{}",str.await);
+        } else {
+            let str = at_post::post_request(m.to_string());
+            println!("{}",str.await);
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}",res);
 }
 
-#[tokio::main]
-async fn tt(c: &Context) -> reqwest::Result<()> {
-    let token = token_toml(&"access");
-    //let did = token_toml(&"did");
+fn tt(c: &Context) {
+    let h = async {
+        let j = at_timeline::get_request().await;
+        let timeline: Timeline = serde_json::from_str(&j).unwrap();
+        let n = timeline.feed;
+        let mut map = HashMap::new();
 
-    let url = url(&"timeline_get");
-
-    let client = reqwest::Client::new();
-    let j = client.get(url)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    let timeline: Timeline = serde_json::from_str(&j).unwrap();
-    let n = timeline.feed;
-
-    let mut map = HashMap::new();
-
-    if c.bool_flag("json") {
-        println!("{}", j);
-    } else if c.bool_flag("latest") {
-        map.insert("handle", &n[0].post.author.handle);
-        map.insert("uri", &n[0].post.uri);
-        if ! n[0].post.record.text.is_none() { 
-            map.insert("text", &n[0].post.record.text.as_ref().unwrap());
-        } 
-        println!("{:?}", map);
-    } else {
-        let length = &n.len();
-        for i in 0..*length {
-            println!("@{}", n[i].post.author.handle);
-            if ! n[i].post.record.text.is_none() { 
-                println!("{}", n[i].post.record.text.as_ref().unwrap());
-            } else {
+        if c.bool_flag("json") {
+            println!("{}", j);
+        } else if c.bool_flag("latest") {
+            map.insert("handle", &n[0].post.author.handle);
+            map.insert("uri", &n[0].post.uri);
+            if ! n[0].post.record.text.is_none() { 
+                map.insert("text", &n[0].post.record.text.as_ref().unwrap());
+            } 
+            println!("{:?}", map);
+        } else {
+            let length = &n.len();
+            for i in 0..*length {
+                println!("@{}", n[i].post.author.handle);
+                if ! n[i].post.record.text.is_none() { 
+                    println!("{}", n[i].post.record.text.as_ref().unwrap());
+                } else {
+                }
+                println!("uri : {}", n[i].post.uri);
+                println!("cid : {}", n[i].post.cid);
+                println!("⚡️ [{}]\t🌈 [{}]\t⭐️ [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
+                println!("{}", "---------");
             }
-            println!("uri : {}", n[i].post.uri);
-            println!("cid : {}", n[i].post.cid);
-            println!("⚡️ [{}]\t🌈 [{}]\t⭐️ [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
-            println!("{}", "---------");
         }
-    }
-
-    Ok(())
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}",res);
 }
 
 fn t(c: &Context) {
     aa().unwrap();
-    tt(c).unwrap();
+    tt(c);
 }
 
-#[tokio::main]
-async fn pro(_c: &Context, s: bool) -> reqwest::Result<()> {
+fn pro(u: String) {
+    let h = async {
+        let str = at_profile::get_request(u.to_string());
+        println!("{}", str.await);
+    };
 
-    let token = token_toml(&"access");
-    
-    if s == true {
-        let user = _c.args[0].to_string();
-        let url = url(&"profile_get") + &"?actor=" + &user;
-        //println!("{}", url);
-        let client = reqwest::Client::new();
-        let j = client.get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        let file = "/.config/atr/".to_owned() + &user.to_string() + &".json".to_string();
-        let mut f = shellexpand::tilde("~").to_string();
-        f.push_str(&file);
-        let mut f = fs::File::create(f).unwrap();
-        if j != "" {
-            f.write_all(&j.as_bytes()).unwrap();
-        }
-        println!("{}", j);
-    } else {
-        let data = Datas::new().unwrap();
-        let data = Datas {
-            host: data.host,
-            user: data.user,
-            pass: data.pass,
-        };
-        let url = url(&"profile_get") + &"?actor=" + &data.user;
-        let client = reqwest::Client::new();
-        let j = client.get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        let file = "/.config/atr/".to_owned() + &data.user.to_string() + &".json".to_string();
-        let mut f = shellexpand::tilde("~").to_string();
-        f.push_str(&file);
-        let mut f = fs::File::create(f).unwrap();
-        if j != "" {
-            f.write_all(&j.as_bytes()).unwrap();
-        }
-        println!("{}", j);
-    }
-    Ok(())
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn profile(_c: &Context) {
     aa().unwrap();
+    let m = _c.args[0].to_string();
+    let user = cfg(&"user");
     if _c.args.len() == 0 {
-        pro(_c, false).unwrap();
+        pro(user);
     } else {
-        pro(_c, true).unwrap();
+        pro(m);
     }
 }
 
@@ -667,13 +554,7 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
     let con = "Content-Type: image/png";
     let did = token_toml(&"did");
 
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-
+    let host = cfg(&"host");
     let url = url(&"upload_blob");
 
     let f = "@".to_owned() + &c.args[0].to_string();
@@ -690,7 +571,7 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
     let mtype = "image/png".to_string();
 
     //let url = url(&"record_create");
-    let url = "https://".to_owned() + &data.host + &"/xrpc/com.atproto.repo.createRecord";
+    let url = "https://".to_owned() + &host + &"/xrpc/com.atproto.repo.createRecord";
     let con = "Content-Type: application/json";
 
     let cid = cid.cid;
@@ -709,55 +590,32 @@ fn m(c: &Context) {
     mm(c).unwrap();
 }
 
-#[tokio::main]
-async fn hh(c: &Context) -> reqwest::Result<()> {
-    
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-    
+fn hh(c: &Context) {
     let m = c.args[0].to_string();
-
-    let url = url(&"update_handle");
-    println!("DNS txt : _atproto.{}, did={}.", m, did);
-
-    let handle = Handle {
-        handle: m.to_string()
+    let h = async {
+        let str = at_handle_update::post_request(m.to_string());
+        println!("{}", str.await);
     };
- 
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&handle)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", res);
-    Ok(())
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn h(c: &Context) {
     aa().unwrap();
-    hh(c).unwrap();
+    hh(c);
 }
 
 #[tokio::main]
 async fn cc(c: &Context) -> reqwest::Result<()> {
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
 
     let url = url(&"account_create");
-    let handle = data.user;
+    let handle = cfg(&"user");
+    let pass = cfg(&"pass");
 
     let mut map = HashMap::new();
     map.insert("handle", &handle);
-    map.insert("password", &data.pass);
+    map.insert("password", &pass);
+
     if let Ok(invite) = c.string_flag("invite") {
         if let Ok(email) = c.string_flag("email") {
             map.insert("inviteCode", &invite);
@@ -780,181 +638,78 @@ fn c(c: &Context) {
     cc(c).unwrap();
 }
 
-#[tokio::main]
-async fn mention(c: &Context) -> reqwest::Result<()> {
-
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-
+fn mention(c: &Context) {
     let m = c.args[0].to_string();
-
-    let file = "/.config/atr/".to_owned() + &m.to_string() + &".json".to_string();
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-
-    let mut file = File::open(f).unwrap();
-    let mut data = String::new();
-    file.read_to_string(&mut data).unwrap();
-
-    let udid: Did = serde_json::from_str(&data).unwrap();
-    let udid = udid.did;
-    let handle: Handle = serde_json::from_str(&data).unwrap();
-    let handle = handle.handle;
-
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
-    let at = "@".to_owned() + &handle;
-    let e = at.chars().count();
-    let s = 0;
-    if let Ok(post) = c.string_flag("post") {
-        let p = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": at.to_string() + &" ".to_string() + &post.to_string(),
-                "createdAt": d.to_string(),
-                "entities": [
-                {
-                    "type": "mention".to_string(),
-                    "index": {
-                        "end": e,
-                        "start": s
-                    },
-                    "value": udid.to_string()
-                }
-                ]
-            },
-        }));
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&p)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        println!("{}", res);
-    } else {
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": m.to_string(),
-                "createdAt": d.to_string(),
-                "entities": [
-                {
-                    "type": "mention".to_string(),
-                    "index": {
-                        "end": e,
-                        "start": s
-                    },
-                    "value": udid.to_string()
-                }
-                ]
-            },
-        }));
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        println!("{}", res);
-    }
-    Ok(())
+    let h = async {
+        let str = at_profile::get_request(m.to_string()).await;
+        let profile: Profile = serde_json::from_str(&str).unwrap();
+        let udid = profile.did;
+        let handle = profile.handle;
+        let at = "@".to_owned() + &handle;
+        let e = at.chars().count();
+        let s = 0;
+        let str = at_mention::post_request(m.to_string(), at.to_string(), udid.to_string(), s, e.try_into().unwrap()).await;
+        println!("{}",str);
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn mention_run(c: &Context) {
     aa().unwrap();
-    pro(c, true).unwrap();
-    mention(c).unwrap();
+    mention(c);
 }
 
-#[tokio::main]
-async fn nn(c: &Context) -> reqwest::Result<()> {
-
-    let token = token_toml(&"access");
-    //let did = token_toml(&"did");
-
-    if let Ok(_get) = c.string_flag("get") {
-
-        let url = url(&"notify_count");
-        let client = reqwest::Client::new();
-        let res = client
-            .get(url)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-        println!("{}", res);
-    } 
-
-    let url = url(&"notify_list");
-    let client = reqwest::Client::new();
-    let res = client
-        .get(url)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let notify: Notify = serde_json::from_str(&res).unwrap();
-    let n = notify.notifications;
-    let mut map = HashMap::new();
-
-    if c.bool_flag("latest") {
-        map.insert("handle", &n[0].author.handle);
-        map.insert("createdAt", &n[0].record.createdAt);
-        map.insert("uri", &n[0].uri);
-        map.insert("cid", &n[0].cid);
-        map.insert("reason", &n[0].reason);
-        if ! n[0].record.text.is_none() { 
-            map.insert("text", &n[0].record.text.as_ref().unwrap());
-        } 
-        println!("{:?}", map);
-    } else if let Ok(count) = c.int_flag("count") {
+fn nn(c: &Context, limit: i32, check: bool) {
+    let h = async {
+        let str = at_notify_limit::get_request(limit);
+        let notify: Notify = serde_json::from_str(&str.await).unwrap();
+        let n = notify.notifications;
         let length = &n.len();
         for i in 0..*length {
-            if i < count.try_into().unwrap() {
-                println!("handle : {}", n[i].author.handle);
-                println!("createdAt : {}", n[i].record.createdAt);
-                println!("uri : {}", n[i].uri);
-                println!("cid : {}", n[i].cid);
+            let reason = &n[i].reason;
+            let handle = &n[i].author.handle;
+            let read = n[i].isRead;
+            let time = &n[i].indexedAt;
+            let cid = &n[i].cid;
+            let uri = &n[i].uri;
+            if c.bool_flag("clean") {
+                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                println!("{}", str_notify);
+            }
+            if read == check {
                 if ! n[i].record.text.is_none() { 
-                    println!("text : {}", n[i].record.text.as_ref().unwrap());
+                    let text = &n[i].record.text.as_ref().unwrap();
+                    println!("{}\n[{}]\n{}", handle, reason, text);
+                    println!("{}\ncid:{}\turi:{}", time, cid, uri);
+                    println!("{}", "---------");
                 }
-                println!("{}", "---------");
             }
         }
-    } else {
-        println!("{}", res);
-    }
-    Ok(())
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn n(c: &Context) {
     aa().unwrap();
-    nn(c).unwrap();
+    let limit = 50;
+    if c.bool_flag("latest") {
+        let limit = 1;
+        nn(c, limit, true);
+    } else if let Ok(limit) = c.int_flag("limit") {
+        nn(c, limit.try_into().unwrap(), true);
+    } else if c.bool_flag("check") {
+        let check = false;
+        nn(c, limit.try_into().unwrap(), check);
+    } else {
+        nn(c, limit, true);
+    }
 }
 
 fn get_domain_zsh() {
-    let data = Datas::new().unwrap();
-    let data = Datas {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    let e = "export BLUESKY_BASE=".to_owned() + &data.user.to_string() + "\n";
-    //let e = "export BLUESKY_BASE=".to_owned() + &data.user.to_string() + &".".to_string() + &data.host.to_string() + "\n";
+    let user = cfg(&"user");
+    let e = "export BLUESKY_BASE=".to_owned() + &user.to_string() + "\n";
     let e = e.to_string();
     let f = shellexpand::tilde("~") + "/.config/atr/atr.zsh";
     let f = f.to_string();
@@ -1011,7 +766,6 @@ fn first_start(c: &Context) -> io::Result<()> {
     let d = d.to_string();
     let f = shellexpand::tilde("~") + "/.config/atr/config.toml";
     let f = f.to_string();
-    println!("{}", f);
 
     let setting = Setting {
         host: "bsky.social".to_string(),
@@ -1054,137 +808,31 @@ fn first(c: &Context) {
     first_start(c).unwrap();
 }
 
-#[tokio::main]
-async fn rr(c: &Context) -> reqwest::Result<()> {
-
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-    
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
+fn rr(c: &Context) {
     let m = c.args[0].to_string();
-    if let Ok(link) = c.string_flag("link") {
-        let e = link.chars().count();
-        let s = 0;
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": link.to_string() + &" ".to_string() + &m.to_string(),
-                "createdAt": d.to_string(),
-                "entities": [
-                {
-                    "type": "link".to_string(),
-                    "index": {
-                        "end": e,
-                        "start": s
-                    },
-                    "value": link.to_string()
-                }
-                ]
-            },
-        }));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", res);
-
-    } else {
-        if let Ok(uri) = c.string_flag("uri") {
-            if let Ok(cid) = c.string_flag("cid") {
-                let post = Some(json!({
-                    "did": did.to_string(),
-                    "collection": col.to_string(),
-                    "record": {
-                        "text": m.to_string(),
-                        "createdAt": d.to_string(),
-                        "reply": {
-                            "root": {
-                                "cid": cid.to_string(),
-                                "uri": uri.to_string()
-                            },
-                            "parent": {
-                                "cid": cid.to_string(),
-                                "uri": uri.to_string()
-                            }
-                        }
-                    },
-                }));
-
-                let client = reqwest::Client::new();
-                let res = client
-                    .post(url)
-                    .json(&post)
-                    .header("Authorization", "Bearer ".to_owned() + &token)
-                    .send()
-                    .await?
-                    .text()
-                    .await?;
-
-                println!("{}", res);
+    let h = async {
+        if let Ok(cid) = c.string_flag("cid") {
+            if let Ok(uri) = c.string_flag("uri") {
+                let str = at_reply::post_request(m.to_string(), cid.to_string(), uri.to_string()).await;
+                println!("{}", str);
             }
         }
-    }
-    Ok(())
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn r(c: &Context) {
     aa().unwrap();
-    rr(c).unwrap();
-}
-
-#[tokio::main]
-async fn deepl(message: String,lang: String) -> reqwest::Result<()> {
-    let data = Deeps::new().unwrap();
-    let data = Deeps {
-        api: data.api,
-    };
-    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
-    let mut params = HashMap::new();
-    params.insert("text", &message);
-    params.insert("target_lang", &lang);
-
-    //let parmas = Some(json!({
-    //    "text": message.to_string(),
-    //    "target_lang": lang.to_string(),
-    //}));
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api-free.deepl.com/v2/translate")
-        .header(AUTHORIZATION, api)
-        //.json(&params)
-        .header(CONTENT_TYPE, "json")
-        .form(&params)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let p: DeepData = serde_json::from_str(&res).unwrap();
-    let o = &p.translations[0].text;
-    //println!("{}", res);
-    println!("{}", o);
-    Ok(())
+    rr(c);
 }
 
 #[allow(unused_must_use)]
-fn deepl_post(c: &Context) {
-    let m = c.args[0].to_string();
+fn deepl_read(c: &Context) {
     if let Ok(lang) = c.string_flag("lang") {
-        deepl(m,lang.to_string());
+        ppd(c, &lang, false);
     } else {
-        let lang = "ja";
-        deepl(m,lang.to_string());
+        ppd(c, &"ja", false);
     }
 }
 
@@ -1202,152 +850,29 @@ fn deepl_api(c: &Context) {
     println!("{:#?}", l);
 }
 
-#[tokio::main]
-async fn ppd(c: &Context, lang: &str) -> reqwest::Result<()> {
+fn ppd(c: &Context, lang: &str, check_post: bool) {
     let m = c.args[0].to_string();
     let lang = lang.to_string();
-
-    let data = Deeps::new().unwrap();
-    let data = Deeps {
-        api: data.api,
-    };
-    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
-    let mut params = HashMap::new();
-    params.insert("text", &m);
-    params.insert("target_lang", &lang);
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api-free.deepl.com/v2/translate")
-        .header(AUTHORIZATION, api)
-        .header(CONTENT_TYPE, "json")
-        .form(&params)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    let p: DeepData = serde_json::from_str(&res).unwrap();
-    let o = &p.translations[0].text;
-    println!("deepl : {}", o);
-   
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-    
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
-    if let Ok(uri) = c.string_flag("uri") {
-        if let Ok(cid) = c.string_flag("cid") {
-            let post = Some(json!({
-                "did": did.to_string(),
-                "collection": col.to_string(),
-                "record": {
-                    "text": o.to_string(),
-                    "createdAt": d.to_string(),
-                    "reply": {
-                        "root": {
-                            "cid": cid.to_string(),
-                            "uri": uri.to_string()
-                        },
-                        "parent": {
-                            "cid": cid.to_string(),
-                            "uri": uri.to_string()
-                        }
-                    }
-                },
-            }));
-
-            let client = reqwest::Client::new();
-            let res = client
-                .post(url)
-                .json(&post)
-                .header("Authorization", "Bearer ".to_owned() + &token)
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            println!("{}", res);
+    let h = async {
+        let str_openai = deepl::post_request(m.to_string(), lang.to_string()).await;
+        println!("{}", str_openai);
+        if check_post == true {
+            let text_limit = char_c(str_openai);
+            let str_rep = at_post::post_request(text_limit.to_string()).await;
+            println!("{}", str_rep); 
         }
-    } else {
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": o.to_string(),
-                "createdAt": d.to_string(),
-            },
-        }));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", res);
-    }
-    Ok(())
-}
-
-#[tokio::main]
-async fn openai(c: &Context, prompt: String, model: String) -> reqwest::Result<()> {
-    let data = Opens::new().unwrap();
-    let data = Opens {
-        api: data.api,
     };
-    let temperature = 0.7;
-    let max_tokens = 250;
-    let top_p = 1;
-    let frequency_penalty = 0;
-    let presence_penalty = 0;
-    let stop = "[\"###\"]";
-
-    let post = Some(json!({
-        "prompt": &prompt.to_string(),
-        "model": &model.to_string(),
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "top_p": top_p,
-        "frequency_penalty": frequency_penalty,
-        "presence_penalty": presence_penalty,
-        "stop": stop,
-    }));
-        
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api.openai.com/v1/completions")
-        .header("Authorization", "Bearer ".to_owned() + &data.api)
-        .json(&post)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let p: OpenData = serde_json::from_str(&res).unwrap();
-    let o = &p.choices[0].text;
-    if c.bool_flag("chat-ja") {
-        let o: String = o.chars().filter(|c| !c.is_whitespace()).collect();
-        println!("chatgpt : {}", o);
-    } else {
-        println!("chatgpt : {}", o);
-    }
-    Ok(())
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res); 
 }
 
 #[allow(unused_must_use)]
-fn openai_post(c: &Context) {
-    let m = c.args[0].to_string();
+fn openai_read(c: &Context) {
     if let Ok(model) = c.string_flag("model") {
-        openai(c, m, model.to_string());
+        ppc(c, &model, false);
     } else {
         let model = "text-davinci-003";
-        openai(c, m, model.to_string());
+        ppc(c, &model, false);
     }
 }
 
@@ -1365,570 +890,214 @@ fn openai_api(c: &Context) {
     println!("{:#?}", l);
 }
 
-#[tokio::main]
-async fn ppc(c: &Context, model: &str) -> reqwest::Result<()> {
+fn ppc(c: &Context, model: &str, check_post: bool) {
     let m = c.args[0].to_string();
     let model = model.to_string();
-
-    let data = Opens::new().unwrap();
-    let data = Opens {
-        api: data.api,
-    };
-
-    let temperature = 0.7;
-    let max_tokens = 250;
-    let top_p = 1;
-    let frequency_penalty = 0;
-    let presence_penalty = 0;
-    let stop = "[\"###\"]";
-
-    let post = Some(json!({
-        "prompt": &m.to_string(),
-        "model": &model.to_string(),
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "top_p": top_p,
-        "frequency_penalty": frequency_penalty,
-        "presence_penalty": presence_penalty,
-        "stop": stop,
-    }));
-
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api.openai.com/v1/completions")
-        .header("Authorization", "Bearer ".to_owned() + &data.api)
-        .json(&post)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let p: OpenData = serde_json::from_str(&res).unwrap();
-    let o = &p.choices[0].text;
-    if c.bool_flag("chat-ja") {
-        let o: String = o.chars().filter(|c| !c.is_whitespace()).collect();
-        println!("chatgpt : {}", o);
-    } else {
-        println!("chatgpt : {}", o);
-    }
-   
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-    
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
-    if let Ok(uri) = c.string_flag("uri") {
-        if let Ok(cid) = c.string_flag("cid") {
-            let post = Some(json!({
-                "did": did.to_string(),
-                "collection": col.to_string(),
-                "record": {
-                    "text": o.to_string(),
-                    "createdAt": d.to_string(),
-                    "reply": {
-                        "root": {
-                            "cid": cid.to_string(),
-                            "uri": uri.to_string()
-                        },
-                        "parent": {
-                            "cid": cid.to_string(),
-                            "uri": uri.to_string()
-                        }
-                    }
-                },
-            }));
-
-            let client = reqwest::Client::new();
-            let res = client
-                .post(url)
-                .json(&post)
-                .header("Authorization", "Bearer ".to_owned() + &token)
-                .send()
-                .await?
-                .text()
-                .await?;
-
-            println!("{}", res);
+    let h = async {
+        let str_openai = openai::post_request(m.to_string(),model.to_string()).await;
+        println!("{}", str_openai);
+        if check_post == true {
+            let text_limit = char_c(str_openai);
+            let str_rep = at_post::post_request(text_limit.to_string()).await;
+            println!("{}", str_rep); 
         }
-    } else {
-        let post = Some(json!({
-            "did": did.to_string(),
-            "collection": col.to_string(),
-            "record": {
-                "text": o.to_string(),
-                "createdAt": d.to_string(),
-            },
-        }));
-
-        let client = reqwest::Client::new();
-        let res = client
-            .post(url)
-            .json(&post)
-            .header("Authorization", "Bearer ".to_owned() + &token)
-            .send()
-            .await?
-            .text()
-            .await?;
-
-        println!("{}", res);
-    }
-    Ok(())
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res); 
 }
 
 fn p(c: &Context) {
     aa().unwrap();
     if c.bool_flag("en") {
-        ppd(c, &"en").unwrap();
+        ppd(c, &"en", true);
     } else if c.bool_flag("ja") {
-        ppd(c, &"ja").unwrap();
+        ppd(c, &"ja", true);
     } else if c.bool_flag("chat") {
-        ppc(c, &"text-davinci-003").unwrap();
+        ppc(c, &"text-davinci-003", true);
     } else {
-        pp(c).unwrap();
+        pp(c);
     }
 }
 
-
-
-#[allow(unused_must_use)]
-#[tokio::main]
-pub async fn notify_openai_post(prompt: String, model: String, cid: String, uri: String) -> reqwest::Result<()> {
-    let data = Opens::new().unwrap();
-    let data = Opens {
-        api: data.api,
-    };
-    let temperature = 0.7;
-    let max_tokens = 250;
-    let top_p = 1;
-    let frequency_penalty = 0;
-    let presence_penalty = 0;
-    let stop = "[\"###\"]";
-
-    let post = Some(json!({
-        "prompt": &prompt.to_string(),
-        "model": &model.to_string(),
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-        "top_p": top_p,
-        "frequency_penalty": frequency_penalty,
-        "presence_penalty": presence_penalty,
-        "stop": stop,
-    }));
-
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api.openai.com/v1/completions")
-        .header("Authorization", "Bearer ".to_owned() + &data.api)
-        .json(&post)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let p: OpenData = serde_json::from_str(&res).unwrap();
-    let o = &p.choices[0].text;
-    let o = o.replace("\n", "");
-    println!("chatgpt : {}", o);
-
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
-    let post = Some(json!({
-        "did": did.to_string(),
-        "collection": col.to_string(),
-        "record": {
-            "text": o.to_string(),
-            "createdAt": d.to_string(),
-            "reply": {
-                "root": {
-                    "cid": cid.to_string(),
-                    "uri": uri.to_string()
-                },
-                "parent": {
-                    "cid": cid.to_string(),
-                    "uri": uri.to_string()
-                }
-            }
-        },
-    }));
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&post)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", res);
-    Ok(())
+pub fn char_c(i: String) -> String {
+    let l = 250;
+    let mut s = String::new();
+    for ii in i.chars().enumerate() {
+        match ii.0 {
+            n if n > l.try_into().unwrap() => {break}
+            _ => {s.push(ii.1)}
+        }
+    }
+    return s
 }
 
-#[allow(unused_must_use)]
-#[tokio::main]
-pub async fn notify_read(time: String) -> reqwest::Result<()> {
-    let token = token_toml(&"access");
-    let url = url(&"notify_update");
-    let post = Some(json!({
-        "seenAt": time.to_string(),
-    }));
-
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&post)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", res);
-    Ok(())
-}
-
-#[allow(unused_must_use)]
-#[tokio::main]
-pub async fn notify_deepl_post(prompt: String, lang: String, cid: String, uri: String) -> reqwest::Result<()> {
-    let lang = lang.to_string();
-    let data = Deeps::new().unwrap();
-    let data = Deeps {
-        api: data.api,
-    };
-    let api = "DeepL-Auth-Key ".to_owned() + &data.api;
-    let mut params = HashMap::new();
-    params.insert("text", &prompt);
-    params.insert("target_lang", &lang);
-    let client = reqwest::Client::new();
-    let res = client
-        .post("https://api-free.deepl.com/v2/translate")
-        .header(AUTHORIZATION, api)
-        .header(CONTENT_TYPE, "json")
-        .form(&params)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    let p: DeepData = serde_json::from_str(&res).unwrap();
-    let o = &p.translations[0].text;
-    println!("deepl : {}", o);
-
-    let token = token_toml(&"access");
-    let did = token_toml(&"did");
-
-    let url = url(&"record_create");
-    let col = "app.bsky.feed.post".to_string();
-    let d = Timestamp::now_utc();
-    let d = d.to_string();
-
-    let post = Some(json!({
-        "did": did.to_string(),
-        "collection": col.to_string(),
-        "record": {
-            "text": o.to_string(),
-            "createdAt": d.to_string(),
-            "reply": {
-                "root": {
-                    "cid": cid.to_string(),
-                    "uri": uri.to_string()
-                },
-                "parent": {
-                    "cid": cid.to_string(),
-                    "uri": uri.to_string()
-                }
-            }
-        },
-    }));
-    let client = reqwest::Client::new();
-    let res = client
-        .post(url)
-        .json(&post)
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-
-    println!("{}", res);
-    Ok(())
-}
-
-#[allow(unused_must_use)]
-#[tokio::main]
-async fn bot_run(_c: &Context) -> reqwest::Result<()> {
-    let token = token_toml(&"access");
-    let url = url(&"notify_list");
-    let client = reqwest::Client::new();
-    let res = client
-        .get(url)
-        .query(&[("limit", 4)])
-        .header("Authorization", "Bearer ".to_owned() + &token)
-        .send()
-        .await?
-        .text()
-        .await?;
-    let notify: Notify = serde_json::from_str(&res).unwrap();
-    let n = notify.notifications;
-
-    let length = &n.len();
-    for i in 0..*length {
-        let reason = &n[i].reason;
-        let handle = &n[i].author.handle;
-        let read = n[i].isRead;
-        if reason == "mention" &&  handle == "syui.cf" && read == false {
-            let time = &n[i].indexedAt;
-            let cid = &n[i].cid;
-            let uri = &n[i].uri;
-            if ! n[i].record.text.is_none() { 
-                let text = &n[i].record.text.as_ref().unwrap();
-                let vec: Vec<&str> = text.split_whitespace().collect();
-                if vec.len() > 2 {
-                    let com = vec[1].trim().to_string();
-                    if com == "/chat" {
-                        let prompt = &vec[2..].join(" ");
-                        println!("cmd:{}, prompt:{}", com, prompt);
-                        println!("cid:{}, uri:{}", cid, uri);
-                        println!("{}", text);
-                        let model = "text-davinci-003";
-
-                        //notify_openai_post(prompt.to_string(), model.to_string(), cid.to_string(), uri.to_string());
-                        //
-                        //
-                        //
-                        let data = Opens::new().unwrap();
-                        let data = Opens {
-                            api: data.api,
-                        };
-                        let temperature = 0.7;
-                        let max_tokens = 250;
-                        let top_p = 1;
-                        let frequency_penalty = 0;
-                        let presence_penalty = 0;
-                        let stop = "[\"###\"]";
-
-                        let post = Some(json!({
-                            "prompt": &prompt.to_string(),
-                            "model": &model.to_string(),
-                            "temperature": temperature,
-                            "max_tokens": max_tokens,
-                            "top_p": top_p,
-                            "frequency_penalty": frequency_penalty,
-                            "presence_penalty": presence_penalty,
-                            "stop": stop,
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post("https://api.openai.com/v1/completions")
-                            .header("Authorization", "Bearer ".to_owned() + &data.api)
-                            .json(&post)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-                        let p: OpenData = serde_json::from_str(&res).unwrap();
-                        let o = &p.choices[0].text;
-                        let o = o.replace("\n", "");
-                        println!("chatgpt : {}", o);
-
-                        let token = token_toml(&"access");
-                        let did = token_toml(&"did");
-
-                        let url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
-                        //let url = url(&"record_create");
-                        let col = "app.bsky.feed.post".to_string();
-                        let d = Timestamp::now_utc();
-                        let d = d.to_string();
-
-                        let post = Some(json!({
-                            "did": did.to_string(),
-                            "collection": col.to_string(),
-                            "record": {
-                                "text": o.to_string(),
-                                "createdAt": d.to_string(),
-                                "reply": {
-                                    "root": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    },
-                                    "parent": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    }
-                                }
-                            },
-                        }));
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-
-                        println!("{}", res);
-                        //
-                        //
-                        //
-                        //
-
-                        //notify_read(time.to_string());
-                        //
-                        //
-                        //
-                        let token = token_toml(&"access");
-                        //let url = url(&"notify_update");
-                        let url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
-                        let post = Some(json!({
-                            "seenAt": time.to_string(),
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-                        println!("{}", res);
-                        //
-                        //
-                        //
-                        //
-
-                    }
-                    if com == "/deepl" {
-
-                        //notify_deepl_post(prompt.to_string(), lang.to_string(), cid.to_string(), uri.to_string()).unwrap();
-                        //
-                        //
-                        //
-                        //
-                        let lang = &vec[2].to_string();
-                        let prompt = &vec[3..].join(" ");
-                        println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
-                        println!("cid:{}, uri:{}", cid, uri);
-                        println!("{}", text);
-
-                        let data = Deeps::new().unwrap();
-                        let data = Deeps {
-                            api: data.api,
-                        };
-                        let api = "DeepL-Auth-Key ".to_owned() + &data.api;
-
-                        // error ?
-                        //let params = HashMap::new();
-                        //params.insert("text", &prompt);
-                        //params.insert("target_lang", &lang);
-                        //let lang = lang.to_string();
-                        let params = [("text", &prompt), ("target_lang", &lang)];
-                        
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post("https://api-free.deepl.com/v2/translate")
-                            .header(AUTHORIZATION, api)
-                            .header(CONTENT_TYPE, "json")
-                            .form(&params)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-
-                        let p: DeepData = serde_json::from_str(&res).unwrap();
-                        let o = &p.translations[0].text;
-                        println!("deepl : {}", o);
-
-                        let token = token_toml(&"access");
-                        let did = token_toml(&"did");
-
-                        let url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
-                        //let url = url(&"record_create");
-                        let col = "app.bsky.feed.post".to_string();
-                        let d = Timestamp::now_utc();
-                        let d = d.to_string();
-
-                        let post = Some(json!({
-                            "did": did.to_string(),
-                            "collection": col.to_string(),
-                            "record": {
-                                "text": o.to_string(),
-                                "createdAt": d.to_string(),
-                                "reply": {
-                                    "root": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    },
-                                    "parent": {
-                                        "cid": cid.to_string(),
-                                        "uri": uri.to_string()
-                                    }
-                                }
-                            },
-                        }));
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-
-                        println!("{}", res);
-                        //
-                        //
-                        //
-                        //
-
-                        //notify_read(time.to_string()).unwrap();
-                        //
-                        //
-                        //
-                        let token = token_toml(&"access");
-                        //let url = url(&"notify_update");
-                        let url = "https://bsky.social/xrpc/app.bsky.notification.updateSeen";
-                        let post = Some(json!({
-                            "seenAt": time.to_string(),
-                        }));
-
-                        let client = reqwest::Client::new();
-                        let res = client
-                            .post(url)
-                            .json(&post)
-                            .header("Authorization", "Bearer ".to_owned() + &token)
-                            .send()
-                            .await?
-                            .text()
-                            .await?;
-                        println!("{}", res);
-                        //
-                        //
-                        //
-                        //
+fn bot_run(_c: &Context) {
+    let limit = 3;
+    let h = async {
+        let str = at_notify_limit::get_request(limit);
+        let notify: Notify = serde_json::from_str(&str.await).unwrap();
+        let n = notify.notifications;
+        let length = &n.len();
+        for i in 0..*length {
+            let reason = &n[i].reason;
+            let handle = &n[i].author.handle;
+            let read = n[i].isRead;
+            if reason == "mention" &&  handle == "syui.cf" && read == false {
+                let time = &n[i].indexedAt;
+                let cid = &n[i].cid;
+                let uri = &n[i].uri;
+                if ! n[i].record.text.is_none() { 
+                    let text = &n[i].record.text.as_ref().unwrap();
+                    let vec: Vec<&str> = text.split_whitespace().collect();
+                    if vec.len() > 2 {
+                        let com = vec[1].trim().to_string();
+                        if com == "/chat" {
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let model = "text-davinci-003";
+                            let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                            println!("{}", str_openai);
+                            let text_limit = char_c(str_openai);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        }
+                        if com == "/deepl" {
+                            let lang = &vec[2].to_string();
+                            let prompt = &vec[3..].join(" ");
+                            println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let str_deepl = deepl::post_request(prompt.to_string(),lang.to_string()).await;
+                            println!("{}", str_deepl);
+                            let text_limit = char_c(str_deepl);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        }
                     }
                 }
             }
         }
-    }
-    Ok(())
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    println!("{:?}", res);
 }
 
 fn bot(c: &Context) {
     if c.bool_flag("chat") || c.bool_flag("deepl") {
         aa().unwrap();
-        bot_run(c).unwrap();
+        bot_run(c);
     }
+}
+
+// atr test
+fn test(_c: &Context) {
+    let model = "text-davinci-003";
+    let lang = "en";
+    let time = "2023-03-08T08:37:12.165Z";
+    let prompt = "test";
+    let cid = "bafyreigdwt5te7atk3oekowlursremi7wt6pw37a4bum2jsjvvrj4uuuzq";
+    let uri = "at://did:plc:uqzpqmrjnptsxezjx4xuh2mn/app.bsky.feed.post/3jqnetfduws2a";
+    let did = "did:plc:uqzpqmrjnptsxezjx4xuh2mn";
+    let link = "https://syui.cf";
+    let limit: i32 = 3;
+    let s = 0;
+    let e = link.chars().count();
+    let handle = "syui.cf";
+
+    //pub mod openai;
+    let h = async {
+        println!("{}","openai");
+        let str = openai::post_request(prompt.to_string(),model.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod deepl;
+    let h = async {
+        println!("{}","deepl");
+        let str = deepl::post_request(prompt.to_string(),lang.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_notify_read;
+    let h = async {
+        println!("{}","at_notify_read");
+        let str = at_notify_read::post_request(time.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_reply;
+    let h = async {
+        println!("{}","at_reply");
+        let str = at_reply::post_request(prompt.to_string(), cid.to_string(), uri.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_notify_limit;
+    let h = async {
+        println!("{}","at_notify_limit");
+        let str = at_notify_limit::get_request(limit);
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_post;
+    let h = async {
+        println!("{}","at_post");
+        let str = at_post::post_request(prompt.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_post_link;
+    let h = async {
+        println!("{}","at_post_link");
+        let str = at_post_link::post_request(prompt.to_string(), link.to_string(), s, e.try_into().unwrap());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_profile;
+    let h = async {
+        println!("{}","at_profile");
+        let str = at_profile::get_request(handle.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_mention;
+    let h = async {
+        let at = "@".to_owned() + &handle;
+        let e = at.chars().count();
+        let udid = did;
+        println!("{}","at_mention");
+        let str = at_mention::post_request(prompt.to_string(), at.to_string(), udid.to_string(), s, e.try_into().unwrap());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_timeline;
+    let h = async {
+        println!("{}","at_timeline");
+        let str = at_timeline::get_request();
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_handle_update;
+    let h = async {
+        println!("{}","at_handle_update");
+        let str = at_handle_update::post_request(handle.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
 }
