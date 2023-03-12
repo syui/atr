@@ -649,8 +649,10 @@ fn mention(c: &Context) {
         let at = "@".to_owned() + &handle;
         let e = at.chars().count();
         let s = 0;
-        let str = at_mention::post_request(m.to_string(), at.to_string(), udid.to_string(), s, e.try_into().unwrap()).await;
-        println!("{}",str);
+        if let Ok(post) = c.string_flag("post") {
+            let str = at_mention::post_request(post.to_string(), at.to_string(), udid.to_string(), s, e.try_into().unwrap()).await;
+            println!("{}",str);
+        }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     println!("{:?}", res);
