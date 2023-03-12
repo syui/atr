@@ -34,6 +34,7 @@ pub mod deepl;
 pub mod at_notify_limit;
 pub mod at_notify_read;
 pub mod at_reply;
+pub mod at_reply_media;
 pub mod at_post;
 pub mod at_post_link;
 pub mod at_profile;
@@ -804,6 +805,8 @@ fn first_start(c: &Context) -> io::Result<()> {
     Ok(())
 }
 
+
+
 fn first(c: &Context) {
     first_start(c).unwrap();
 }
@@ -979,6 +982,64 @@ fn bot_run(_c: &Context) {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
                         }
+                        if com == "/sh" {
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let file = "/.config/atr/scpt/arch.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        }
+                        if com == "/diffusion" {
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let file = "/.config/atr/scpt/diffusion.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+
+
+                            //media upload { #efactoring }
+                            let file = "/.config/atr/scpt/png/t.jpg";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            let token = token_toml(&"access");
+                            let atoken = "Authorization: Bearer ".to_owned() + &token;
+                            let con = "Content-Type: image/png";
+                            let url = url(&"upload_blob");
+                            let f = "@".to_owned() + &f;
+                            let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            let mid: Cid = serde_json::from_str(&d).unwrap();
+                            let mid = mid.cid;
+                            println!("{}", mid);
+                         
+
+                            let text_limit = "#stablediffusion";
+                            let itype = "image/jpeg";
+                            let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        }
                     }
                 }
             }
@@ -1009,6 +1070,8 @@ fn test(_c: &Context) {
     let s = 0;
     let e = link.chars().count();
     let handle = "syui.cf";
+    let mid = "bafyreid27zk7lbis4zw5fz4podbvbs4fc5ivwji3dmrwa6zggnj4bnd57u";
+    let itype = "image/jpeg";
 
     //pub mod openai;
     let h = async {
@@ -1038,6 +1101,14 @@ fn test(_c: &Context) {
     let h = async {
         println!("{}","at_reply");
         let str = at_reply::post_request(prompt.to_string(), cid.to_string(), uri.to_string());
+        println!("{}",str.await);
+    };
+    tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    //pub mod at_reply_media;
+    let h = async {
+        println!("{}","at_reply_media");
+        let str = at_reply_media::post_request(prompt.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string());
         println!("{}",str.await);
     };
     tokio::runtime::Runtime::new().unwrap().block_on(h);

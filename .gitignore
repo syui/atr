@@ -10,3 +10,5 @@ target
 */node_mobules
 */*.lock
 json
+*.png
+*.jpg
