@@ -482,7 +482,7 @@ fn pp(c: &Context) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}",res);
+    return res
 }
 
 fn tt(c: &Context) {
@@ -517,7 +517,7 @@ fn tt(c: &Context) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}",res);
+    return res
 }
 
 fn t(c: &Context) {
@@ -532,7 +532,7 @@ fn pro(u: String) {
     };
 
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn profile(_c: &Context) {
@@ -598,7 +598,7 @@ fn hh(c: &Context) {
         println!("{}", str.await);
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn h(c: &Context) {
@@ -655,7 +655,7 @@ fn mention(c: &Context) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn mention_run(c: &Context) {
@@ -691,7 +691,7 @@ fn nn(c: &Context, limit: i32, check: bool) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn n(c: &Context) {
@@ -824,7 +824,7 @@ fn rr(c: &Context) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn r(c: &Context) {
@@ -868,7 +868,7 @@ fn ppd(c: &Context, lang: &str, check_post: bool) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res); 
+    return res
 }
 
 #[allow(unused_must_use)]
@@ -908,7 +908,7 @@ fn ppc(c: &Context, model: &str, check_post: bool) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res); 
+    return res
 }
 
 fn p(c: &Context) {
@@ -1050,7 +1050,7 @@ fn bot_run(_c: &Context) {
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
-    println!("{:?}", res);
+    return res
 }
 
 fn bot(c: &Context) {
