@@ -12,6 +12,13 @@ $ ./atr
 
 ### build
 
+support :  cargo 1.67.1
+
+err : cargo 1.6.8.x
+
+> rejected by a future version of Rust: rustc-serialize v0.3.24
+
+
 ```sh
 # install rust
 $ sudo pacman -S rust
@@ -136,7 +143,7 @@ $ atr p "[chatgpt] post by openai chatgpt" -c --cid $cid --uri $uri
 
 ```sh
 # test : bot
-$ atr bot --chat
+$ atr bot
 ```
 
 ### ref
