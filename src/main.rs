@@ -936,7 +936,7 @@ fn bot_run(_c: &Context) {
                 if ! n[i].record.text.is_none() { 
                     let text = &n[i].record.text.as_ref().unwrap();
                     let vec: Vec<&str> = text.split_whitespace().collect();
-                    if reason == "reply" && handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" {
+                    if reason == "reply" {
                         let prompt = &vec[0..].join(" ");
                         println!("prompt:{}", prompt);
                         println!("cid:{}, uri:{}", cid, uri);
@@ -1040,7 +1040,7 @@ fn bot_run(_c: &Context) {
                                         let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
                                         println!("{}", str_rep);
                                     } else
-                                        if reason == "mention" && handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" {
+                                        if reason == "mention" {
                                             let prompt = &vec[1..].join(" ");
                                             println!("prompt:{}", prompt);
                                             println!("cid:{}, uri:{}", cid, uri);
