@@ -7,25 +7,29 @@ seed=$RANDOM
 
 sd_prompt_a="masterpiece, high quality, very_high_resolution, large_filesize, full color"
 
-## kawaii girl random prompt
-#	ra=$(($RANDOM % 2 + 1))
-#	rp="beautiful kawaii "`echo "little girl,girl"|cut -d , -f $ra|tr -d ,`
-#	rb=$(($RANDOM % 3 + 1))
-#	rbp="with "`echo "gold,silver,black"|cut -d , -f $rb|tr -d ,`" hair"
-#	rc=$(($RANDOM % 4 + 1))
-#	rcp=`echo "wavy,long,straight,"|cut -d , -f $rc|tr -d ,`
-#	rd=$(($RANDOM % 3 + 1))
-#	rdp="in "`echo "fluttery white onepice,simple white onepice,normal white school uniform"|cut -d , -f $rd|tr -d ,`
-#	echo $sd_prompt_a, $rp $rdp $rcp $rbp 
-
-if [ -n "$1" ];then
-	echo $sd_prompt_a $* >! $f
-	cat $f
-	q=`cat $f`
-else
-	echo no query
-	exit
-fi
+case "$1" in
+	"--anime"|"-a")
+		## kawaii girl random prompt
+		ra=$(($RANDOM % 2 + 1))
+		rp="beautiful kawaii "`echo "little girl,girl"|cut -d , -f $ra|tr -d ,`
+		rb=$(($RANDOM % 3 + 1))
+		rbp="with "`echo "gold,silver,black"|cut -d , -f $rb|tr -d ,`" hair"
+		rc=$(($RANDOM % 4 + 1))
+		rcp=`echo "wavy,long,straight,"|cut -d , -f $rc|tr -d ,`
+		rd=$(($RANDOM % 3 + 1))
+		rdp="in "`echo "fluttery white onepice,simple white onepice,normal white school uniform"|cut -d , -f $rd|tr -d ,`
+		sd_prompt_a="$sd_prompt_a, $rp $rdp $rcp $rbp"
+		echo $sd_prompt_a >! $f
+		;;
+	"")
+		exit
+		;;
+	*)
+		echo $sd_prompt_a $* >! $f
+		;;
+esac
+cat $f
+q=`cat $f`
 
 rm -rf $dir/png
 mkdir -p $dir/png
