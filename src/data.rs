@@ -124,6 +124,8 @@ pub struct BaseUrl {
     pub notify_count: String,
     pub notify_list: String,
     pub notify_update: String,
+    pub repo_update: String,
+    pub follow: String,
 }
 
 pub fn url(s: &str) -> String {
@@ -148,6 +150,8 @@ pub fn url(s: &str) -> String {
         notify_count: "app.bsky.notification.getCount".to_string(),
         notify_list: "app.bsky.notification.list".to_string(),
         notify_update: "app.bsky.notification.updateSeen".to_string(),
+        repo_update: "com.atproto.sync.updateRepo".to_string(),
+        follow: "app.bsky.graph.follow".to_string(),
     };
     match &*s {
         "profile_get" => t.to_string() + &baseurl.profile_get,
@@ -162,6 +166,8 @@ pub fn url(s: &str) -> String {
         "notify_list" => t.to_string() + &baseurl.notify_list,
         "notify_count" => t.to_string() + &baseurl.notify_count,
         "notify_update" => t.to_string() + &baseurl.notify_update,
+        "repo_update" => t.to_string() + &baseurl.repo_update,
+        "follow" => t.to_string() + &baseurl.follow,
         _ => s,
     }
 }
