@@ -964,114 +964,109 @@ fn bot_run(_c: &Context) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
-                        } else 
-                            if com == "/deepl" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
-                                let lang = &vec[2].to_string();
-                                let prompt = &vec[3..].join(" ");
-                                println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
-                                println!("cid:{}, uri:{}", cid, uri);
-                                println!("{}", text);
-                                let str_deepl = deepl::post_request(prompt.to_string(),lang.to_string()).await;
-                                println!("{}", str_deepl);
-                                let text_limit = char_c(str_deepl);
-                                let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
-                                println!("{}", str_rep);
-                                let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                println!("{}", str_notify);
-                            } else 
-                                if com == "/sh" && handle == "syui.cf" {
-                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                    println!("{}", str_notify);
+                        } else if com == "/deepl" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                            let lang = &vec[2].to_string();
+                            let prompt = &vec[3..].join(" ");
+                            println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let str_deepl = deepl::post_request(prompt.to_string(),lang.to_string()).await;
+                            println!("{}", str_deepl);
+                            let text_limit = char_c(str_deepl);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        } else if com == "/sh" && handle == "syui.cf" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
 
-                                    let prompt = &vec[2..].join(" ");
-                                    println!("cmd:{}, prompt:{}", com, prompt);
-                                    println!("cid:{}, uri:{}", cid, uri);
-                                    println!("{}", text);
-                                    let file = "/.config/atr/scpt/arch.zsh";
-                                    let mut f = shellexpand::tilde("~").to_string();
-                                    f.push_str(&file);
-                                    use std::process::Command;
-                                    let output = Command::new(&f).arg(&prompt).output().expect("zsh");
-                                    let d = String::from_utf8_lossy(&output.stdout);
-                                    let d =  d.to_string();
-                                    println!("{}", d);
-                                    let text_limit = char_c(d);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
-                                    println!("{}", str_rep);
-                                } else 
-                                    if com == "/diffusion" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
-                                        let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                        println!("{}", str_notify);
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let file = "/.config/atr/scpt/arch.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                        } else if com == "/diffusion" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
 
-                                        let prompt = &vec[2..].join(" ");
-                                        println!("cmd:{}, prompt:{}", com, prompt);
-                                        println!("cid:{}, uri:{}", cid, uri);
-                                        println!("{}", text);
-                                        let file = "/.config/atr/scpt/diffusion.zsh";
-                                        let mut f = shellexpand::tilde("~").to_string();
-                                        f.push_str(&file);
-                                        use std::process::Command;
-                                        let output = Command::new(&f).arg(&prompt).output().expect("zsh");
-                                        let d = String::from_utf8_lossy(&output.stdout);
-                                        let d =  d.to_string();
-                                        println!("{}", d);
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let file = "/.config/atr/scpt/diffusion.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
 
 
-                                        //media upload { #efactoring }
-                                        let file = "/.config/atr/scpt/png/t.jpg";
-                                        let mut f = shellexpand::tilde("~").to_string();
-                                        f.push_str(&file);
-                                        let token = token_toml(&"access");
-                                        let atoken = "Authorization: Bearer ".to_owned() + &token;
-                                        let con = "Content-Type: image/png";
-                                        let url = url(&"upload_blob");
-                                        let f = "@".to_owned() + &f;
-                                        let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
-                                        let d = String::from_utf8_lossy(&output.stdout);
-                                        let d =  d.to_string();
-                                        let mid: Cid = serde_json::from_str(&d).unwrap();
-                                        let mid = mid.cid;
-                                        println!("{}", mid);
+                            //media upload { #efactoring }
+                            let file = "/.config/atr/scpt/png/t.jpg";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            let token = token_toml(&"access");
+                            let atoken = "Authorization: Bearer ".to_owned() + &token;
+                            let con = "Content-Type: image/png";
+                            let url = url(&"upload_blob");
+                            let f = "@".to_owned() + &f;
+                            let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            let mid: Cid = serde_json::from_str(&d).unwrap();
+                            let mid = mid.cid;
+                            println!("{}", mid);
 
 
-                                        let text_limit = "#stablediffusion";
-                                        let itype = "image/jpeg";
-                                        let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
-                                        println!("{}", str_rep);
-                                } else 
-                                    if com == "/s" || com == "search" || com == "-s" {
-                                        let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                        println!("{}", str_notify);
-                                        let prompt = &vec[2..].join(" ");
-                                        println!("cmd:{}, prompt:{}", com, prompt);
-                                        println!("cid:{}, uri:{}", cid, uri);
-                                        println!("{}", text);
-                                        let file = "/.config/atr/scpt/search.zsh";
-                                        let mut f = shellexpand::tilde("~").to_string();
-                                        f.push_str(&file);
-                                        use std::process::Command;
-                                        let output = Command::new(&f).arg(&prompt).output().expect("zsh");
-                                        let d = String::from_utf8_lossy(&output.stdout);
-                                        let d =  d.to_string();
-                                        println!("{}", d);
-                                        let text_limit = char_c(d);
-                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
-                                        println!("{}", str_rep);
-                                    } else
-                                        if reason == "mention" {
-                                            let prompt = &vec[1..].join(" ");
-                                            println!("prompt:{}", prompt);
-                                            println!("cid:{}, uri:{}", cid, uri);
-                                            println!("{}", text);
-                                            let model = "text-davinci-003";
-                                            let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
-                                            println!("{}", str_openai);
-                                            let text_limit = char_c(str_openai);
-                                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
-                                            println!("{}", str_rep);
-                                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                            println!("{}", str_notify);
-                                        }
+                            let text_limit = "#stablediffusion";
+                            let itype = "image/jpeg";
+                            let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            println!("{}", str_rep);
+                        } else if com == "/s" || com == "search" || com == "-s" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let prompt = &vec[2..].join(" ");
+                            println!("cmd:{}, prompt:{}", com, prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let file = "/.config/atr/scpt/at_search.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                        } else if reason == "mention" {
+                            let prompt = &vec[1..].join(" ");
+                            println!("prompt:{}", prompt);
+                            println!("cid:{}, uri:{}", cid, uri);
+                            println!("{}", text);
+                            let model = "text-davinci-003";
+                            let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                            println!("{}", str_openai);
+                            let text_limit = char_c(str_openai);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                        }
                     }
                 }
             }
