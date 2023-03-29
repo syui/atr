@@ -262,6 +262,12 @@ fn main() {
                 .action(m)
                 )
             .command(
+                Command::new("img-upload")
+                .usage("atr img-upload {} -p text")
+                .description("media post\n\t\t\t$ atr img-upload ~/test.png")
+                .action(img_upload)
+                )
+            .command(
                 Command::new("profile")
                 .usage("atr profile")
                 .description("profile\n\t\t\t$ atr pro\n\t\t\t$ atr pro yui.bsky.social")
@@ -571,6 +577,38 @@ async fn mm(c: &Context) -> reqwest::Result<()> {
 fn m(c: &Context) {
     aa().unwrap();
     mm(c).unwrap();
+}
+
+
+#[tokio::main]
+async fn img_upload_run(c: &Context) -> reqwest::Result<()> {
+    
+    let token = token_toml(&"access");
+
+    let atoken = "Authorization: Bearer ".to_owned() + &token;
+    let con = "Content-Type: image/png";
+    let did = token_toml(&"did");
+
+    //let host = cfg(&"host");
+    let url = url(&"upload_blob");
+
+    let f = "@".to_owned() + &c.args[0].to_string();
+    use std::process::Command;
+    let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+    let d = String::from_utf8_lossy(&output.stdout);
+    let d =  d.to_string();
+    let cid: Cid = serde_json::from_str(&d).unwrap();
+    let cid = cid.cid;
+    println!("{}", cid);
+    let mtype = "image/png";
+    let j = "{\"did\":\"".to_owned() + &did + &"\",\"collection\":\"app.bsky.feed.post\",\"record\":{\"text\":\"\",\"createdAt\":\"" + &d + &"\", \"embed\": {\"$type\":\"app.bsky.embed.images\",\"images\":[{\"image\":{\"cid\":\"" + &cid + &"\",\"mimeType\":\"" + &mtype + &"\"},\"alt\":\"\"}]}}}".to_string();
+    println!("{}", j);
+    Ok(())
+}
+
+fn img_upload(c: &Context) {
+    aa().unwrap();
+    img_upload_run(c).unwrap();
 }
 
 fn hh(c: &Context) {
@@ -918,7 +956,7 @@ pub fn char_c(i: String) -> String {
 }
 
 fn bot_run(_c: &Context) {
-    let limit = 3;
+    let limit = 10;
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
@@ -951,7 +989,7 @@ fn bot_run(_c: &Context) {
                     }
                     if vec.len() > 1 {
                         let com = vec[1].trim().to_string();
-                        if com == "/chat"  && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                        if com == "/chat"  && { handle == "syui.bsky.social" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
                             println!("cid:{}, uri:{}", cid, uri);
@@ -977,7 +1015,7 @@ fn bot_run(_c: &Context) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
-                        } else if com == "/sh" && handle == "syui.cf" {
+                        } else if com == "/sh" && handle == "syui.bsky.social" {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
 
@@ -1013,14 +1051,13 @@ fn bot_run(_c: &Context) {
                             let d =  d.to_string();
                             println!("{}", d);
 
-
                             //media upload { #efactoring }
-                            let file = "/.config/atr/scpt/png/t.jpg";
+                            let file = "/.config/atr/scpt/png/t.webp";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
                             let token = token_toml(&"access");
                             let atoken = "Authorization: Bearer ".to_owned() + &token;
-                            let con = "Content-Type: image/png";
+                            let con = "Content-Type: image/webp";
                             let url = url(&"upload_blob");
                             let f = "@".to_owned() + &f;
                             let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
@@ -1029,10 +1066,8 @@ fn bot_run(_c: &Context) {
                             let mid: Cid = serde_json::from_str(&d).unwrap();
                             let mid = mid.cid;
                             println!("{}", mid);
-
-
                             let text_limit = "#stablediffusion";
-                            let itype = "image/jpeg";
+                            let itype = "image/webp";
                             let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
                             println!("{}", str_rep);
                         } else if com == "/s" || com == "search" || com == "-s" {
@@ -1053,6 +1088,49 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                        } else if com == "/card" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/api_card.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&handle).arg("-t").output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+
+                            //// use cid
+                            //let file = "/.config/atr/scpt/api_card.zsh";
+                            //let mut f = shellexpand::tilde("~").to_string();
+                            //f.push_str(&file);
+                            //let output = Command::new(&f).arg("-c").output().expect("zsh");
+                            //let d = String::from_utf8_lossy(&output.stdout);
+                            //let d =  d.to_string();
+                            //let mid = d;
+                            //println!("{}", mid);
+
+                            //media upload { #efactoring }
+                            let file = "/.config/atr/scpt/t.webp";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            let token = token_toml(&"access");
+                            let atoken = "Authorization: Bearer ".to_owned() + &token;
+                            let con = "Content-Type: image/webp";
+                            let url = url(&"upload_blob");
+                            let f = "@".to_owned() + &f;
+                            let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            let mid: Cid = serde_json::from_str(&d).unwrap();
+                            let mid = mid.cid;
+                            println!("{}", mid);
+                            
+                            let itype = "image/webp";
+                            let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            println!("{}", str_rep);
+
                         } else if reason == "mention" {
                             let prompt = &vec[1..].join(" ");
                             println!("prompt:{}", prompt);

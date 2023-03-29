@@ -1,10 +1,11 @@
 #!/bin/zsh
-
+d=${0:a:h:h}
 url="search.bsky.social/search/posts?q="
 q=`echo $*|tr ' ' '+'`
 url="${url}${q}"
 
-t=`curl -sL "$url"|jq .`
+t=`curl -sL "$url"`
+echo $t
 n=`echo $t|jq "length"`
 n=`expr $n - 1`
 for ((i=0;i<=$n;i++))
