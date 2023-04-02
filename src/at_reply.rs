@@ -8,6 +8,7 @@ pub async fn post_request(text: String, cid: String, uri: String) -> String {
 
     let token = token_toml(&"access");
     let did = token_toml(&"did");
+    let handle = token_toml(&"handle");
 
     let url = url(&"record_create");
     //let url = "https://bsky.social/xrpc/com.atproto.repo.createRecord";
@@ -17,6 +18,7 @@ pub async fn post_request(text: String, cid: String, uri: String) -> String {
     let d = d.to_string();
 
     let post = Some(json!({
+        "repo": handle.to_string(),
         "did": did.to_string(),
         "collection": col.to_string(),
         "record": {

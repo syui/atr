@@ -24,7 +24,6 @@ next=`echo $data|jq -r .next`
 if [ $next -gt $d ];then
 	echo limit 1 day
 	echo "next : $nd"
-	echo "url : https://card.syui.ai"
 	t=0
 	curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
 	exit
@@ -42,7 +41,6 @@ tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -
 next=`echo $tmp|jq -r .next`
 echo next : $next
 echo url : $card_url
-echo search your id : $uid
 
 f=$HOME/.config/atr/scpt/t.webp
 curl -sL -o $f https://card.syui.ai/card/card_${t}.webp

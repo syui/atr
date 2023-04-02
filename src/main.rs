@@ -34,6 +34,7 @@ pub mod deepl;
 pub mod at_notify_limit;
 pub mod at_notify_read;
 pub mod at_reply;
+pub mod at_reply_link;
 pub mod at_reply_media;
 pub mod at_post;
 pub mod at_post_link;
@@ -420,6 +421,7 @@ async fn aa() -> reqwest::Result<()> {
     let mut map = HashMap::new();
 
     let url = url(&"session_create");
+    //map.insert("did", &did);
     map.insert("handle", &handle);
     map.insert("password", &pass);
     let client = reqwest::Client::new();
@@ -1097,9 +1099,20 @@ fn bot_run(_c: &Context) {
                             use std::process::Command;
                             let output = Command::new(&f).arg(&handle).arg("-t").output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
-                            let d =  d.to_string();
+
+                            // test reply link
+                            let handlev: Vec<&str> = handle.split('.').collect();
+                            let handlev = handlev[0].trim().to_string();
+                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+
+                            let d = "\n".to_owned() + &d.to_string();
                             println!("{}", d);
                             let text_limit = char_c(d);
+                            println!("{}", text_limit);
 
                             //// use cid
                             //let file = "/.config/atr/scpt/api_card.zsh";
@@ -1112,24 +1125,29 @@ fn bot_run(_c: &Context) {
                             //println!("{}", mid);
 
                             //media upload { #efactoring }
-                            let file = "/.config/atr/scpt/t.webp";
-                            let mut f = shellexpand::tilde("~").to_string();
-                            f.push_str(&file);
-                            let token = token_toml(&"access");
-                            let atoken = "Authorization: Bearer ".to_owned() + &token;
-                            let con = "Content-Type: image/webp";
-                            let url = url(&"upload_blob");
-                            let f = "@".to_owned() + &f;
-                            let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
-                            let d = String::from_utf8_lossy(&output.stdout);
-                            let d =  d.to_string();
-                            let mid: Cid = serde_json::from_str(&d).unwrap();
-                            let mid = mid.cid;
-                            println!("{}", mid);
-                            
-                            let itype = "image/webp";
-                            let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            //let file = "/.config/atr/scpt/t.webp";
+                            //let mut f = shellexpand::tilde("~").to_string();
+                            //f.push_str(&file);
+                            //let token = token_toml(&"access");
+                            //let atoken = "Authorization: Bearer ".to_owned() + &token;
+                            //let con = "Content-Type: image/webp";
+                            //let url = url(&"upload_blob");
+                            //let f = "@".to_owned() + &f;
+                            //let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+                            //let d = String::from_utf8_lossy(&output.stdout);
+                            //let d =  d.to_string();
+                            //let mid: Cid = serde_json::from_str(&d).unwrap();
+                            //let mid = mid.cid;
+                            //println!("{}", mid);
+                            //
+                            //let itype = "image/webp";
+                            //let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            //println!("{}", str_rep);
+
+                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
 
                         } else if reason == "mention" {
                             let prompt = &vec[1..].join(" ");

@@ -8,6 +8,7 @@ pub async fn post_request(text: String, at: String, udid: String, s: i32, e: i32
 
     let token = token_toml(&"access");
     let did = token_toml(&"did");
+    let handle = token_toml(&"handle");
 
     let url = url(&"record_create");
     let col = "app.bsky.feed.post".to_string();
@@ -17,6 +18,7 @@ pub async fn post_request(text: String, at: String, udid: String, s: i32, e: i32
 
     let post = Some(json!({
         "did": did.to_string(),
+        "repo": handle.to_string(),
         "collection": col.to_string(),
         "record": {
             "text": at.to_string() + &" ".to_string() + &text.to_string(),
