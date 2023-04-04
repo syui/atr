@@ -501,7 +501,7 @@ fn tt(c: &Context) {
                 }
                 println!("uri : {}", n[i].post.uri);
                 println!("cid : {}", n[i].post.cid);
-                println!("⚡️ [{}]\t🌈 [{}]\t⭐️ [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.upvoteCount);
+                println!("⚡️ [{}]\t🌈 [{}]\t⭐️ [{}]", n[i].post.replyCount,n[i].post.replyCount, n[i].post.likeCount);
                 println!("{}", "---------");
             }
         }
@@ -1091,13 +1091,15 @@ fn bot_run(_c: &Context) {
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
                         } else if com == "/card" {
+                            let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
                             let file = "/.config/atr/scpt/api_card.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
                             use std::process::Command;
-                            let output = Command::new(&f).arg(&handle).arg("-t").output().expect("zsh");
+
+                            let output = Command::new(&f).arg(&handle).arg(&prompt).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
 
                             // test reply link
@@ -1113,36 +1115,6 @@ fn bot_run(_c: &Context) {
                             println!("{}", d);
                             let text_limit = char_c(d);
                             println!("{}", text_limit);
-
-                            //// use cid
-                            //let file = "/.config/atr/scpt/api_card.zsh";
-                            //let mut f = shellexpand::tilde("~").to_string();
-                            //f.push_str(&file);
-                            //let output = Command::new(&f).arg("-c").output().expect("zsh");
-                            //let d = String::from_utf8_lossy(&output.stdout);
-                            //let d =  d.to_string();
-                            //let mid = d;
-                            //println!("{}", mid);
-
-                            //media upload { #efactoring }
-                            //let file = "/.config/atr/scpt/t.webp";
-                            //let mut f = shellexpand::tilde("~").to_string();
-                            //f.push_str(&file);
-                            //let token = token_toml(&"access");
-                            //let atoken = "Authorization: Bearer ".to_owned() + &token;
-                            //let con = "Content-Type: image/webp";
-                            //let url = url(&"upload_blob");
-                            //let f = "@".to_owned() + &f;
-                            //let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
-                            //let d = String::from_utf8_lossy(&output.stdout);
-                            //let d =  d.to_string();
-                            //let mid: Cid = serde_json::from_str(&d).unwrap();
-                            //let mid = mid.cid;
-                            //println!("{}", mid);
-                            //
-                            //let itype = "image/webp";
-                            //let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
-                            //println!("{}", str_rep);
 
                             let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);

@@ -22,16 +22,82 @@ if [ -z "$data" ];then
 	echo $data|jq -r .username
 fi
 next=`echo $data|jq -r .next`
+uid=`echo $data|jq -r ".id"`
 
-if [ $next -gt $d ] && [ "$2" != "--thx" ];then
-	echo limit 1 day
-	echo "next : $nd"
-	t=0
-	curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
+# battle
+updated_at=`echo $data|jq -r .updated_at`
+updated_at_n=`date --iso-8601=seconds`
+updated_at=`date -d "$updated_at" +"%Y%m%d"`
+
+if [ "$2" = "-b" ];then
+	if [ $updated_at -ge $d ];then
+		echo "limit battle"
+	else
+		len=`curl -sL $url_user_all|jq length`
+		r=$(($RANDOM % $len))
+		if [ 0 -eq $r ];then
+			r=1
+		fi
+
+		data_u=`curl -sL $url/users/$uid/card`
+		#echo $data_u|jq ".[].cp"
+		nl=`echo $data_u|jq length`
+		if [ $nl -ge 3 ];then
+			rs=$(($RANDOM % 3 + 1))
+		else
+			rs=$(($RANDOM % $nl + 1))
+		fi
+		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		echo $tt | sed -n 1,3p
+		echo "---"
+		cp_i=`echo $tt |awk "NR==$rs"`
+
+		data_u=`curl -sL $url/users/$r/card`
+		#echo $data_u|jq ".[].cp"
+		nl=`echo $data_u|jq length`
+		rs=$(($RANDOM % $nl))
+		if [ $nl -ge 3 ];then
+			rs=$(($RANDOM % 3 + 1))
+		else
+			rs=$(($RANDOM % $nl + 1))
+		fi
+		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		echo id : $r
+		echo $tt | sed -n 1,3p
+		cp_b=`echo $tt |awk "NR==$rs"`
+		echo "---"
+		echo $cp_i vs $cp_b
+
+		if [ $cp_i -gt $cp_b ];then
+			echo "win!"
+		else
+			echo loss
+		fi
+
+		if [ $cp_i -gt $cp_b ];then
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid}" -s $url/cards`
+			card=`echo $tmp|jq -r .card`
+			card_url=`echo $tmp|jq -r .url`
+			cp=`echo $tmp|jq -r .cp`
+			echo card : $card
+			echo cp : $cp
+			t=`echo $tmp|jq -r .card`
+		fi
+
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\"}" -s $url/users/$uid`
+
+	fi
 	exit
 fi
 
-uid=`echo $data|jq -r ".id"`
+if [ $next -gt $d ];then
+	echo limit 1 day
+	echo "next : $nd"
+	t=0
+	#curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
+	exit
+fi
+
 tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid}" -s $url/cards`
 card=`echo $tmp|jq -r .card`
 card_url=`echo $tmp|jq -r .url`
@@ -43,5 +109,5 @@ tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -
 next=`echo $tmp|jq -r .next`
 echo next : $next
 
-f=$HOME/.config/atr/scpt/t.webp
-curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
+#f=$HOME/.config/atr/scpt/t.webp
+#curl -sL -o $f https://card.syui.ai/card/card_${t}.webp

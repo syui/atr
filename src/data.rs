@@ -263,8 +263,7 @@ pub struct Post {
     pub indexedAt: String,
     pub replyCount: i32,
     pub repostCount: i32,
-    pub upvoteCount: i32,
-    pub downvoteCount: i32,
+    pub likeCount: i32,
 }
 
 #[derive(Serialize, Deserialize)]
