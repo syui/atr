@@ -22,15 +22,20 @@ pub async fn post_request(text: String, at: String, udid: String, s: i32, e: i32
         "collection": col.to_string(),
         "record": {
             "text": at.to_string() + &" ".to_string() + &text.to_string(),
+            "$type": "app.bsky.feed.post",
             "createdAt": d.to_string(),
-            "entities": [
+            "facets": [
             {
-                "type": "mention".to_string(),
+                "$type": "app.bsky.richtext.facet",
                 "index": {
-                    "end": e,
-                    "start": s
-                },
-                "value": udid.to_string()
+                    "byteEnd": e,
+                    "byteStart": s
+                },"features": [
+                {
+                    "did": udid.to_string(),
+                    "$type": "app.bsky.richtext.facet#mention"
+                }
+                ]
             }
             ]
         },
