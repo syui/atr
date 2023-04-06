@@ -254,6 +254,11 @@ fn main() {
                     .description("count flag\n\t\t\t$ atr t -j")
                     .alias("j"),
                     )
+                .flag(
+                    Flag::new("latest", FlagType::Bool)
+                    .description("count flag\n\t\t\t$ atr t -l")
+                    .alias("l"),
+                    )
                 )
             .command(
                 Command::new("media")
@@ -434,6 +439,7 @@ async fn aa() -> reqwest::Result<()> {
         .await?;
     let j = Json::from_str(&res).unwrap();
     let j = j.to_string();
+    //println!("{}", j);
     let mut f = fs::File::create(f).unwrap();
     if j != "" {
         f.write_all(&j.as_bytes()).unwrap();

@@ -1,4 +1,4 @@
-`art` is cli clietn for at written in rust.
+`art` is cli client for at written in rust.
 
 [download](https://github.com/syui/atr/releases)
 

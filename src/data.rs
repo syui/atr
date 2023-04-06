@@ -216,7 +216,7 @@ pub struct Author {
     pub did: String,
     //pub declaration: Declaration,
     pub description: Option<String>,
-    pub displayName: String,
+    pub displayName: Option<String>,
     pub handle: String,
     pub avatar: Option<String>,
     pub viewer: Viewer

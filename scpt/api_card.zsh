@@ -11,14 +11,14 @@ username=`echo $1|cut -d . -f 1`
 url=https://api.syui.ai
 url_user_all="$url/users?itemsPerPage=255"
 f=$HOME/.config/atr/scpt/t.webp
-
+pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 if [ -z "$1" ];then
 	exit
 fi
 
 data=`curl -sL $url_user_all|jq ".[]|select(.username == \"$username\")"`
 if [ -z "$data" ];then
-	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\"}" -s $url/users`
+	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\"}" -s $url/users`
 	echo $data|jq -r .username
 fi
 next=`echo $data|jq -r .next`
@@ -75,7 +75,7 @@ if [ "$2" = "-b" ];then
 		fi
 
 		if [ $cp_i -gt $cp_b ];then
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid}" -s $url/cards`
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
 			cp=`echo $tmp|jq -r .cp`
@@ -98,7 +98,7 @@ if [ $next -gt $d ];then
 	exit
 fi
 
-tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid}" -s $url/cards`
+tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 card=`echo $tmp|jq -r .card`
 card_url=`echo $tmp|jq -r .url`
 cp=`echo $tmp|jq -r .cp`

@@ -2,7 +2,7 @@
 name = "atr"
 description = "at client in rust"
 version = "0.0.1"
-authors = ["syui <syui@syui.cf>"]
+authors = ["syui <syui@syui.ai>"]
 edition = "2021"
 
 [dependencies]

@@ -13,9 +13,11 @@ else
 fi
 
 curl -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $token" $url | jq . >! $dd/profile.json
+cat $dd/profile.json
 
 url=$base/app.bsky.feed.getTimeline
 curl -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $token" $url | jq . >! $dd/timeline.json
+cat $dd/timeline.json
 
 url=$base/app.bsky.notification.listNotifications
 curl -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $token" $url | jq . >! $dd/notify.json
