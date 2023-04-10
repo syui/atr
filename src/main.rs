@@ -1122,10 +1122,12 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             println!("{}", text_limit);
 
-                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                            println!("{}", str_rep);
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
 
                         } else if reason == "mention" {
                             let prompt = &vec[1..].join(" ");

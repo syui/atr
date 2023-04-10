@@ -26,12 +26,19 @@ uid=`echo $data|jq -r ".id"`
 
 # battle
 updated_at=`echo $data|jq -r .updated_at`
+updated_at_m=`date -d "$updated_at" +"%H%M"`
 updated_at_n=`date --iso-8601=seconds`
 updated_at=`date -d "$updated_at" +"%Y%m%d"`
+day_m=`date +"%H%M"`
 
 if [ "$2" = "-b" ];then
 	if [ $updated_at -ge $d ];then
-		echo "limit battle"
+		if [ "$updated_at" = "$d" ] && [ "$updated_at_m" = "$day_m" ];then
+			exit
+		else
+			echo "limit battle"
+			exit
+		fi
 	else
 		len=`curl -sL $url_user_all|jq length`
 		r=$(($RANDOM % $len))
@@ -91,11 +98,13 @@ if [ "$2" = "-b" ];then
 fi
 
 if [ $next -gt $d ];then
-	echo limit 1 day
-	echo "next : $nd"
-	t=0
-	#curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
-	exit
+	if [ "$updated_at" = "$d" ] && [ "$updated_at_m" = "$day_m" ];then
+		exit
+	else
+		echo limit 1 day
+		echo "next : $nd"
+		exit
+	fi
 fi
 
 tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
