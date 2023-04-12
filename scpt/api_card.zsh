@@ -30,10 +30,12 @@ updated_at_m=`date -d "$updated_at" +"%H%M"`
 updated_at_n=`date --iso-8601=seconds`
 updated_at=`date -d "$updated_at" +"%Y%m%d"`
 day_m=`date +"%H%M"`
+day_mm=`date +"%H%M" -d "-1 min"`
+day_mmm=`date +"%H%M" -d "-2 min"`
 
 if [ "$2" = "-b" ];then
 	if [ $updated_at -ge $d ];then
-		if [ "$updated_at" = "$d" ] && [ "$updated_at_m" = "$day_m" ];then
+		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 			exit
 		else
 			echo "limit battle"
@@ -98,7 +100,7 @@ if [ "$2" = "-b" ];then
 fi
 
 if [ $next -gt $d ];then
-	if [ "$updated_at" = "$d" ] && [ "$updated_at_m" = "$day_m" ];then
+	if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 		exit
 	else
 		echo limit 1 day
