@@ -427,7 +427,7 @@ async fn aa() -> reqwest::Result<()> {
 
     let url = url(&"session_create");
     //map.insert("did", &did);
-    map.insert("handle", &handle);
+    map.insert("identifier", &handle);
     map.insert("password", &pass);
     let client = reqwest::Client::new();
     let res = client

@@ -8,7 +8,7 @@ handle=`cat ~/.config/atr/config.json|jq -r .user`
 pass=`cat ~/.config/atr/config.json|jq -r .pass`
 f=~/.config/atr/token.json
 
-curl -X POST -H "Content-Type: application/json" -d "{\"handle\":\"$handle\",\"password\":\"$pass\"}" https://$host/xrpc/com.atproto.server.createSession | jq . >! $f
+curl -X POST -H "Content-Type: application/json" -d "{\"identifier\":\"$handle\",\"password\":\"$pass\"}" https://$host/xrpc/com.atproto.server.createSession | jq . >! $f
 cat $f
 
 if [ "$1" = "-a" ];then
