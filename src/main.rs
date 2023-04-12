@@ -997,7 +997,7 @@ fn bot_run(_c: &Context) {
                     }
                     if vec.len() > 1 {
                         let com = vec[1].trim().to_string();
-                        if com == "/chat"  && { handle == "syui.bsky.social" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                        if com == "/chat"  && { handle == "syui.bsky.social" } {
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
                             println!("cid:{}, uri:{}", cid, uri);
@@ -1010,7 +1010,7 @@ fn bot_run(_c: &Context) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
-                        } else if com == "/deepl" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                        } else if com == "/deepl" && { handle == "syui.bsky.social" } {
                             let lang = &vec[2].to_string();
                             let prompt = &vec[3..].join(" ");
                             println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
@@ -1042,7 +1042,7 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
-                        } else if com == "/diffusion" && { handle == "syui.cf" || handle == "jik.wtf" || handle == "kappa.seijin.jp" } {
+                        } else if com == "/diffusion" && { handle == "syui.bsky.social" } {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
 
