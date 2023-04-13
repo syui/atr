@@ -973,6 +973,7 @@ fn bot_run(_c: &Context) {
         for i in 0..*length {
             let reason = &n[i].reason;
             let handle = &n[i].author.handle;
+            let did = &n[i].author.did;
             let read = n[i].isRead;
             if read == false && { reason == "mention" || reason == "reply" } {
                 let time = &n[i].indexedAt;
@@ -1105,7 +1106,7 @@ fn bot_run(_c: &Context) {
                             f.push_str(&file);
                             use std::process::Command;
 
-                            let output = Command::new(&f).arg(&handle).arg(&prompt).output().expect("zsh");
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
 
                             // test reply link
