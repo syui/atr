@@ -1097,6 +1097,36 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                        } else if com == "date" {
+                            let d = Timestamp::now_utc();
+                            let d = "utc ".to_owned() + &d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
+                        } else if com == "did" {
+                            let link = "https://plc.directory/".to_owned() + &did;
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+
+                            let d = "\n".to_owned() + &did.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
                         } else if com == "/card" {
                             let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
