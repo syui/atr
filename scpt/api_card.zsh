@@ -138,15 +138,26 @@ if [ "$3" = "ai" ];then
 		exit
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":2,\"password\":\"$pass\"}" -s $url/cards`
-	echo "thx! $username"
-	echo https://card.syui.ai/ai
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+	echo "\nthx! $username"
+	echo "\n"
+	echo "
+          .
+        =%:
+    -##*%#:
+   -%=  .*%.
+   =%    -%:
+   *%*:.:#%=
+ .+##=*###+.
+"
 	card=`echo $tmp|jq -r .card`
 	card_url=`echo $tmp|jq -r .url`
 	cp=`echo $tmp|jq -r .cp`
-	echo card : $card
-	echo cp : $cp
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+	echo "\nhttps://card.syui.ai/ai"
 	t=`echo $tmp|jq -r .card`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -s $url/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -s $url/users/2`
 	exit
 fi
 
