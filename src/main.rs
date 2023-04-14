@@ -964,7 +964,7 @@ pub fn char_c(i: String) -> String {
 }
 
 fn bot_run(_c: &Context) {
-    let limit = 10;
+    let limit = 3;
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
