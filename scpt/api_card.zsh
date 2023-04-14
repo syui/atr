@@ -7,7 +7,7 @@ case $OSTYPE in
 esac
 
 function l_cards() {
-	data_card=`curl -sL "$url/users/$old_id/card?itemsPerPage=255"`
+	data_card=`curl -sL "$url/users/$old_id/card?itemsPerPage=2000"`
 	nn=`echo $data_card|jq length`
 	nn=$((nn - 1))
 	for ((ii=0;ii<=$nn;ii++))
@@ -24,7 +24,7 @@ nd=`date +"%Y%m%d" -d '1 day'`
 username=`echo $1|cut -d . -f 1`
 #username=$1
 url=https://api.syui.ai
-url_user_all="$url/users?itemsPerPage=255"
+url_user_all="$url/users?itemsPerPage=2000"
 f=$HOME/.config/atr/scpt/t.webp
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 if [ -z "$1" ];then
