@@ -63,6 +63,15 @@ function plc(){
 	fi
 }
 
+function first(){
+	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value"
+}
+
+if [ "$2" = "-f" ];then
+	first $1
+	exit
+fi
+
 if [ "$2" = "-l" ];then
 	mfile
 	cat $file
