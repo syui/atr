@@ -964,7 +964,7 @@ pub fn char_c(i: String) -> String {
 }
 
 fn bot_run(_c: &Context) {
-    let limit = 3;
+    let limit = 7;
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
@@ -1123,6 +1123,48 @@ fn bot_run(_c: &Context) {
 
                             if text_limit.len() > 3 {
                                 let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
+                        } else if com == "user" {
+                            let prompt = &vec[2..].join(" ");
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/user_list.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+
+                            let output = Command::new(&f).arg(&handle).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d = "\n".to_owned() + &d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
+                        } else if com == "bot" {
+                            let prompt = &vec[2..].join(" ");
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/bot_list.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+
+                            let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d = "\n".to_owned() + &d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
