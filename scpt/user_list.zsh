@@ -64,6 +64,7 @@ function plc(){
 }
 
 function first(){
+	#https://bsky.app/profile/$1/post/$e
 	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value"
 }
 

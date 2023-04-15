@@ -1097,7 +1097,7 @@ fn bot_run(_c: &Context) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
-                        } else if com == "date" {
+                        } else if com == "date" || com == "/date" {
                             let d = Timestamp::now_utc();
                             let d = "utc ".to_owned() + &d.to_string();
                             println!("{}", d);
@@ -1109,7 +1109,7 @@ fn bot_run(_c: &Context) {
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                             }
-                        } else if com == "did" {
+                        } else if com == "did" || com == "/did" {
                             let link = "https://plc.directory/".to_owned() + &did;
                             let s = 0;
                             let e = link.chars().count();
@@ -1127,7 +1127,7 @@ fn bot_run(_c: &Context) {
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                             }
-                        } else if com == "user" {
+                        } else if com == "user" || com == "/user" {
                             let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
@@ -1148,7 +1148,7 @@ fn bot_run(_c: &Context) {
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                             }
-                        } else if com == "bot" {
+                        } else if com == "bot" || com == "/bot" {
                             let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
@@ -1169,7 +1169,7 @@ fn bot_run(_c: &Context) {
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                             }
-                        } else if com == "/card" {
+                        } else if com == "card" || com == "/card" {
                             let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
