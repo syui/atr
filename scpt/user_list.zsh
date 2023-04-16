@@ -6,6 +6,17 @@ url=https://plc.directory
 url_at=https://$host_at/xrpc/com.atproto.repo.listRecords
 dir=$HOME/.config/atr/txt
 file=$dir/user_list.txt
+
+
+dir_git_card_page=$HOME/git/card.syui.ai
+file_fanart=$dir_git_card_page/public/json/fanart.json
+
+if [ ! -d $dir_git_card_page ];then
+	mkdir -p $dir_git_card_page
+	cd $HOME/git
+	git clone https://github.com/syui/card.syui.ai
+fi
+
 unset timed
 
 case $OSTYPE in
@@ -63,7 +74,39 @@ function plc(){
 	fi
 }
 
+function fan_art(){
+	if ! echo $3|grep "https://bsky.app/profile/">/dev/null 2>&1;then
+		echo "please url : https://bsky.app/profile/$1/post/xxx"
+		exit
+	fi
+
+	if [ -z "$4" ];then
+		echo "please img-url : https://example.com/img.png"
+		exit
+	fi
+
+	img=$4
+	author=`echo $3|cut -d / -f 5`
+	cd $dir_git_card_page
+	cat $file_fanart|jq ".+ {\"add\":\"$1\",\"link\":\"$3\",\"author\":\"$author\",\"img\":\"$img\"}" >! $file_fanart.back
+	if cat $file_fanart|jq . ;then
+		mv $file_fanart.back $file_fanart
+		git add $file_fanart
+		git commit -m  "add fanart"
+		git push -u orgin main
+	fi
+}
+
+if [ "$2" = "--url" ];then
+	if [ -z "$3" ];then
+		exit
+	fi
+	fan_art $3
+	exit
+fi
+
 function first(){
+
 	#https://bsky.app/profile/$1/post/$e
 	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value"
 }

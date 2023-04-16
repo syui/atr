@@ -1127,6 +1127,36 @@ fn bot_run(_c: &Context) {
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                             }
+                        } else if com == "fa" || com == "/fa" {
+                            let prompt = &vec[2].to_string();
+                            let prompt_img = &vec[3].to_string();
+                            let prompt_img = "'".to_owned() + &prompt_img.to_string() + &"'".to_string();
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/fan_art.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+
+                            let output = Command::new(&f).arg(&handle).arg(&prompt).arg(&prompt_img).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d = "\n".to_owned() + &d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+
+                            let link = "https://card.syui.ai/".to_owned() + &"fanart";
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
                         } else if com == "user" || com == "/user" {
                             let prompt = &vec[2..].join(" ");
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
