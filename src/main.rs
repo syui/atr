@@ -1138,7 +1138,7 @@ fn bot_run(_c: &Context) {
                             f.push_str(&file);
                             use std::process::Command;
 
-                            let output = Command::new(&f).arg(&handle).arg(&prompt).arg(&prompt_img).output().expect("zsh");
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).arg(&prompt_img).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
                             let d = "\n".to_owned() + &d.to_string();
                             println!("{}", d);

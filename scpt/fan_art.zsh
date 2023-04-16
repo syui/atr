@@ -19,44 +19,74 @@ else
 fi
 
 file_fanart=$dir_git_card_page/public/json/fanart.json
-
-created_at=`date --iso-8601=seconds`
-
 case $OSTYPE in
 	darwin*)
 		alias date="/opt/homebrew/bin/gdate"
 		;;
 esac
+created_at=`date --iso-8601=seconds`
 
 #if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ];then
 #	exit
 #fi
+
+function fan_art_search() {
+	k="aifanart"
+	url="search.bsky.social/search/posts?q="
+	t=`curl -sL "${url}${k}"|jq ".[]|select(.post.text == \"$k\")"`
+	#n=`curl -sL "${url}${k}"|jq length`
+	n=$((n - 1))
+	for ((i=0;i<=$n;i++))
+	do
+		did=`curl -sL "${url}${k}"|jq -r ".[$i]|.user.did"`
+		handle=`curl -sL https://plc.directory/$did|jq -r ".alsoKnownAs|.[]"|cut -d / -f 3-`
+		if [ -z "$handle" ];then
+			continue
+		fi
+		tid=`curl -sL "${url}${k}"|jq -r ".[$i]|.tid"|cut -d / -f 2`
+		http=https://staging.bsky.app/profile/$handle/post/$tid
+		echo $http
+	done
+}
+
+if [ "$1" = "-s" ];then
+	fan_art_search
+	exit
+fi
 
 if ! echo $1|grep "." >/dev/null 2>&1;then
 	echo "ex : user syui.bsky.social"
 	exit
 fi
 
-if [ "$2" = "-l" ];then
+if ! echo $2|grep "did:plc:" >/dev/null 2>&1;then
+	echo "ex : user did"
+	exit
+fi
+
+if [ "$3" = "-l" ];then
 	curl -sL card.syui.ai/json/fanart.json|jq -r ".[]|.author, .link"
 	exit
 fi
 
-if ! echo $2|grep "bsky.app/profile/">/dev/null 2>&1;then
+if ! echo $3|grep "bsky.app/profile/">/dev/null 2>&1;then
 	echo "please url : bsky.app/profile/$1/post/xxx"
 	exit
 fi
 
-if ! echo $3|grep "https://cdn.bsky.social/imgproxy/">/dev/null 2>&1;then
+if ! echo $4|grep "https://cdn.bsky.social/imgproxy/">/dev/null 2>&1;then
 	echo "please url : cdn.bsky.social/imgproxy"
 	exit
 fi
 
 function fan_art(){
-	img=`echo $3|tr -d "'"`
-	author=`echo $2|cut -d / -f 5`
+	add=$1
+	did=$2
+	link=$3
+	img=`echo $4|tr -d "'"`
+	author=`echo $3|cut -d / -f 5`
 	cd $dir_git_card_page
-	echo `cat $file_fanart` "[{\"add\":\"$1\",\"link\":\"$2\",\"author\":\"$author\",\"img\":\"$img\",\"created_at\":\"$created_at\"}]" | jq -s add >! $file_fanart.back
+	echo `cat $file_fanart` "[{\"add\":\"$add\",\"link\":\"$link\",\"author\":\"$author\",\"img\":\"$img\",\"created_at\":\"$created_at\",\"did\":\"$did\"}]" | jq -s add >! $file_fanart.back
 	if cat $file_fanart.back|jq . >/dev/null 2>&1;then
 		mv $file_fanart.back $file_fanart
 		git add $file_fanart
