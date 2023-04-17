@@ -138,7 +138,26 @@ if [ "$3" = "ai" ];then
 		exit
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":2,\"password\":\"$pass\"}" -s $url/cards`
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+	## ai card plus
+	#tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+	card=`echo $(($RANDOM % 15))`
+	cp=`echo $(($RANDOM % 300))`
+	cp=$((cp + 50))
+	s=$(($RANDOM % 2))
+	if [ $status -eq 1 ];then
+		s=super
+		plus=$(($RANDOM % 500))
+		cp=$((cp + plus))
+	else
+		s=normal
+	fi
+	if [ $card -eq 13 ];then
+		plus=$(($RANDOM % 1000))
+		cp=$((cp + plus))
+	fi
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+	## ai card plus
+	
 	echo "\nthx! $username"
 	echo "\n"
 	echo "
