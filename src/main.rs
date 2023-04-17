@@ -348,6 +348,11 @@ fn main() {
                 .description("bot\n\t\t\t$ atr bot")
                 .alias("b")
                 .action(bot)
+                .flag(
+                    Flag::new("limit", FlagType::Int)
+                    .description("nofity limit")
+                    .alias("l"),
+                    )
                 )
             .command(
                 Command::new("test")
@@ -963,8 +968,7 @@ pub fn char_c(i: String) -> String {
     return s
 }
 
-fn bot_run(_c: &Context) {
-    let limit = 7;
+fn bot_run(_c: &Context, limit: i32) {
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
@@ -1257,7 +1261,12 @@ fn bot_run(_c: &Context) {
 
 fn bot(c: &Context) {
     aa().unwrap();
-    bot_run(c);
+    if let Ok(limit) = c.int_flag("limit") {
+        let l: i32 = limit.try_into().unwrap();
+        bot_run(c,l);
+    } else {
+        bot_run(c,7);
+    }
 }
 
 // atr test
