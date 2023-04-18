@@ -15,7 +15,7 @@ if [ ! -d $dir_git_card_page ];then
 	git clone https://github.com/syui/card.syui.ai
 else
 	cd $dir_git_card_page
-	git pull
+	t=`git pull`
 fi
 
 file_fanart=$dir_git_card_page/public/json/fanart.json
@@ -86,6 +86,11 @@ function fan_art(){
 	img=`echo $4|tr -d "'"`
 	author=`echo $3|cut -d / -f 5`
 	cd $dir_git_card_page
+	check_null=`cat $file_fanart|jq ".[]|select(.img == \"$img\")"`
+	if [ -n "$check_null" ];then
+		echo registered
+		exit
+	fi
 	echo `cat $file_fanart` "[{\"add\":\"$add\",\"link\":\"$link\",\"author\":\"$author\",\"img\":\"$img\",\"created_at\":\"$created_at\",\"did\":\"$did\"}]" | jq -s add >! $file_fanart.back
 	if cat $file_fanart.back|jq . >/dev/null 2>&1;then
 		mv $file_fanart.back $file_fanart
