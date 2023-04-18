@@ -119,7 +119,7 @@ function first_created(){
 }
 
 first_created $1
-#for ((i=0;i<=20;i++))
+#for ((i=0;i<=300;i++))
 #do
 #	if [ $i -eq 0 ];then
 #		timed="1970-01-01"

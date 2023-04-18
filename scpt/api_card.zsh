@@ -27,6 +27,7 @@ url=https://api.syui.ai
 url_user_all="$url/users?itemsPerPage=2000"
 f=$HOME/.config/atr/scpt/t.webp
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
+token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 if [ -z "$1" ];then
 	exit
 fi
@@ -124,7 +125,7 @@ if [ "$3" = "-b" ];then
 			t=`echo $tmp|jq -r .card`
 		fi
 
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\"}" -s $url/users/$uid`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 
 	fi
 	exit
@@ -176,7 +177,7 @@ if [ "$3" = "ai" ];then
 	echo "cp : ${cp}"
 	echo "\nhttps://card.syui.ai/ai"
 	t=`echo $tmp|jq -r .card`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -s $url/users/2`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/2`
 	exit
 fi
 
@@ -197,7 +198,7 @@ cp=`echo $tmp|jq -r .cp`
 echo id : $card
 echo cp : $cp
 t=`echo $tmp|jq -r .card`
-tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\"}" -s $url/users/$uid`
+tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
 #next=`echo $tmp|jq -r .next`
 #echo next : $next
 
