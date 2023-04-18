@@ -8,15 +8,6 @@ dir=$HOME/.config/atr/txt
 file=$dir/user_list.txt
 
 
-dir_git_card_page=$HOME/git/card.syui.ai
-file_fanart=$dir_git_card_page/public/json/fanart.json
-
-if [ ! -d $dir_git_card_page ];then
-	mkdir -p $dir_git_card_page
-	cd $HOME/git
-	git clone https://github.com/syui/card.syui.ai
-fi
-
 unset timed
 
 case $OSTYPE in
@@ -106,7 +97,6 @@ if [ "$2" = "--url" ];then
 fi
 
 function first(){
-
 	#https://bsky.app/profile/$1/post/$e
 	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value"
 }
@@ -122,11 +112,18 @@ if [ "$2" = "-l" ];then
 	exit
 fi
 
-for ((i=0;i<=20;i++))
-do
-	if [ $i -eq 0 ];then
-		timed="1970-01-01"
-	fi
-	plc $1
-	timed=`echo $json_tmp|jq -r .createdAt|tail -n 1`
-done
+function first_created(){
+	#https://bsky.app/profile/$1/post/$e
+	#curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.createdAt"
+	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.value.createdAt"
+}
+
+first_created $1
+#for ((i=0;i<=20;i++))
+#do
+#	if [ $i -eq 0 ];then
+#		timed="1970-01-01"
+#	fi
+#	plc $1
+#	timed=`echo $json_tmp|jq -r .createdAt|tail -n 1`
+#done
