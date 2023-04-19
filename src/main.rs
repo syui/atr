@@ -353,6 +353,11 @@ fn main() {
                     .description("nofity limit")
                     .alias("l"),
                     )
+                .flag(
+                    Flag::new("admin", FlagType::String)
+                    .description("set admin")
+                    .alias("a"),
+                    )
                 )
             .command(
                 Command::new("test")
@@ -968,7 +973,7 @@ pub fn char_c(i: String) -> String {
     return s
 }
 
-fn bot_run(_c: &Context, limit: i32) {
+fn bot_run(_c: &Context, limit: i32, admin: String) {
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
@@ -1002,7 +1007,7 @@ fn bot_run(_c: &Context, limit: i32) {
                     }
                     if vec.len() > 1 {
                         let com = vec[1].trim().to_string();
-                        if com == "/chat"  && { handle == "syui.bsky.social" } {
+                        if com == "/chat"  && { handle == &admin } {
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
                             println!("cid:{}, uri:{}", cid, uri);
@@ -1015,7 +1020,7 @@ fn bot_run(_c: &Context, limit: i32) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
-                        } else if com == "/deepl" && { handle == "syui.bsky.social" } {
+                        } else if com == "/deepl" && { handle == &admin } {
                             let lang = &vec[2].to_string();
                             let prompt = &vec[3..].join(" ");
                             println!("cmd:{}, lang:{}, prompt:{}", com, lang, prompt);
@@ -1028,7 +1033,7 @@ fn bot_run(_c: &Context, limit: i32) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
-                        } else if com == "/sh" && handle == "syui.bsky.social" {
+                        } else if com == "/sh" && handle == &admin {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
 
@@ -1047,7 +1052,7 @@ fn bot_run(_c: &Context, limit: i32) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
-                        } else if com == "/diffusion" && { handle == "syui.bsky.social" } {
+                        } else if com == "/diffusion" && { handle == &admin } {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
 
@@ -1261,11 +1266,16 @@ fn bot_run(_c: &Context, limit: i32) {
 
 fn bot(c: &Context) {
     aa().unwrap();
+    let admin = "syui.ai".to_string();
     if let Ok(limit) = c.int_flag("limit") {
         let l: i32 = limit.try_into().unwrap();
-        bot_run(c,l);
+        if let Ok(admin) = c.string_flag("admin") {
+            bot_run(c,l,admin);
+        } else {
+            bot_run(c,l,admin);
+        }
     } else {
-        bot_run(c,7);
+        bot_run(c,7, admin);
     }
 }
 
