@@ -49,7 +49,7 @@ if [ -z "$data" ];then
 	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s $url/users`
 	echo $data|jq -r .username
 	if [ -n "$data_did" ];then
-		uid=`echo $data|jq -r ".id"`
+		uid=`echo $data|jq -r ".id"|tail -n 1`
 		l_cards
 	fi
 fi
