@@ -42,6 +42,8 @@ pub mod at_profile;
 pub mod at_mention;
 pub mod at_timeline;
 pub mod at_handle_update;
+pub mod at_like;
+pub mod at_repost;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -154,6 +156,28 @@ fn main() {
                 Flag::new("profile", FlagType::String)
                 .description("user flag(ex: $ atr s -p user)")
                 .alias("p"),
+                )
+            )
+        .command(
+            Command::new("like")
+            .usage("atr like")
+            .description("like post\n\t\t\t$ atr like\n\t\t\t$ atr like subject")
+            .action(like)
+            .flag(
+                Flag::new("uri", FlagType::String)
+                .description("uri(ex: $ atr like <cid> -u <uri>)")
+                .alias("u"),
+                )
+            )
+        .command(
+            Command::new("repost")
+            .usage("atr repost")
+            .description("repost\n\t\t\t$ atr repost\n\t\t\t$ atr repost subject")
+            .action(repost)
+            .flag(
+                Flag::new("uri", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                .alias("u"),
                 )
             )
         .command(
@@ -489,6 +513,40 @@ fn pp(c: &Context) {
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
+}
+
+fn like_c(c: &Context) {
+    let m = c.args[0].to_string();
+    let h = async {
+        if let Ok(uri) = c.string_flag("uri") {
+            let str = at_like::post_request(m.to_string(), uri);
+            println!("{}",str.await);
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn like(c: &Context) {
+    aa().unwrap();
+    like_c(c);
+}
+
+fn repost_c(c: &Context) {
+    let m = c.args[0].to_string();
+    let h = async {
+        if let Ok(uri) = c.string_flag("uri") {
+            let str = at_repost::post_request(m.to_string(), uri);
+            println!("{}",str.await);
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn repost(c: &Context) {
+    aa().unwrap();
+    repost_c(c);
 }
 
 fn tt(c: &Context) {
@@ -1395,4 +1453,6 @@ fn test(_c: &Context) {
     };
     tokio::runtime::Runtime::new().unwrap().block_on(h);
 }
+
+
 

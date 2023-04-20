@@ -69,6 +69,15 @@ $ atr m ~/test.png
 ```
 
 ```sh
+# like
+## atr like $cid -u $uri
+$ atr like bafyreieb7cbrjg646h65yaufv6fkzytg4iqff2n7p6ge2kcwmm7jzgowde -u "at://did:plc:a6sw7vngvr3qyqb4vgaxnmp5/app.bsky.feed.post/3jtsgga3nxx2z"
+
+# repost
+$ atr repost bafyreieb7cbrjg646h65yaufv6fkzytg4iqff2n7p6ge2kcwmm7jzgowde -u "at://did:plc:a6sw7vngvr3qyqb4vgaxnmp5/app.bsky.feed.post/3jtsgga3nxx2z"
+```
+
+```sh
 # custom handle
 $ atr h te.bsky.social
 $ vim ~/.config/atr/config.toml
