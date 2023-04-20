@@ -11,7 +11,7 @@ pub async fn post_request(cid: String, uri: String) -> String {
     let handle = token_toml(&"handle");
 
     let url = url(&"record_create");
-    let col = "app.bsky.feed.like".to_string();
+    let col = "app.bsky.feed.repost".to_string();
 
     let d = Timestamp::now_utc();
     let d = d.to_string();
