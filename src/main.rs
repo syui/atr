@@ -254,6 +254,11 @@ fn main() {
                     .description("cid flag(ex: $ atr r -u -c)")
                     .alias("c"),
                     )
+                .flag(
+                    Flag::new("link", FlagType::String)
+                    .description("link flag(ex: $ atr r $text -u $uri -c $cid -l $link)")
+                    .alias("l"),
+                    )
                 )
             .command(
                 Command::new("mention")
@@ -914,9 +919,16 @@ fn rr(c: &Context) {
     let h = async {
         if let Ok(cid) = c.string_flag("cid") {
             if let Ok(uri) = c.string_flag("uri") {
-                let str = at_reply::post_request(m.to_string(), cid.to_string(), uri.to_string()).await;
-                println!("{}", str);
-            }
+                if let Ok(link) = c.string_flag("link") {
+                    let s = 0;
+                    let e = link.chars().count();
+                    let str = at_reply_link::post_request(m.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                    println!("{}", str);
+                } else {
+                    let str = at_reply::post_request(m.to_string(), cid.to_string(), uri.to_string()).await;
+                    println!("{}", str);
+                }
+            } 
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
