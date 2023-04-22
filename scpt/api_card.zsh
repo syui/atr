@@ -153,12 +153,16 @@ if [ "$3" = "ai" ];then
 		s=normal
 	fi
 	if [ $card -eq 13 ];then
-		plus=$(($RANDOM % 1700))
+		plus=$(($RANDOM % 1200))
 		cp=$((cp + plus))
+		if [ "$s" = "super" ];then
+			plus=$(($RANDOM % 800))
+			cp=$((cp + plus))
+		fi
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 	## ai card plus
-	
+
 	echo "\nthx! $username"
 	echo "\n"
 	echo "
