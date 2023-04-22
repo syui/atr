@@ -402,7 +402,7 @@ fn main() {
 async fn at_user(url: String,user :String) -> reqwest::Result<()> {
     let client = reqwest::Client::new();
     let body = client.get(url)
-        .query(&[("user", &user)])
+        .query(&[("repo", &user)])
         .send()
         .await?
         .text()

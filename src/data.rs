@@ -142,7 +142,7 @@ pub fn url(s: &str) -> String {
     let baseurl = BaseUrl {
         profile_get: "app.bsky.actor.getProfile".to_string(),
         record_create: "com.atproto.repo.createRecord".to_string(),
-        describe: "com.atproto.repo.describe".to_string(),
+        describe: "com.atproto.repo.describeRepo".to_string(),
         record_list: "com.atproto.repo.listRecords".to_string(),
         session_create: "com.atproto.server.createSession".to_string(),
         timeline_get: "app.bsky.feed.getTimeline".to_string(),
