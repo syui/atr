@@ -4,23 +4,26 @@ use crate::url;
 use serde_json::json;
 use iso8601_timestamp::Timestamp;
 
-pub async fn post_request(cid: String, did: String) -> String {
+pub async fn post_request(u: String) -> String {
 
     let token = token_toml(&"access");
     let did = token_toml(&"did");
+    let handle = token_toml(&"handle");
 
-    let url = url(&"follow");
-    let col = "app.bsky.feed.post".to_string();
+    let url = url(&"record_create");
+    let col = "app.bsky.graph.follow".to_string();
 
     let d = Timestamp::now_utc();
     let d = d.to_string();
 
     let post = Some(json!({
-        createdAt: d,
-        subject: {
-            "did": did.to_string(),
-            "DeclarationCid": cid.to_string()
-        }
+        "repo": handle.to_string(),
+        "did": did.to_string(),
+        "collection": col.to_string(),
+        "record": {
+            "subject": u.to_string(),
+            "createdAt": d.to_string(),
+        },
     }));
 
     let client = reqwest::Client::new();

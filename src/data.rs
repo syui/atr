@@ -125,9 +125,11 @@ pub struct BaseUrl {
     pub notify_list: String,
     pub notify_update: String,
     pub repo_update: String,
-    pub follow: String,
     pub like: String,
     pub repost: String,
+    pub follow: String,
+    pub follows: String,
+    pub followers: String,
 }
 
 pub fn url(s: &str) -> String {
@@ -148,6 +150,9 @@ pub fn url(s: &str) -> String {
         timeline_get: "app.bsky.feed.getTimeline".to_string(),
         like: "app.bsky.feed.like".to_string(),
         repost: "app.bsky.feed.repost".to_string(),
+        follow: "app.bsky.graph.follow".to_string(),
+        follows: "app.bsky.graph.getFollows".to_string(),
+        followers: "app.bsky.graph.getFollowers".to_string(),
         upload_blob: "com.atproto.repo.uploadBlob".to_string(),
         account_create: "com.atproto.server.createAccount".to_string(),
         update_handle: "com.atproto.identity.updateHandle".to_string(),
@@ -155,7 +160,6 @@ pub fn url(s: &str) -> String {
         notify_list: "app.bsky.notification.listNotifications".to_string(),
         notify_update: "app.bsky.notification.updateSeen".to_string(),
         repo_update: "com.atproto.sync.updateRepo".to_string(),
-        follow: "app.bsky.graph.follow".to_string(),
     };
 
     match &*s {
@@ -172,9 +176,11 @@ pub fn url(s: &str) -> String {
         "notify_count" => t.to_string() + &baseurl.notify_count,
         "notify_update" => t.to_string() + &baseurl.notify_update,
         "repo_update" => t.to_string() + &baseurl.repo_update,
-        "follow" => t.to_string() + &baseurl.follow,
         "like" => t.to_string() + &baseurl.like,
         "repost" => t.to_string() + &baseurl.repost,
+        "follow" => t.to_string() + &baseurl.follow,
+        "follows" => t.to_string() + &baseurl.follows,
+        "followers" => t.to_string() + &baseurl.followers,
         _ => s,
     }
 }

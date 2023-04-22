@@ -44,6 +44,9 @@ pub mod at_timeline;
 pub mod at_handle_update;
 pub mod at_like;
 pub mod at_repost;
+pub mod at_follow;
+pub mod at_follows;
+pub mod at_followers;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -288,6 +291,27 @@ fn main() {
                     .description("count flag\n\t\t\t$ atr t -l")
                     .alias("l"),
                     )
+                )
+            .command(
+                Command::new("follow")
+                .usage("atr follow")
+                .description("follow\n\t\t\t$ atr follow did")
+                .action(follow)
+                .flag(
+                    Flag::new("s", FlagType::Bool)
+                    .description("follows\n\t\t\t$ atr follow -s")
+                    .alias("s"),
+                    )
+                .flag(
+                    Flag::new("w", FlagType::Bool)
+                    .description("followers\n\t\t\t$ atr follow -w")
+                    .alias("w"),
+                    )
+                //.flag(
+                //    Flag::new("all", FlagType::Bool)
+                //    .description("followback and unfollow\n\t\t\t$ atr follow -a")
+                //    .alias("a"),
+                //    )
                 )
             .command(
                 Command::new("media")
@@ -552,6 +576,47 @@ fn repost_c(c: &Context) {
 fn repost(c: &Context) {
     aa().unwrap();
     repost_c(c);
+}
+
+fn follow_c(c: &Context) {
+    let m = c.args[0].to_string();
+    let h = async {
+        let str = at_follow::post_request(m.to_string());
+        println!("{}",str.await);
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn follows_c(_c: &Context) {
+    let h = async {
+        let handle = cfg(&"user");
+        let str = at_follows::get_request(handle);
+        println!("{}",str.await);
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+} 
+
+fn followers_c(_c: &Context) {
+    let h = async {
+        let handle = cfg(&"user");
+        let str = at_followers::get_request(handle);
+        println!("{}",str.await);
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+} 
+
+fn follow(c: &Context) {
+    aa().unwrap();
+    if c.bool_flag("s") {
+        follows_c(c);
+    } else if c.bool_flag("w") {
+        followers_c(c);
+    } else {
+        follow_c(c);
+    }
 }
 
 fn tt(c: &Context) {

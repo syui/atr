@@ -78,6 +78,18 @@ $ atr repost bafyreieb7cbrjg646h65yaufv6fkzytg4iqff2n7p6ge2kcwmm7jzgowde -u "at:
 ```
 
 ```sh
+# follow
+## atr follow $did
+$ atr follow did:plc:uqzpqmrjnptsxezjx4xuh2mn
+
+# get follows
+$ atr follow -s
+
+# get followers
+$ atr follow -w
+```
+
+```sh
 # custom handle
 $ atr h te.bsky.social
 $ vim ~/.config/atr/config.toml
