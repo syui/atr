@@ -46,7 +46,7 @@ if [ -z "$data" ];then
 		old_id=`echo $data_did|jq -r .id`
 		echo https://card.syui.ai/$old_user
 	fi
-	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s $url/users`
+	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s "$url/users"`
 	echo $data|jq -r .username
 	if [ -n "$data_did" ];then
 		uid=`echo $data|jq -r ".id"|tail -n 1`
@@ -80,7 +80,7 @@ if [ "$3" = "-b" ];then
 			r=1
 		fi
 
-		data_u=`curl -sL $url/users/$uid/card`
+		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 		#echo $data_u|jq ".[].cp"
 		nl=`echo $data_u|jq length`
 		if [ $nl -ge 3 ];then
@@ -93,7 +93,7 @@ if [ "$3" = "-b" ];then
 		echo "---"
 		cp_i=`echo $tt |awk "NR==$rs"`
 
-		data_u=`curl -sL $url/users/$r/card`
+		data_u=`curl -sL "$url/users/$r/card?itemsPerPage=2000"`
 		#echo $data_u|jq ".[].cp"
 		nl=`echo $data_u|jq length`
 		rs=$(($RANDOM % $nl))
