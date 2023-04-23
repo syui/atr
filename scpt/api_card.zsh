@@ -120,9 +120,49 @@ if [ "$3" = "-b" ];then
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
 			cp=`echo $tmp|jq -r .cp`
-			echo card : $card
+			echo "[card]"
+			echo id : $card
 			echo cp : $cp
 			t=`echo $tmp|jq -r .card`
+
+			# 自分との戦いで勝利した場合
+			if [ $r -eq $uid ];then
+				card=`echo $(($RANDOM % 15))`
+				cp=`echo $(($RANDOM % 300))`
+				cp=$((cp + 50))
+				s=$(($RANDOM % 2))
+				if [ $s -eq 1 ];then
+					s=super
+					plus=$(($RANDOM % 500))
+					cp=$((cp + plus))
+				else
+					s=normal
+				fi
+				if [ $card -eq 13 ];then
+					plus=$(($RANDOM % 1200))
+					cp=$((cp + plus))
+					if [ "$s" = "super" ];then
+						plus=$(($RANDOM % 800))
+						cp=$((cp + plus))
+					fi
+				fi
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+				echo "
+				.
+				=%:
+				-##*%#:
+				-%=  .*%.
+				=%    -%:
+				*%*:.:#%=
+				.+##=*###+.
+				"
+				card=`echo $tmp|jq -r .card`
+				card_url=`echo $tmp|jq -r .url`
+				cp=`echo $tmp|jq -r .cp`
+				echo "[card]"
+				echo "id : ${card}"
+				echo "cp : ${cp}"
+			fi
 		fi
 
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
@@ -177,6 +217,7 @@ if [ "$3" = "ai" ];then
 	card=`echo $tmp|jq -r .card`
 	card_url=`echo $tmp|jq -r .url`
 	cp=`echo $tmp|jq -r .cp`
+	echo "[card]"
 	echo "id : ${card}"
 	echo "cp : ${cp}"
 	echo "\nhttps://card.syui.ai/ai"
@@ -199,6 +240,7 @@ tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"pass
 card=`echo $tmp|jq -r .card`
 card_url=`echo $tmp|jq -r .url`
 cp=`echo $tmp|jq -r .cp`
+echo "[card]"
 echo id : $card
 echo cp : $cp
 t=`echo $tmp|jq -r .card`
