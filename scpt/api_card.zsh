@@ -128,23 +128,18 @@ if [ "$3" = "-b" ];then
 			# 自分との戦いで勝利した場合
 			if [ $r -eq $uid ];then
 				card=`echo $(($RANDOM % 15))`
-				cp=`echo $(($RANDOM % 300))`
-				cp=$((cp + 50))
+				cp=`echo $(($RANDOM % 300 + 200))`
 				s=$(($RANDOM % 2))
 				if [ $s -eq 1 ];then
 					s=super
-					plus=$(($RANDOM % 500))
+					plus=$(($RANDOM % 500 + 500))
 					cp=$((cp + plus))
 				else
 					s=normal
 				fi
 				if [ $card -eq 13 ];then
-					plus=$(($RANDOM % 1200))
+					plus=$(($RANDOM % 1200 + 800))
 					cp=$((cp + plus))
-					if [ "$s" = "super" ];then
-						plus=$(($RANDOM % 800))
-						cp=$((cp + plus))
-					fi
 				fi
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 				echo "
@@ -182,23 +177,18 @@ if [ "$3" = "ai" ];then
 	## ai card plus
 	#tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 	card=`echo $(($RANDOM % 15))`
-	cp=`echo $(($RANDOM % 300))`
-	cp=$((cp + 50))
+	cp=`echo $(($RANDOM % 300 + 200))`
 	s=$(($RANDOM % 2))
 	if [ $s -eq 1 ];then
 		s=super
-		plus=$(($RANDOM % 500))
+		plus=$(($RANDOM % 200 + 500))
 		cp=$((cp + plus))
 	else
 		s=normal
 	fi
 	if [ $card -eq 13 ];then
-		plus=$(($RANDOM % 1200))
+		plus=$(($RANDOM % 500 + 800))
 		cp=$((cp + plus))
-		if [ "$s" = "super" ];then
-			plus=$(($RANDOM % 800))
-			cp=$((cp + plus))
-		fi
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 	## ai card plus
