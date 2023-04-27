@@ -298,20 +298,30 @@ fn main() {
                 .description("follow\n\t\t\t$ atr follow did")
                 .action(follow)
                 .flag(
-                    Flag::new("s", FlagType::Bool)
+                    Flag::new("follows", FlagType::Bool)
                     .description("follows\n\t\t\t$ atr follow -s")
                     .alias("s"),
                     )
                 .flag(
-                    Flag::new("w", FlagType::Bool)
+                    Flag::new("delete", FlagType::String)
+                    .description("delete follow\n\t\t\t$ atr follow -d rkey")
+                    .alias("d"),
+                    )
+                .flag(
+                    Flag::new("followers", FlagType::Bool)
                     .description("followers\n\t\t\t$ atr follow -w")
                     .alias("w"),
                     )
-                //.flag(
-                //    Flag::new("all", FlagType::Bool)
-                //    .description("followback and unfollow\n\t\t\t$ atr follow -a")
-                //    .alias("a"),
-                //    )
+                .flag(
+                    Flag::new("all", FlagType::Bool)
+                    .description("followback and unfollow\n\t\t\t$ atr follow -a")
+                    .alias("a"),
+                    )
+                .flag(
+                    Flag::new("cursor", FlagType::String)
+                    .description("cursor flag\n\t\t\t$ atr follow -s -c xxx:xxx")
+                    .alias("c"),
+                    )
                 )
             .command(
                 Command::new("media")
@@ -588,21 +598,53 @@ fn follow_c(c: &Context) {
     return res
 }
 
-fn follows_c(_c: &Context) {
+fn follow_c_d(c: &Context, delete: String) {
+    let m = c.args[0].to_string();
     let h = async {
-        let handle = cfg(&"user");
-        let str = at_follows::get_request(handle);
+        let str = at_follow::delete_request(m.to_string(), delete.to_string());
         println!("{}",str.await);
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
-} 
+}
 
-fn followers_c(_c: &Context) {
+fn follow_c_all(_c: &Context) {
+    let file = "/.config/atr/scpt/follow_all.zsh";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    use std::process::Command;
+    let output = Command::new(&f).output().expect("zsh");
+    let d = String::from_utf8_lossy(&output.stdout);
+    let d = "\n".to_owned() + &d.to_string();
+    println!("{}", d);
+}
+
+fn follows_c(c: &Context) {
     let h = async {
         let handle = cfg(&"user");
-        let str = at_followers::get_request(handle);
-        println!("{}",str.await);
+        if let Ok(cursor) = c.string_flag("cursor") {
+            let str = at_follows::get_request(handle,Some(cursor.to_string()));
+            println!("{}",str.await);
+        } else {
+            let str = at_follows::get_request(handle,Some("".to_string()));
+            println!("{}",str.await);
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+
+    return res
+} 
+
+fn followers_c(c: &Context) {
+    let h = async {
+        let handle = cfg(&"user");
+        if let Ok(cursor) = c.string_flag("cursor") {
+            let str = at_followers::get_request(handle,Some(cursor.to_string()));
+            println!("{}",str.await);
+        } else {
+            let str = at_followers::get_request(handle,Some("".to_string()));
+            println!("{}",str.await);
+        }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
@@ -610,12 +652,18 @@ fn followers_c(_c: &Context) {
 
 fn follow(c: &Context) {
     aa().unwrap();
-    if c.bool_flag("s") {
+    if c.bool_flag("follows") {
         follows_c(c);
-    } else if c.bool_flag("w") {
+    } else if c.bool_flag("followers") {
         followers_c(c);
+    } else if c.bool_flag("all") {
+        follow_c_all(c);
     } else {
-        follow_c(c);
+        if let Ok(delete) = c.string_flag("delete") {
+            follow_c_d(c, delete);
+        } else {
+            follow_c(c);
+        }
     }
 }
 

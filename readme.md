@@ -87,6 +87,19 @@ $ atr follow -s
 
 # get followers
 $ atr follow -w
+
+# next
+$ atr follow -s -c $cursor
+$ atr follow -w -c $cursor
+
+# unfollow
+# at://did:plc:uqzpqmrjnptsxezjx4xuh2mn/app.bsky.graph.follow/xxx
+# rkey = xxx
+$ atr follow $did -d $rkey
+
+# all follow back
+$ cp -rf scpt ~/.config/atr/
+$ atr follow -a
 ```
 
 ```sh

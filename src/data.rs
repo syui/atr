@@ -116,6 +116,7 @@ pub struct BaseUrl {
     pub describe: String,
     pub record_list: String,
     pub record_create: String,
+    pub record_delete: String,
     pub session_create: String,
     pub timeline_get: String,
     pub upload_blob: String,
@@ -144,6 +145,7 @@ pub fn url(s: &str) -> String {
     let baseurl = BaseUrl {
         profile_get: "app.bsky.actor.getProfile".to_string(),
         record_create: "com.atproto.repo.createRecord".to_string(),
+        record_delete: "com.atproto.repo.deleteRecord".to_string(),
         describe: "com.atproto.repo.describeRepo".to_string(),
         record_list: "com.atproto.repo.listRecords".to_string(),
         session_create: "com.atproto.server.createSession".to_string(),
@@ -167,6 +169,7 @@ pub fn url(s: &str) -> String {
         "describe" => t.to_string() + &baseurl.describe,
         "record_list" => t.to_string() + &baseurl.record_list,
         "record_create" => t.to_string() + &baseurl.record_create,
+        "record_delete" => t.to_string() + &baseurl.record_delete,
         "session_create" => t.to_string() + &baseurl.session_create,
         "timeline_get" => t.to_string() + &baseurl.timeline_get,
         "upload_blob" => t.to_string() + &baseurl.upload_blob,
@@ -193,6 +196,11 @@ pub struct Notify {
 pub struct Timeline {
     pub feed: Vec<Feed>
 }
+#[derive(Serialize, Deserialize)]
+pub struct Follow {
+    pub follows: Vec<Author>,
+    pub cursor: String,
+}
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
@@ -215,7 +223,13 @@ pub struct Author {
     pub displayName: Option<String>,
     pub handle: String,
     pub avatar: Option<String>,
-    pub viewer: Viewer
+    pub viewer: Viewer,
+    pub labels: Labels,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Labels {
 }
 
 #[derive(Serialize, Deserialize)]
