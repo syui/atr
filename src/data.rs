@@ -192,6 +192,44 @@ pub fn url(s: &str) -> String {
 pub struct Notify {
     pub notifications: Vec<Notifications>
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct Status {
+    pub handle: String,
+    pub did: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct DidDocs {
+    pub verificationMethod: Vec<VerificationMethod>,
+    pub service: Vec<Service>,
+    pub id: String,
+    pub alsoKnownAs: Vec<AlsoKnownAs>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct VerificationMethod {
+    pub id: String,
+    pub r#type: String,
+    pub controller: String,
+    pub publicKeyMultibase: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Service {
+    pub id: String,
+    pub r#type: String,
+    pub serviceEndpoint: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct AlsoKnownAs {
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Timeline {
     pub feed: Vec<Feed>

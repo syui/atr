@@ -46,6 +46,14 @@ pass = "xxx"
 user = "syui.bsky.social"
 ```
 
+### did
+
+```sh
+$ atr s syui.bsky.social -d
+or
+$ atr did syui.bsky.social
+```
+
 ### use
 
 ```sh

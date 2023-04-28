@@ -15,6 +15,7 @@ use seahorse::{App, Command, Context, Flag, FlagType};
 use smol_str::SmolStr;
 use iso8601_timestamp::Timestamp;
 
+use data::Status as Status;
 use data::Notify as Notify;
 use data::Token as Token;
 use data::Cid as Cid;
@@ -160,6 +161,17 @@ fn main() {
                 .description("user flag(ex: $ atr s -p user)")
                 .alias("p"),
                 )
+            .flag(
+                Flag::new("did", FlagType::Bool)
+                .description("did flag(ex: $ atr s -d handle)")
+                .alias("d"),
+                )
+            )
+        .command(
+            Command::new("did")
+            .usage("atr did handle")
+            .description("search handle did\n\t\t\t$ atr like\n\t\t\t$ atr like subject")
+            .action(did)
             )
         .command(
             Command::new("like")
@@ -445,20 +457,52 @@ async fn at_user(url: String,user :String) -> reqwest::Result<()> {
     Ok(())
 }
 
+#[tokio::main]
+async fn at_user_did(url: String,user :String) -> reqwest::Result<()> {
+    let client = reqwest::Client::new();
+    let res = client.get(url)
+        .query(&[("repo", &user)])
+        .send()
+        .await?
+        .text()
+        .await?;
+    let status: Status = serde_json::from_str(&res).unwrap();
+    println!("{}", status.did);
+    Ok(())
+}
+
 #[allow(unused_must_use)]
 fn ss(c :&Context) -> reqwest::Result<()> {
+    let m = c.args[0].to_string();
     let url = url(&"describe");
     if let Ok(user) = c.string_flag("user") {
         at_user(url, user);
     } else {
-        let user = cfg(&"user");
-        at_user(url, user);
+        if c.bool_flag("did") {
+            at_user_did(url, m);
+        } else {
+            let user = cfg(&"user");
+            at_user(url, user);
+        }
     }
     Ok(())
 }
 
 fn s(c: &Context) {
     ss(c).unwrap();
+}
+
+
+#[allow(unused_must_use)]
+fn did_c(c: &Context) -> reqwest::Result<()> {
+    let m = c.args[0].to_string();
+    let url = url(&"describe");
+    at_user_did(url, m);
+    Ok(())
+}
+
+fn did(c: &Context) {
+    did_c(c).unwrap();
 }
 
 #[tokio::main]
