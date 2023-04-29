@@ -1381,7 +1381,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(d);
                             println!("{}", text_limit);
 
-                            let link = "https://card.syui.ai/".to_owned() + &"fanart";
+                            let link = "https://card.syui.ai/".to_owned() + &"fa";
                             let s = 0;
                             let e = link.chars().count();
                             println!("{}", link);
@@ -1411,7 +1411,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(d);
                             println!("{}", text_limit);
 
-                            let link = "https://card.syui.ai/".to_owned() + &"photo";
+                            let link = "https://card.syui.ai/".to_owned() + &"ph";
                             let s = 0;
                             let e = link.chars().count();
                             println!("{}", link);

@@ -7,6 +7,7 @@ url_at=https://$host_at/xrpc/com.atproto.repo.listRecords
 dir=$HOME/.config/atr/txt
 file=$dir/user_list.txt
 
+opt=`echo $4|tr -d "'"`
 dir_git_card_page=$HOME/git/card.syui.ai
 
 if [ ! -d $dir_git_card_page ];then
@@ -75,8 +76,10 @@ if ! echo $3|grep "bsky.app/profile/">/dev/null 2>&1;then
 fi
 
 if ! echo $4|grep "https://cdn.bsky.social/imgproxy/">/dev/null 2>&1;then
-	echo "please url : cdn.bsky.social/imgproxy"
-	exit
+	if [ "$opt" != "-d" ];then
+		echo "please url : cdn.bsky.social/imgproxy"
+		exit
+	fi
 fi
 
 function fan_art(){
@@ -103,5 +106,33 @@ function fan_art(){
 	fi
 }
 
+function fan_art_delete(){
+	add=$1
+	did=$2
+	link=$3
+	cd $dir_git_card_page
+	check_null=`cat $file_fanart|jq ".[]|select(.img == \"$img\")"`
+	if [ -n "$check_null" ];then
+		echo registered
+		exit
+	fi
+	cat $file_fanart|jq ".[]|select(.link == \"$link\")|= .+{\"delete\":true,\"delete-did\":\"$did\"}"|jq -s >! $file_fanart.back
+	if cat $file_fanart.back|jq . >/dev/null 2>&1;then
+		mv $file_fanart.back $file_fanart
+		git add $file_fanart
+		git commit -m  "delete fanart"
+		git push -u origin main -f
+		echo delete fanart, thx $1
+		echo "delete-did : $did"
+		echo "it will take some time to deploy"
+	fi
+}
+
+if [ "$opt" = "-d" ];then
+	fan_art_delete $1 $2 $3
+	exit
+fi
+
 fan_art $1 $2 $3 $4
+
 exit
