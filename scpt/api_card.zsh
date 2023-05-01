@@ -55,6 +55,13 @@ if [ -z "$data" ];then
 fi
 next=`echo $data|jq -r .next`
 uid=`echo $data|jq -r ".id"`
+delete=`echo $data|jq -r ".delete"`
+did=`echo $data|jq -r ".did"`
+
+if [ "$delete" = "true" ];then
+	echo change account $did
+	exit
+fi
 
 # battle
 updated_at=`echo $data|jq -r .updated_at`
