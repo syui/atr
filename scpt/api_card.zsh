@@ -74,10 +74,20 @@ if [ "$3" = "-b" ];then
 			exit
 		fi
 	else
-		len=`curl -sL $url_user_all|jq length`
-		r=$(($RANDOM % $len))
-		if [ 0 -eq $r ];then
-			r=1
+		id_all=`curl -sL "https://api.syui.ai/users?itemsPerPage=2000"|jq ".[]|.id"`
+		id_n=`echo "$id_all"|wc -l`
+		id_nr=$(($RANDOM % $id_n))
+		r=`echo "$id_all"| awk "NR==$id_nr"`
+
+		if [ "$id_all" = "null" ];then
+			r=2
+		fi
+
+		if [ 0 -eq $id_n ] || [ 0 -eq $r ];then
+			r=2
+		fi
+		if [ -z "$id_n" ] || [ -z "$r" ];then
+			r=2
 		fi
 
 		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
@@ -143,13 +153,13 @@ if [ "$3" = "-b" ];then
 				fi
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 				echo "
-				.
-				=%:
-				-##*%#:
-				-%=  .*%.
-				=%    -%:
-				*%*:.:#%=
-				.+##=*###+.
+          .
+        =%:
+    -##*%#:
+   -%=  .*%.
+   =%    -%:
+   *%*:.:#%=
+ .+##=*###+.
 				"
 				card=`echo $tmp|jq -r .card`
 				card_url=`echo $tmp|jq -r .url`
