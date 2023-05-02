@@ -6,6 +6,95 @@ case $OSTYPE in
 		;;
 esac
 
+function battle_raid(){
+	boss_cp=10000
+	f_raid=$HOME/.config/atr/txt/card_raid.txt
+	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
+
+	if [ ! -f $f_raid ];then
+		echo "$boss_cp" >! $f_raid
+	fi
+
+	if [ `cat $f_raid` -eq 0 ];then
+		echo shutdown boss
+		exit
+	fi
+
+	if [ $updated_at -ge $d ];then
+		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
+			exit
+		else
+			echo "limit battle"
+			exit
+		fi
+	else
+		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		nl=`echo $data_u|jq length`
+		if [ $nl -ge 3 ];then
+			rs=$(($RANDOM % 3 + 1))
+		else
+			rs=$(($RANDOM % $nl + 1))
+		fi
+		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		cp_i=`echo $tt |awk "NR==1"`
+		if [[ "$cp_i" =~ ^[0-9]+$ ]]; then
+		else
+			echo error
+			exit
+		fi
+		cp_b=`cat $f_raid`
+		cp_bb=`expr $cp_b - $cp_i`
+		echo "[raid battle]"
+		echo "$cp_i vs $cp_b ---> $cp_bb"
+
+		if [ `cat $f_raid` -eq 0 ];then
+			echo shutdown boss
+			exit
+		fi
+
+		s=normal
+		ss=$(($RANDOM % 10))
+		if [ $ss -eq 1 ];then
+			card=`echo $(($RANDOM % 15))`
+		else
+			card=0
+		fi
+
+		if [ $cp_i -gt $cp_bb ];then
+			echo "win!"
+			echo "0" >! $f_raid
+			card=`echo $(($RANDOM % 15))`
+		else
+			echo $cp_bb >! $f_raid
+			echo $uid >> $f_raid_user
+		fi
+
+		if [ $card -eq 0 ];then
+			cp=`echo $(($RANDOM % 100 + 50))`
+		else
+			cp=`echo $(($RANDOM % 500 + 200))`
+			s=$(($RANDOM % 2))
+			if [ $s -eq 1 ];then
+				s=super
+				plus=$(($RANDOM % 500 + 300))
+				cp=$((cp + plus))
+			fi
+		fi
+
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		card_url=`echo $tmp|jq -r .url`
+		cp=`echo $tmp|jq -r .cp`
+		echo "---"
+		echo "[card]"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+	fi
+	exit
+}
+
 function l_cards() {
 	data_card=`curl -sL "$url/users/$old_id/card?itemsPerPage=2000"`
 	nn=`echo $data_card|jq length`
@@ -54,6 +143,10 @@ if [ -z "$data" ];then
 	fi
 fi
 next=`echo $data|jq -r .next`
+if [ "$next" = "null" ];then
+	echo null error
+fi
+
 uid=`echo $data|jq -r ".id"`
 delete=`echo $data|jq -r ".delete"`
 did=`echo $data|jq -r ".did"`
@@ -71,6 +164,10 @@ updated_at=`date -d "$updated_at" +"%Y%m%d"`
 day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
+
+if [ "$3" = "-raid" ] || [ "$3" = "-r" ];then
+	battle_raid $1 $2
+fi
 
 if [ "$3" = "-b" ];then
 	if [ $updated_at -ge $d ];then
