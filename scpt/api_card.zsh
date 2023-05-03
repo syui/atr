@@ -7,7 +7,7 @@ case $OSTYPE in
 esac
 
 function battle_raid(){
-	boss_cp=10000
+	boss_cp=50000
 	f_raid=$HOME/.config/atr/txt/card_raid.txt
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 
@@ -16,7 +16,8 @@ function battle_raid(){
 	fi
 
 	if [ `cat $f_raid` -eq 0 ];then
-		echo shutdown boss
+		echo "[boss]"
+		echo "shutdown"
 		exit
 	fi
 
@@ -29,14 +30,13 @@ function battle_raid(){
 		fi
 	else
 		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
-		nl=`echo $data_u|jq length`
-		if [ $nl -ge 3 ];then
-			rs=$(($RANDOM % 3 + 1))
-		else
-			rs=$(($RANDOM % $nl + 1))
+		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
+		skill=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].skill"`
+		ss=$(($RANDOM % 2))
+		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
+			cp_i=$((cp_i + cp_i))
 		fi
-		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
-		cp_i=`echo $tt |awk "NR==1"`
+
 		if [[ "$cp_i" =~ ^[0-9]+$ ]]; then
 		else
 			echo error
@@ -45,7 +45,11 @@ function battle_raid(){
 		cp_b=`cat $f_raid`
 		cp_bb=`expr $cp_b - $cp_i`
 		echo "[raid battle]"
-		echo "$cp_i vs $cp_b ---> $cp_bb"
+		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
+			echo "⚡  $cp_i vs $cp_b ---> $cp_bb"
+		else
+			echo "$cp_i vs $cp_b ---> $cp_bb"
+		fi
 
 		if [ `cat $f_raid` -eq 0 ];then
 			echo shutdown boss
@@ -344,9 +348,13 @@ tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"pass
 card=`echo $tmp|jq -r .card`
 card_url=`echo $tmp|jq -r .url`
 cp=`echo $tmp|jq -r .cp`
+skill=`echo $tmp|jq -r .skill`
 echo "[card]"
 echo id : $card
 echo cp : $cp
+if [ "$skill" != "normal" ];then
+	echo skill : $skill
+fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
 #next=`echo $tmp|jq -r .next`
