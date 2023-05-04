@@ -48,6 +48,7 @@ pub mod at_repost;
 pub mod at_follow;
 pub mod at_follows;
 pub mod at_followers;
+pub mod at_user_status;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -1353,6 +1354,35 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("{}", e);
 
                             let d = "\n".to_owned() + &did.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
+
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                            }
+                        } else if com == "handle" || com == "/handle" || com == "-h" {
+                            let user = &vec[2].to_string();
+                            let res = at_user_status::get_request(user.to_string()).await;
+                            let status: Status = serde_json::from_str(&res).unwrap();
+                            let link = "https://plc.directory/".to_owned() + &status.did.to_string() + &"/log";
+
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+
+                            let file = "/.config/atr/scpt/dig.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+
+                            let output = Command::new(&f).arg(&user).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d = "\n".to_owned() + &status.did.to_string() + &"\n".to_string() + &d.to_string();
                             println!("{}", d);
                             let text_limit = char_c(d);
                             println!("{}", text_limit);

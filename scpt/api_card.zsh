@@ -7,7 +7,9 @@ case $OSTYPE in
 esac
 
 function battle_raid(){
-	boss_cp=50000
+	boss_cp=$(($RANDOM % 100000))
+	boss_cp=$((boss_cp + 30000))
+
 	f_raid=$HOME/.config/atr/txt/card_raid.txt
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 
