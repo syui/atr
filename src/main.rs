@@ -1402,8 +1402,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let prompt = &vec[2].to_string();
                             let prompt_img = &vec[3].to_string();
                             let prompt_img = "'".to_owned() + &prompt_img.to_string() + &"'".to_string();
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
                             let file = "/.config/atr/scpt/fan_art.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
@@ -1432,8 +1430,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let prompt = &vec[2].to_string();
                             let prompt_img = &vec[3].to_string();
                             let prompt_img = "'".to_owned() + &prompt_img.to_string() + &"'".to_string();
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
                             let file = "/.config/atr/scpt/photo.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
@@ -1460,8 +1456,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             }
                         } else if com == "user" || com == "/user" {
                             let prompt = &vec[2..].join(" ");
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
                             let file = "/.config/atr/scpt/user_list.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);

@@ -250,35 +250,42 @@ if [ "$3" = "-b" ];then
 			r=2
 		fi
 
-		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		data_u=`curl -sL "$url/users/$r/card?itemsPerPage=2000"`
+		tt=`echo $data_uu|jq ".[].cp"|sort -n -r`
+		ttt=`echo $data_u|jq ".[].cp"|sort -n -r`
+
 		#echo $data_u|jq ".[].cp"
-		nl=`echo $data_u|jq length`
+		nl=`echo $data_uu|jq length`
 		if [ $nl -ge 3 ];then
 			rs=$(($RANDOM % 3 + 1))
 		else
 			rs=$(($RANDOM % $nl + 1))
 		fi
-		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
+
+		#echo $data_u|jq ".[].cp"
+		nll=`echo $data_u|jq length`
+		rss=$(($RANDOM % $nll))
+		if [ $nll -ge 3 ];then
+			rss=$(($RANDOM % 3 + 1))
+		else
+			rss=$(($RANDOM % $nll + 1))
+		fi
+		cp_i=`echo $tt |awk "NR==$rs"`
+		cp_b=`echo $ttt |awk "NR==$rss"`
+		if [ -z "$cp_i" ];then
+			exit
+		fi
+		if [ -z "$cp_b" ];then
+			exit
+		fi
+
 		echo $tt | sed -n 1,3p
 		echo "---"
-		cp_i=`echo $tt |awk "NR==$rs"`
-
-		data_u=`curl -sL "$url/users/$r/card?itemsPerPage=2000"`
-		#echo $data_u|jq ".[].cp"
-		nl=`echo $data_u|jq length`
-		rs=$(($RANDOM % $nl))
-		if [ $nl -ge 3 ];then
-			rs=$(($RANDOM % 3 + 1))
-		else
-			rs=$(($RANDOM % $nl + 1))
-		fi
-		tt=`echo $data_u|jq ".[].cp"|sort -n -r`
 		echo id : $r
-		echo $tt | sed -n 1,3p
-		cp_b=`echo $tt |awk "NR==$rs"`
+		echo $ttt | sed -n 1,3p
 		echo "---"
 		echo $cp_i vs $cp_b
-
 		if [ $cp_i -gt $cp_b ];then
 			echo "win!"
 		else
