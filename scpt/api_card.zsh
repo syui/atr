@@ -18,17 +18,17 @@ function user_data(){
 	echo "id : $id"
 	echo "$did"
 	echo "battle : $updated_at"
-	exit
 }
 
 function user_card(){
+	id=$1
 	data=`curl -sL "$url/users/$id"`
 	u=`echo $data|jq -r .username`
 	data_u=`curl -sL "$url/users/$id/card?itemsPerPage=2000"`
 	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 	cp_ii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[1].cp"`
 	cp_iii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[2].cp"`
-	owner=`curl -sL card.syui.ai/json/card.json|jq -r ".[]|select(.owner == \"u\")|.id,.h"|tr -d '\n'`
+	owner=`curl -sL card.syui.ai/json/card.json|jq -r ".[]|select(.owner == \"$u\")|.id,.h"|tr -d '\n'`
 	if [ "$u" = "null" ];then
 		echo no id
 		exit
@@ -41,7 +41,6 @@ function user_card(){
 	if [ -n "$owner" ];then
 		echo "owner : $owner"
 	fi
-	exit
 }
 
 function battle_raid(){
@@ -215,12 +214,15 @@ if [ "$3" = "-raid" ] || [ "$3" = "-r" ];then
 fi
 
 if [ "$3" = "-u" ];then
-	if [ -n "$4" ] && [[ "$4" =~ ^[0-9]+$ ]];then
-		id=$4
-		user_card
-	else
-		user_data
-	fi
+	user_data
+	echo "---"
+	user_card $uid
+	exit
+fi
+
+if [[ "$3" =~ ^[0-9]+$ ]];then
+	user_card $3
+	exit
 fi
 
 if [ "$3" = "-b" ];then
