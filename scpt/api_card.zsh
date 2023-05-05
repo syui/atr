@@ -6,6 +6,44 @@ case $OSTYPE in
 		;;
 esac
 
+
+function user_data(){
+	u=`echo $data|jq -r .username`
+	id=`echo $data|jq -r .id`
+	did=`echo $data|jq -r .did`
+	d=`date +"%Y%m%d"`
+	updated_at=`echo $data|jq -r .updated_at`
+	updated_at=`date -d "$updated_at" +"%Y-%m-%d"`
+	echo "user : $u"
+	echo "id : $id"
+	echo "$did"
+	echo "battle : $updated_at"
+	exit
+}
+
+function user_card(){
+	data=`curl -sL "$url/users/$id"`
+	u=`echo $data|jq -r .username`
+	data_u=`curl -sL "$url/users/$id/card?itemsPerPage=2000"`
+	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
+	cp_ii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[1].cp"`
+	cp_iii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[2].cp"`
+	owner=`curl -sL card.syui.ai/json/card.json|jq -r ".[]|select(.owner == \"u\")|.id,.h"|tr -d '\n'`
+	if [ "$u" = "null" ];then
+		echo no id
+		exit
+	fi
+	echo "user : $u"
+	echo "[card]"
+	echo "cp : $cp_i"
+	echo "cp : $cp_ii"
+	echo "cp : $cp_iii"
+	if [ -n "$owner" ];then
+		echo "owner : $owner"
+	fi
+	exit
+}
+
 function battle_raid(){
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
@@ -27,8 +65,8 @@ function battle_raid(){
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 			exit
 		else
-			echo "limit battle"
 			exit
+			echo "limit battle"
 		fi
 	else
 		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
@@ -150,6 +188,7 @@ if [ -z "$data" ];then
 fi
 next=`echo $data|jq -r .next`
 if [ "$next" = "null" ];then
+	exit
 	echo null error
 fi
 
@@ -175,13 +214,22 @@ if [ "$3" = "-raid" ] || [ "$3" = "-r" ];then
 	battle_raid $1 $2
 fi
 
+if [ "$3" = "-u" ];then
+	if [ -n "$4" ] && [[ "$4" =~ ^[0-9]+$ ]];then
+		id=$4
+		user_card
+	else
+		user_data
+	fi
+fi
+
 if [ "$3" = "-b" ];then
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 			exit
 		else
-			echo "limit battle"
 			exit
+			echo "limit battle"
 		fi
 	else
 		id_all=`curl -sL "https://api.syui.ai/users?itemsPerPage=2000"|jq ".[]|.id"`
@@ -289,6 +337,9 @@ fi
 if [ "$3" = "ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
 	next=`echo $data|jq -r .next`
+	if [ "$next" = "null" ];then
+		exit
+	fi
 	d=`date +"%Y%m%d"`
 	if [ $next -gt $d ];then
 		exit
@@ -340,6 +391,7 @@ if [ $next -gt $d ];then
 	if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 		exit
 	else
+		exit
 		echo limit 1 day
 		echo "next : $nd"
 		exit

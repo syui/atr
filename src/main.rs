@@ -368,6 +368,11 @@ fn main() {
                     .alias("l"),
                     )
                 .flag(
+                    Flag::new("json", FlagType::Bool)
+                    .description("json flag\n\t\t\t$ atr n -j")
+                    .alias("j"),
+                    )
+                .flag(
                     Flag::new("limit", FlagType::Int)
                     .description("number limit flag\n\t\t\t$ atr n -l")
                     .alias("n"),
@@ -942,7 +947,7 @@ fn nn(c: &Context, limit: i32, check: bool) {
             if read == check {
                 if ! n[i].record.text.is_none() { 
                     let text = &n[i].record.text.as_ref().unwrap();
-                    println!("{}\n[{}]\n{}", handle, reason, text);
+                    println!("{}\n[{}]{}\n{}", handle, reason, read, text);
                     println!("{}\ncid:{}\turi:{}", time, cid, uri);
                     println!("{}", "---------");
                 }
@@ -1380,7 +1385,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             f.push_str(&file);
                             use std::process::Command;
 
-                            let output = Command::new(&f).arg(&user).output().expect("zsh");
+                            let output = Command::new(&f).arg(&user).arg(&status.did).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
                             let d = "\n".to_owned() + &status.did.to_string() + &"\n".to_string() + &d.to_string();
                             println!("{}", d);
