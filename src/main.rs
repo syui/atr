@@ -1497,8 +1497,8 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             }
                         } else if com == "card" || com == "/card" {
                             let prompt = &vec[2..].join(" ");
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
+                            //let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            //println!("{}", str_notify);
                             let file = "/.config/atr/scpt/api_card.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
