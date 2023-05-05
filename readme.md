@@ -195,4 +195,3 @@ openai : https://github.com/syui/msr/tree/openai
 deepl : https://github.com/syui/msr/tree/deepl
 
 at : https://atproto.com/guides/lexicon
-

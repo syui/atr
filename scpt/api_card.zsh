@@ -6,18 +6,68 @@ case $OSTYPE in
 		;;
 esac
 
+function yui_card() {
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == 19)"`
+	if [ -n "$card_check" ];then
+		echo "you already have"
+		exit
+	fi
+	card=19
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":123,\"password\":\"$pass\",\"skill\":\"critical\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	cp=`echo $tmp|jq -r .cp`
+	echo "---"
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+}
 
 function user_data(){
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
 	did=`echo $data|jq -r .did`
+	next=`echo $data|jq -r .next`
 	d=`date +"%Y%m%d"`
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y-%m-%d"`
+	next_at=`date -d "$next -1 day" +"%Y-%m-%d"`
 	echo "user : $u"
 	echo "id : $id"
 	echo "$did"
+	echo "card : $next_at"
 	echo "battle : $updated_at"
+	echo "boss : $raid_cp"
+}
+
+function ascii_moji_a() {
+echo "
+⠀⠈⠀⠀⠀⠀⠈⠀⠀⠀⠁⠀⣠⠈⠀⠀⠀⠁⠀⠀⠈⠀⠀⠀⠁⠀
+⠈⠀⠀⠂⠁⠀⠀⠄⠀⠠⠀⣰⡯⣷⡀⠀⢀⠀⢀⠠⠀⠀⡀⠄⠀⠀
+⠀⠄⠀⢀⠀⠀⠄⠀⣠⢴⣼⣳⣟⣗⡷⣦⣄⡀⠀⠀⠀⠀⠀⠀⠀⢀
+⢀⠀⠀⠀⠀⠀⣠⢾⣽⣻⡺⠷⠳⠯⢯⣗⣯⣟⣦⠀⠀⠐⠀⠀⠄⠀
+⠀⠀⠀⠁⠀⣸⢽⣻⡺⠊⠀⢀⠀⠀⠀⠈⢳⣗⣯⢷⠀⠀⠄⠀⠀⠀
+⠐⠈⠀⠀⠀⣿⢽⣳⠁⡀⠄⠀⠀⠀⠂⠀⠀⣳⢯⣟⡇⠀⠀⠀⠈⠀
+⠀⠀⢀⠀⠈⣯⣟⣾⡀⠀⠀⠀⠐⠀⠀⠄⠀⣺⡽⣞⡇⠀⠀⠁⠀⠀
+⠈⠀⠀⠀⢠⣟⣞⣷⣳⣀⠀⠂⠀⠀⠄⢀⡴⣯⢯⣟⣆⠀⠀⠂⠀⠂
+⠠⠀⠐⢀⣟⣞⣷⣳⣻⣞⡷⡦⣦⢦⡶⡯⡿⣽⢽⢾⢽⣆⠀⠠⠀⠀
+⠀⠀⠀⠚⠉⠉⠁⠉⠑⠳⢯⡿⣽⣽⡽⠽⠛⠉⠉⠉⠙⠙⠀⠀⠀⡀
+⠀⠁⠀⠀⠄⠈⠀⠀⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⢀⠠⠀⠈⠀⠀
+"
+}
+
+function ascii_moji_b() {
+echo "
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠
+⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣷⡀
+⠀⠀⠀⠀⠀⣠⢴⣼⣿⣿⣿⣿⣦⣄⡀
+⠀⠀⠀⣠⢾⣿⣿⡺⠷⠳⠯⢯⣿⣿⣿⣦
+⠀⠀⣸⣿⣿⡺⠊⠀⠀⠀⠀⠀⠈⢳⣿⣿⢷
+⠀⠀⣿⣿⣿⠁⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⡇
+⠀⠀⣿⣿⣿⡀⠀⠀⠀⠀⠀⠀⠀⠀⣺⣿⣿⡇
+⠀⢠⣿⣿⣿⣳⣀⠀⠀⠀⠀⠀⠀⡴⣿⣿⣿⣆
+⠀⣿⣿⣿⣿⣿⣿⡷⡦⣦⢦⡶⣿⣿⣿⣿⣿⣿⣆
+⠚⠉⠉⠁⠉⠑⠳⢯⣿⣿⣿⡽⠽⠛⠉⠉⠉⠙⠙"
 }
 
 function user_card(){
@@ -47,7 +97,6 @@ function battle_raid(){
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
 
-	f_raid=$HOME/.config/atr/txt/card_raid.txt
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 
 	if [ ! -f $f_raid ];then
@@ -124,7 +173,12 @@ function battle_raid(){
 			fi
 		fi
 
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+		if [ $cp_i -gt $cp_bb ];then
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+		else
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+		fi
+
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
 		cp=`echo $tmp|jq -r .cp`
@@ -151,6 +205,8 @@ function l_cards() {
 	done
 }
 
+f_raid=$HOME/.config/atr/txt/card_raid.txt
+raid_cp=`cat $f_raid`
 d=`date +"%Y%m%d"`
 nd=`date +"%Y%m%d" -d '1 day'`
 username=`echo $1|cut -d . -f 1`
@@ -171,7 +227,6 @@ data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
 if [ -z "$data" ];then
 	#echo "we are currently experiencing problems and are suspending new registrations"
 	#echo "---"
-	#echo "現在、問題が発生しており、新規登録を停止しています"
 	#exit
 	if [ -n "$data_did" ];then
 		old_user=`echo $data_did|jq -r .username`
@@ -222,6 +277,21 @@ fi
 
 if [[ "$3" =~ ^[0-9]+$ ]];then
 	user_card $3
+	exit
+fi
+
+if [ "$3" = "-a" ];then
+	ascii_moji_a
+	exit
+fi
+
+if [ "$3" = "-aa" ];then
+	ascii_moji_b
+	exit
+fi
+
+if [ "$3" = "yui" ];then
+	yui_card
 	exit
 fi
 
@@ -302,8 +372,9 @@ if [ "$3" = "-b" ];then
 			echo cp : $cp
 			t=`echo $tmp|jq -r .card`
 
-			# 自分との戦いで勝利した場合
+			# ai vs i
 			if [ $r -eq $uid ];then
+				echo "$username vs $username"
 				card=`echo $(($RANDOM % 15))`
 				cp=`echo $(($RANDOM % 300 + 200))`
 				s=$(($RANDOM % 2))
@@ -319,15 +390,6 @@ if [ "$3" = "-b" ];then
 					cp=$((cp + plus))
 				fi
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
-				echo "
-          .
-        =%:
-    -##*%#:
-   -%=  .*%.
-   =%    -%:
-   *%*:.:#%=
- .+##=*###+.
-				"
 				card=`echo $tmp|jq -r .card`
 				card_url=`echo $tmp|jq -r .url`
 				cp=`echo $tmp|jq -r .cp`
@@ -366,31 +428,32 @@ if [ "$3" = "ai" ];then
 	else
 		s=normal
 	fi
+	skill=$(($RANDOM % 2))
+	if [ $skill -eq 1 ];then
+		skill=critical
+		plus=$(($RANDOM % 400))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
 	if [ $card -eq 13 ];then
 		plus=$(($RANDOM % 500 + 800))
 		cp=$((cp + plus))
 	fi
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
-	## ai card plus
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
 
-	echo "\nthx! $username"
-	echo "\n"
-	echo "
-          .
-        =%:
-    -##*%#:
-   -%=  .*%.
-   =%    -%:
-   *%*:.:#%=
- .+##=*###+.
-"
+	## ai card plus
+	ascii_moji_b
+	echo "\n[card]"
+	echo "id : $card"
+	echo "cp : $cp"
+	if [ "$skill" = "critical" ];then
+		echo "skill : $skill"
+	fi
+
 	card=`echo $tmp|jq -r .card`
 	card_url=`echo $tmp|jq -r .url`
 	cp=`echo $tmp|jq -r .cp`
-	echo "[card]"
-	echo "id : ${card}"
-	echo "cp : ${cp}"
-	echo "\nhttps://card.syui.ai/ai"
 	t=`echo $tmp|jq -r .card`
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/2`
 	exit
@@ -420,8 +483,4 @@ if [ "$skill" != "normal" ];then
 fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
-#next=`echo $tmp|jq -r .next`
-#echo next : $next
 
-#f=$HOME/.config/atr/scpt/t.webp
-#curl -sL -o $f https://card.syui.ai/card/card_${t}.webp
