@@ -6,23 +6,6 @@ case $OSTYPE in
 		;;
 esac
 
-function yui_card() {
-	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
-	card_check=`echo $data_uu|jq -r ".[]|select(.card == 19)"`
-	if [ -n "$card_check" ];then
-		echo "you already have"
-		exit
-	fi
-	card=19
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":123,\"password\":\"$pass\",\"skill\":\"critical\"}" -s $url/cards`
-	card=`echo $tmp|jq -r .card`
-	cp=`echo $tmp|jq -r .cp`
-	echo "---"
-	echo "[card]"
-	echo "id : ${card}"
-	echo "cp : ${cp}"
-}
-
 function user_data(){
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
@@ -70,6 +53,25 @@ echo "
 ⠚⠉⠉⠁⠉⠑⠳⢯⣿⣿⣿⡽⠽⠛⠉⠉⠉⠙⠙"
 }
 
+function yui_card() {
+	card=$1
+	cp=$2
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have"
+		exit
+	fi
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"critical\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	cp=`echo $tmp|jq -r .cp`
+	ascii_moji_b
+	echo "---"
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+}
+
 function user_card(){
 	id=$1
 	data=`curl -sL "$url/users/$id"`
@@ -111,6 +113,7 @@ function battle_raid(){
 
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
+			echo "limit battle"
 			exit
 		else
 			exit
@@ -152,7 +155,7 @@ function battle_raid(){
 			card=0
 		fi
 
-		if [ $cp_i -gt $cp_bb ];then
+		if [ 0 -ge $cp_bb ];then
 			echo "win!"
 			echo "0" >! $f_raid
 			card=`echo $(($RANDOM % 15))`
@@ -187,7 +190,7 @@ function battle_raid(){
 		echo "id : ${card}"
 		echo "cp : ${cp}"
 
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+		#tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 	fi
 	exit
 }
@@ -264,11 +267,11 @@ day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
 
-if [ "$3" = "-raid" ] || [ "$3" = "-r" ];then
+if [ "$3" = "-raid" ] || [ "$3" = "-r" ] || [ "$3" = "r" ];then
 	battle_raid $1 $2
 fi
 
-if [ "$3" = "-u" ];then
+if [ "$3" = "-u" ] || [ "$3" = "u" ];then
 	user_data
 	echo "---"
 	user_card $uid
@@ -280,27 +283,31 @@ if [[ "$3" =~ ^[0-9]+$ ]];then
 	exit
 fi
 
-if [ "$3" = "-a" ];then
+if [ "$3" = "-a" ] || [ "$3" = "a" ];then
 	ascii_moji_a
 	exit
 fi
 
-if [ "$3" = "-aa" ];then
+if [ "$3" = "-aa" ] || [ "$3" = "aa" ];then
 	ascii_moji_b
 	exit
 fi
 
-if [ "$3" = "yui" ];then
-	yui_card
+if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
+	yui_card 20 123
 	exit
 fi
 
-if [ "$3" = "-b" ];then
+if [ "$3" = "zen" ] || [ "$3" = "-zen" ];then
+	yui_card 21 123
+	exit
+fi
+
+if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 			exit
 		else
-			exit
 			echo "limit battle"
 		fi
 	else
@@ -405,7 +412,7 @@ if [ "$3" = "-b" ];then
 	exit
 fi
 
-if [ "$3" = "ai" ];then
+if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
 	next=`echo $data|jq -r .next`
 	if [ "$next" = "null" ];then
@@ -463,7 +470,6 @@ if [ $next -gt $d ];then
 	if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
 		exit
 	else
-		exit
 		echo limit 1 day
 		echo "next : $nd"
 		exit
