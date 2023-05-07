@@ -49,6 +49,7 @@ pub mod at_follow;
 pub mod at_follows;
 pub mod at_followers;
 pub mod at_user_status;
+pub mod at_img;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -348,6 +349,17 @@ fn main() {
                 .usage("atr img-upload {} -p text")
                 .description("media post\n\t\t\t$ atr img-upload ~/test.png")
                 .action(img_upload)
+                )
+            .command(
+                Command::new("img-post")
+                .usage("atr img-post text -l link")
+                .description("media post\n\t\t\t$ atr img-post text -l link")
+                .action(img_post)
+                .flag(
+                    Flag::new("link", FlagType::String)
+                    .description("link flag\n\t\t\t$ atr img-post text -l link")
+                    .alias("l"),
+                    )
                 )
             .command(
                 Command::new("profile")
@@ -826,12 +838,10 @@ fn m(c: &Context) {
 
 #[tokio::main]
 async fn img_upload_run(c: &Context) -> reqwest::Result<()> {
-    
     let token = token_toml(&"access");
-
     let atoken = "Authorization: Bearer ".to_owned() + &token;
     let con = "Content-Type: image/png";
-    let did = token_toml(&"did");
+    //let did = token_toml(&"did");
 
     //let host = cfg(&"host");
     let url = url(&"upload_blob");
@@ -841,18 +851,24 @@ async fn img_upload_run(c: &Context) -> reqwest::Result<()> {
     let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
     let d = String::from_utf8_lossy(&output.stdout);
     let d =  d.to_string();
-    let cid: Cid = serde_json::from_str(&d).unwrap();
-    let cid = cid.cid;
-    println!("{}", cid);
-    let mtype = "image/png";
-    let j = "{\"did\":\"".to_owned() + &did + &"\",\"collection\":\"app.bsky.feed.post\",\"record\":{\"text\":\"\",\"createdAt\":\"" + &d + &"\", \"embed\": {\"$type\":\"app.bsky.embed.images\",\"images\":[{\"image\":{\"cid\":\"" + &cid + &"\",\"mimeType\":\"" + &mtype + &"\"},\"alt\":\"\"}]}}}".to_string();
-    println!("{}", j);
+    println!("{}", d);
     Ok(())
 }
 
 fn img_upload(c: &Context) {
     aa().unwrap();
     img_upload_run(c).unwrap();
+}
+
+fn img_post(c: &Context) {
+    let m = c.args[0].to_string();
+    if let Ok(link) = c.string_flag("link") {
+        let h = async {
+            let str = at_img::post_request(m.to_string(),link.to_string());
+            println!("{}",str.await);
+        };
+        tokio::runtime::Runtime::new().unwrap().block_on(h);
+    }
 }
 
 fn hh(c: &Context) {

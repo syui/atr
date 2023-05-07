@@ -188,6 +188,14 @@ $ atr p "[chatgpt] post by openai chatgpt" -c --cid $cid --uri $uri
 $ atr bot
 ```
 
+```sh
+# img-upload & img-post
+$ atr img-upload ~/img.png
+$ atr img-post $text -l $link
+
+$ link=`atr img-upload ~/icloud/icon/ai_circle.png|jq -r .blob.ref.'"$link"'`;atr img-post test -l $link
+```
+
 ### ref
 
 openai : https://github.com/syui/msr/tree/openai

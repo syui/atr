@@ -320,6 +320,22 @@ pub struct Cid {
 }
 
 #[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Img {
+    pub blob: Blob
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Blob {
+    pub r#ref: Ref,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Ref {
+    pub link: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct Handle {
     pub handle: String
 }
