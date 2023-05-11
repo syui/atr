@@ -50,6 +50,7 @@ pub mod at_follows;
 pub mod at_followers;
 pub mod at_user_status;
 pub mod at_img;
+pub mod at_img_reply;
 
 // timestamp
 #[derive(Debug, Clone, Serialize)]
@@ -359,6 +360,16 @@ fn main() {
                     Flag::new("link", FlagType::String)
                     .description("link flag\n\t\t\t$ atr img-post text -l link")
                     .alias("l"),
+                    )
+                .flag(
+                    Flag::new("uri", FlagType::String)
+                    .description("uri flag\n\t\t\t$ atr img-post text -l link")
+                    .alias("u"),
+                    )
+                .flag(
+                    Flag::new("cid", FlagType::String)
+                    .description("cid flag\n\t\t\t$ atr img-post text -l link")
+                    .alias("c"),
                     )
                 )
             .command(
@@ -840,7 +851,7 @@ fn m(c: &Context) {
 async fn img_upload_run(c: &Context) -> reqwest::Result<()> {
     let token = token_toml(&"access");
     let atoken = "Authorization: Bearer ".to_owned() + &token;
-    let con = "Content-Type: image/png";
+    let con = "Content-Type: image/jpeg";
     //let did = token_toml(&"did");
 
     //let host = cfg(&"host");
@@ -863,11 +874,22 @@ fn img_upload(c: &Context) {
 fn img_post(c: &Context) {
     let m = c.args[0].to_string();
     if let Ok(link) = c.string_flag("link") {
-        let h = async {
-            let str = at_img::post_request(m.to_string(),link.to_string());
-            println!("{}",str.await);
-        };
-        tokio::runtime::Runtime::new().unwrap().block_on(h);
+        if let Ok(cid) = c.string_flag("cid") {
+            if let Ok(uri) = c.string_flag("uri") {
+                let h = async {
+                    let itype = "image/jpeg";
+                    let str = at_img_reply::post_request(m.to_string(),link.to_string(),cid.to_string(),uri.to_string(), itype.to_string());
+                    println!("{}",str.await);
+                };
+                tokio::runtime::Runtime::new().unwrap().block_on(h);
+            }
+        } else {
+            let h = async {
+                let str = at_img::post_request(m.to_string(),link.to_string());
+                println!("{}",str.await);
+            };
+            tokio::runtime::Runtime::new().unwrap().block_on(h);
+        }
     }
 }
 
@@ -1302,13 +1324,8 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
                         } else if com == "/diffusion" && { handle == &admin } {
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
-
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
-                            println!("cid:{}, uri:{}", cid, uri);
-                            println!("{}", text);
                             let file = "/.config/atr/scpt/diffusion.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
@@ -1317,26 +1334,18 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let d = String::from_utf8_lossy(&output.stdout);
                             let d =  d.to_string();
                             println!("{}", d);
-
-                            //media upload { #efactoring }
-                            let file = "/.config/atr/scpt/png/t.webp";
+                            let file = "/.config/atr/scpt/at_img.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
-                            let token = token_toml(&"access");
-                            let atoken = "Authorization: Bearer ".to_owned() + &token;
-                            let con = "Content-Type: image/webp";
-                            let url = url(&"upload_blob");
-                            let f = "@".to_owned() + &f;
-                            let output = Command::new("curl").arg("-X").arg("POST").arg("-sL").arg("-H").arg(&con).arg("-H").arg(&atoken).arg("--data-binary").arg(&f).arg(&url).output().expect("curl");
+                            let output = Command::new(&f).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
-                            let d =  d.to_string();
-                            let mid: Cid = serde_json::from_str(&d).unwrap();
-                            let mid = mid.cid;
-                            println!("{}", mid);
+                            let link =  d.to_string();
                             let text_limit = "#stablediffusion";
-                            let itype = "image/webp";
-                            let str_rep = at_reply_media::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), mid.to_string(), itype.to_string()).await;
+                            let itype = "image/jpeg";
+                            let str_rep = at_img_reply::post_request(text_limit.to_string(), link.to_string(), cid.to_string(), uri.to_string(), itype.to_string()).await;
                             println!("{}", str_rep);
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
                         } else if com == "/s" || com == "search" || com == "-s" {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);

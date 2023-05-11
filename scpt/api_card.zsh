@@ -190,7 +190,7 @@ function battle_raid(){
 		echo "id : ${card}"
 		echo "cp : ${cp}"
 
-		#tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 	fi
 	exit
 }

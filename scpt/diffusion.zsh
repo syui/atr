@@ -2,6 +2,7 @@
 
 dir=${0:a:h}
 f=$dir/diffusion_prompt.txt
+ff=$dir/png/t.jpg
 
 seed=$RANDOM
 
@@ -28,17 +29,22 @@ case "$1" in
 		echo $sd_prompt_a $* >! $f
 		;;
 esac
-cat $f
-q=`cat $f`
 
-rm -rf $dir/png
-mkdir -p $dir/png
-ssh win Remove-Item -Recurse -Force stable-diffusion/outputs
-ssh win Remove-Item -Recurse -Force msbot
-ssh win mkdir stable-diffusion/outputs
-ssh win mkdir msbot
-ssh win "conda activate ldm;cd ./stable-diffusion/;python optimizedSD/optimized_txt2img.py --prompt \"${q}\" --H 512 --W 512 --seed $seed --n_iter 1 --n_samples 1 --ddim_steps 50"
-diff_dir=`ssh win ls stable-diffusion/outputs/txt2img-samples -Name|cut -b 1-2`
-ssh win "cd stable-diffusion/outputs/txt2img-samples;mv $diff_dir* $diff_dir -Force;mv $diff_dir/*.png ~/msbot/t.png -Force"
-ssh win ".\scoop\apps\imagemagick\current\convert.exe msbot/t.png msbot/t.jpg"
-scp -r win:msbot/t.jpg $dir/png/t.jpg
+function run(){
+	cat $f
+	q=`cat $f`
+	rm -rf $dir/png
+	mkdir -p $dir/png
+	ssh win Remove-Item -Recurse -Force stable-diffusion/outputs
+	ssh win Remove-Item -Recurse -Force msbot
+	ssh win mkdir stable-diffusion/outputs
+	ssh win mkdir msbot
+	ssh win "conda activate ldm;cd ./stable-diffusion/;python optimizedSD/optimized_txt2img.py --prompt \"${q}\" --H 512 --W 512 --seed $seed --n_iter 1 --n_samples 1 --ddim_steps 50"
+	diff_dir=`ssh win ls stable-diffusion/outputs/txt2img-samples -Name|cut -b 1-2`
+	ssh win "cd stable-diffusion/outputs/txt2img-samples;mv $diff_dir* $diff_dir -Force;mv $diff_dir/*.png ~/msbot/t.png -Force"
+	ssh win ".\scoop\apps\imagemagick\current\convert.exe msbot/t.png msbot/t.jpg"
+	scp -r win:msbot/t.jpg $dir/png/t.jpg
+}
+
+#run > /dev/null 2>&1
+run
