@@ -96,8 +96,16 @@ function user_card(){
 }
 
 function battle_raid(){
+	boss_user_bool=false
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
+	if [ "$boss_user_bool" = "true" ];then
+		boss_user=yui
+		boss_user_bsky=${boss_user}.bsky.social
+		boss_cp=100000
+		boss_id=2
+		boss_card=23
+	fi
 
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 
@@ -136,6 +144,7 @@ function battle_raid(){
 		cp_b=`cat $f_raid`
 		cp_bb=`expr $cp_b - $cp_i`
 		echo "[raid battle]"
+		echo "@${boss_user_bsky}\nhttps://card.syui.ai/${boss_user}"
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			echo "⚡  $cp_i vs $cp_b ---> $cp_bb"
 		else
@@ -159,6 +168,12 @@ function battle_raid(){
 			echo "win!"
 			echo "0" >! $f_raid
 			card=`echo $(($RANDOM % 15))`
+			if [ "$boss_user_bool" = "true" ];then
+				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
+				sleep 3
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+				#atr @ ${boss_user_bsky} -p "$body"
+			fi
 		else
 			echo $cp_bb >! $f_raid
 			echo $uid >> $f_raid_user
@@ -177,6 +192,7 @@ function battle_raid(){
 		fi
 
 		if [ $cp_i -gt $cp_bb ];then
+			sleep 5
 			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 		else
 			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
@@ -396,6 +412,7 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 					plus=$(($RANDOM % 1200 + 800))
 					cp=$((cp + plus))
 				fi
+				sleep 5
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 				card=`echo $tmp|jq -r .card`
 				card_url=`echo $tmp|jq -r .url`
@@ -447,6 +464,7 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 		plus=$(($RANDOM % 500 + 800))
 		cp=$((cp + plus))
 	fi
+	sleep 5
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
 
 	## ai card plus
