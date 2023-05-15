@@ -80,6 +80,8 @@ function user_card(){
 	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 	cp_ii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[1].cp"`
 	cp_iii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[2].cp"`
+	boss_l=`curl -sL "https://api.syui.ai/users/$id/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
+	boss_cp=$((${boss_l/%?/}))
 	owner=`curl -sL card.syui.ai/json/card.json|jq -r ".[]|select(.owner == \"$u\")|.id,.h"|tr -d '\n'`
 	if [ "$u" = "null" ];then
 		echo no id
@@ -90,24 +92,31 @@ function user_card(){
 	echo "cp : $cp_i"
 	echo "cp : $cp_ii"
 	echo "cp : $cp_iii"
+	echo "[boss]"
+	echo "cp : $boss_cp"
 	if [ -n "$owner" ];then
 		echo "owner : $owner"
 	fi
 }
 
 function battle_raid(){
-	boss_user_bool=false
+	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
+	boss_user_bool=true
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
+
 	if [ "$boss_user_bool" = "true" ];then
-		boss_user=yui
+		boss_user=niyau
 		boss_user_bsky=${boss_user}.bsky.social
 		boss_cp=100000
-		boss_id=2
+		boss_id=707
 		boss_card=23
 	fi
 
-	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
+	if [ "$boss_user_bool" = "true" ] && [ ! -f $f_raid ];then
+		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
+		boss_cp=$((${boss_l/%?/}))
+	fi
 
 	if [ ! -f $f_raid ];then
 		echo "$boss_cp" >! $f_raid
@@ -310,12 +319,12 @@ if [ "$3" = "-aa" ] || [ "$3" = "aa" ];then
 fi
 
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
-	yui_card 20 123
+	yui_card 19 123
 	exit
 fi
 
 if [ "$3" = "zen" ] || [ "$3" = "-zen" ];then
-	yui_card 21 123
+	yui_card 20 123
 	exit
 fi
 
