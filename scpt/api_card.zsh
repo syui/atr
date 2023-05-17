@@ -101,7 +101,7 @@ function user_card(){
 
 function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
-	boss_user_bool=true
+	boss_user_bool=false
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
 
@@ -130,10 +130,8 @@ function battle_raid(){
 
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
-			echo "limit battle"
 			exit
 		else
-			exit
 			echo "limit battle"
 		fi
 	else
