@@ -104,13 +104,15 @@ function battle_raid(){
 	boss_user_bool=false
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
+	raid_time=`date +"%M"`
 
 	if [ "$boss_user_bool" = "true" ];then
-		boss_user=niyau
+		boss_user=trapezial
 		boss_user_bsky=${boss_user}.bsky.social
 		boss_cp=100000
-		boss_id=707
+		boss_id=586
 		boss_card=23
+		boss_card_win=24
 	fi
 
 	if [ "$boss_user_bool" = "true" ] && [ ! -f $f_raid ];then
@@ -126,6 +128,17 @@ function battle_raid(){
 		echo "[boss]"
 		echo "shutdown"
 		exit
+	fi
+
+	if [ $raid_time -ge 5 ] && [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "niyau" ];then
+		echo "boss win 🌓"
+		cp_b=`cat $f_raid`
+		echo "cp : $cp_b"
+		echo "0" >! $f_raid
+		body=`echo "\n[card]\nid : $boss_card_win\ncp : 0"`
+		sleep 3
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+		atr @ ${boss_user_bsky} -p "$body"
 	fi
 
 	if [ $updated_at -ge $d ];then
@@ -179,7 +192,10 @@ function battle_raid(){
 				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
 				sleep 3
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-				#atr @ ${boss_user_bsky} -p "$body"
+				atr @ ${boss_user_bsky} -p "$body"
+				raid_end=`date +"%H:%M"`
+				raid_body=`echo "[raid status]\nstart : $raid_start\nend : $raid_end\nlast : $raid_last"`
+				atr p "$raid_body"
 			fi
 		else
 			echo $cp_bb >! $f_raid
@@ -245,10 +261,11 @@ token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 if [ -z "$1" ];then
 	exit
 fi
-
 data_tmp=`curl -sL $url_user_all`
 data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
+raid_start=`date +"%H:%M"`
+raid_last=$1
 
 if [ -z "$data" ];then
 	#echo "we are currently experiencing problems and are suspending new registrations"
