@@ -3,7 +3,6 @@ pub mod data;
 use std::env;
 use std::path::Path;
 use std::io;
-use std::io::Write;
 use std::fs;
 use std::collections::HashMap;
 
@@ -29,6 +28,10 @@ use crate::data::cfg;
 use crate::data::token_file;
 use crate::data::token_toml;
 use crate::data::Tokens;
+
+use std::fs::OpenOptions;
+use std::io::Read;
+use std::io::Write;
 
 pub mod openai;
 pub mod deepl;
@@ -391,23 +394,27 @@ fn main() {
                     .alias("l"),
                     )
                 .flag(
+                    Flag::new("cid", FlagType::Bool)
+                    .description("cid write flag\n\t\t\t$ atr n -cid")
+                    )
+                .flag(
                     Flag::new("json", FlagType::Bool)
                     .description("json flag\n\t\t\t$ atr n -j")
                     .alias("j"),
                     )
                 .flag(
                     Flag::new("limit", FlagType::Int)
-                    .description("number limit flag\n\t\t\t$ atr n -l")
+                    .description("number limit flag\n\t\t\t$ atr n -n")
                     .alias("n"),
                     )
                 .flag(
                     Flag::new("check", FlagType::Bool)
-                    .description("number limit flag\n\t\t\t$ atr n -l")
+                    .description("number limit flag\n\t\t\t$ atr n -c")
                     .alias("c"),
                     )
                 .flag(
                     Flag::new("clean", FlagType::Bool)
-                    .description("nofity cleanup limit flag\n\t\t\t$ atr n -l")
+                    .description("nofity cleanup limit flag\n\t\t\t$ atr n -clean")
                     )
                 )
             .command(
@@ -996,6 +1003,83 @@ fn nn(c: &Context, limit: i32, check: bool) {
     return res
 }
 
+fn cid_check(cid :String) -> bool {
+    let file = "/.config/atr/notify_cid.txt";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    let mut file = match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .append(true)
+        .open(f.clone())
+        {
+            Err(why) => panic!("Couldn't open {}: {}", f, why),
+            Ok(file) => file,
+        };
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Couldn't read {}: {}", f, why),
+        Ok(_) => (),
+    }
+    if contents.contains(&cid) == false {
+        let check = false;
+        return check
+    } else { 
+        let check = true;
+        return check 
+    }
+}
+
+fn cid_write(cid :String) -> bool {
+    let file = "/.config/atr/notify_cid.txt";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    let mut file = match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .append(true)
+        .open(f.clone())
+        {
+            Err(why) => panic!("Couldn't open {}: {}", f, why),
+            Ok(file) => file,
+        };
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Couldn't read {}: {}", f, why),
+        Ok(_) => (),
+    }
+    if contents.contains(&cid) == false {
+        let cid = cid + "\n";
+        println!("contents:\n{}", contents);
+        match file.write_all(cid.as_bytes()) {
+            Err(why) => panic!("Couldn't write \"{}\" to {}: {}", contents, f, why),
+            Ok(_) => println!("finished"),
+        }
+        let check = false;
+        return check
+    } else { 
+        let check = true;
+        return check 
+    }
+}
+
+fn nn_cid() {
+    let h = async {
+        let str = at_notify_limit::get_request(100);
+        let notify: Notify = serde_json::from_str(&str.await).unwrap();
+        let n = notify.notifications;
+        let length = &n.len();
+        for i in 0..*length {
+            let cid = &n[i].cid;
+            cid_write(cid.to_string());
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
 fn n(c: &Context) {
     aa().unwrap();
     let limit = 50;
@@ -1007,6 +1091,8 @@ fn n(c: &Context) {
     } else if c.bool_flag("check") {
         let check = false;
         nn(c, limit.try_into().unwrap(), check);
+    } else if c.bool_flag("cid") {
+        nn_cid();
     } else {
         nn(c, limit, true);
     }
@@ -1255,9 +1341,11 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
             let handle = &n[i].author.handle;
             let did = &n[i].author.did;
             let read = n[i].isRead;
-            if read == false && { reason == "mention" || reason == "reply" } {
+            let cid = &n[i].cid;
+            let c_ch = cid_check(cid.to_string());
+            println!("{}", read);
+            if c_ch == false && { reason == "mention" || reason == "reply" } {
                 let time = &n[i].indexedAt;
-                let cid = &n[i].cid;
                 let uri = &n[i].uri;
                 if ! n[i].record.text.is_none() { 
                     let text = &n[i].record.text.as_ref().unwrap();
@@ -1275,6 +1363,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                         let text_limit = char_c(str_openai);
                         let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                         println!("{}", str_rep);
+                        cid_write(cid.to_string());
                     }
                     if vec.len() > 1 {
                         let com = vec[1].trim().to_string();
@@ -1291,6 +1380,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
+                            cid_write(cid.to_string());
                         } else if com == "/deepl" && { handle == &admin } {
                             let lang = &vec[2].to_string();
                             let prompt = &vec[3..].join(" ");
@@ -1304,6 +1394,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
+                            cid_write(cid.to_string());
                         } else if com == "/sh" && handle == &admin {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
@@ -1323,6 +1414,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                            cid_write(cid.to_string());
                         } else if com == "/diffusion" && { handle == &admin } {
                             let prompt = &vec[2..].join(" ");
                             println!("cmd:{}, prompt:{}", com, prompt);
@@ -1346,6 +1438,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("{}", str_rep);
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
+                            cid_write(cid.to_string());
                         } else if com == "/s" || com == "search" || com == "-s" {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
@@ -1364,6 +1457,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(d);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                            cid_write(cid.to_string());
                         } else if com == "date" || com == "/date" {
                             let d = Timestamp::now_utc();
                             let d = "utc ".to_owned() + &d.to_string();
@@ -1375,6 +1469,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "did" || com == "/did" {
                             let link = "https://plc.directory/".to_owned() + &did;
@@ -1393,6 +1488,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "handle" || com == "/handle" || com == "-h" {
                             let user = &vec[2].to_string();
@@ -1422,6 +1518,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "fa" || com == "/fa" {
                             let prompt = &vec[2].to_string();
@@ -1450,6 +1547,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "ph" || com == "/ph" {
                             let prompt = &vec[2].to_string();
@@ -1478,6 +1576,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "user" || com == "/user" {
                             let prompt = &vec[2..].join(" ");
@@ -1497,6 +1596,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "bot" || com == "/bot" {
                             let prompt = &vec[2..].join(" ");
@@ -1518,6 +1618,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if com == "card" || com == "/card" {
                             let prompt = &vec[2..].join(" ");
@@ -1550,6 +1651,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
 
                         } else if reason == "mention" {
@@ -1565,6 +1667,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(str_openai);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                            cid_write(cid.to_string());
                         }
                     }
                 }
