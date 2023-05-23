@@ -101,7 +101,7 @@ function user_card(){
 
 function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
-	boss_user_bool=false
+	boss_user_bool=true
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
 	raid_time=`date +"%M"`
@@ -137,8 +137,8 @@ function battle_raid(){
 		echo "0" >! $f_raid
 		body=`echo "\n[card]\nid : $boss_card_win\ncp : 0"`
 		sleep 3
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-		atr @ ${boss_user_bsky} -p "$body"
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card_win,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+		$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"
 	fi
 
 	if [ $updated_at -ge $d ];then
@@ -192,10 +192,10 @@ function battle_raid(){
 				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
 				sleep 3
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-				atr @ ${boss_user_bsky} -p "$body"
+				$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"
 				raid_end=`date +"%H:%M"`
-				raid_body=`echo "[raid status]\nstart : $raid_start\nend : $raid_end\nlast : $raid_last"`
-				atr p "$raid_body"
+				raid_body=`echo "[raid status]\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
+				$HOME/.cargo/bin/atr p "$raid_body"
 			fi
 		else
 			echo $cp_bb >! $f_raid
@@ -414,6 +414,12 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
 			cp=`echo $tmp|jq -r .cp`
+			if [ -z "$card" ];then
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+				card=`echo $tmp|jq -r .card`
+				card_url=`echo $tmp|jq -r .url`
+				cp=`echo $tmp|jq -r .cp`
+			fi
 			echo "[card]"
 			echo id : $card
 			echo cp : $cp
@@ -523,6 +529,13 @@ card=`echo $tmp|jq -r .card`
 card_url=`echo $tmp|jq -r .url`
 cp=`echo $tmp|jq -r .cp`
 skill=`echo $tmp|jq -r .skill`
+if [ -z "$card" ];then
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	card_url=`echo $tmp|jq -r .url`
+	cp=`echo $tmp|jq -r .cp`
+	skill=`echo $tmp|jq -r .skill`
+fi
 echo "[card]"
 echo id : $card
 echo cp : $cp
