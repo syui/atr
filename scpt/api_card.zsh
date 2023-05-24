@@ -6,6 +6,8 @@ case $OSTYPE in
 		;;
 esac
 
+
+
 function user_data(){
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
@@ -101,19 +103,25 @@ function user_card(){
 
 function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
+	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
+	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_user_bool=true
 	boss_cp=$(($RANDOM % 100000))
 	boss_cp=$((boss_cp + 30000))
-	raid_time=`date +"%M"`
 
-	if [ "$boss_user_bool" = "true" ];then
-		boss_user=trapezial
-		boss_user_bsky=${boss_user}.bsky.social
-		boss_cp=100000
-		boss_id=586
-		boss_card=23
-		boss_card_win=24
-	fi
+		# ai
+		boss_user=ai
+		boss_id=2
+		boss_user_time=ai
+
+		if [ "$boss_user_bool" = "true" ];then
+			boss_user=shino3
+			boss_user_bsky=${boss_user}.bsky.social
+			boss_cp=100000
+			boss_id=47
+			boss_card=23
+			boss_card_win=24
+		fi
 
 	if [ "$boss_user_bool" = "true" ] && [ ! -f $f_raid ];then
 		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
@@ -121,7 +129,25 @@ function battle_raid(){
 	fi
 
 	if [ ! -f $f_raid ];then
+		raid_start=`date +"%H:%M"`
 		echo "$boss_cp" >! $f_raid
+		echo "$boss_cp" >! $f_raid_start_cp
+		echo "$raid_start" >! $f_raid_start_time
+	fi
+
+	if [ -f $f_raid_start_time ];then
+		raid_start=`cat $f_raid_start_time`
+		raid_time=`date -d "$raid_start 3 min" +"%H:%M"`
+	fi
+
+	if [ -f $f_raid_start_cp ];then
+		raid_start_cp=`cat $f_raid_start_cp`
+	fi
+
+	if [ `cat $f_raid` -eq 1 ];then
+		echo "[boss]${boss_user}"
+		echo "win"
+		exit
 	fi
 
 	if [ `cat $f_raid` -eq 0 ];then
@@ -130,19 +156,26 @@ function battle_raid(){
 		exit
 	fi
 
-	if [ $raid_time -ge 5 ] && [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "niyau" ];then
-		echo "boss win 🌓"
+	# time attack
+	rr=`date +"%H:%M"`
+	if [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "$boss_user_time" ];then
+		echo "time : $rr ---> $raid_time"
+	fi
+
+	if [ "$raid_time" = "$rr" ] && [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "$boss_user_time" ];then
+		echo "boss win!"
 		cp_b=`cat $f_raid`
 		echo "cp : $cp_b"
-		echo "0" >! $f_raid
+		echo "1" >! $f_raid
 		body=`echo "\n[card]\nid : $boss_card_win\ncp : 0"`
 		sleep 3
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card_win,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-		$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"
+		tmp=`$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"`
 	fi
 
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
+			echo "limit battle"
 			exit
 		else
 			echo "limit battle"
@@ -192,10 +225,14 @@ function battle_raid(){
 				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
 				sleep 3
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-				$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"
+				tmp=`$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"`
 				raid_end=`date +"%H:%M"`
-				raid_body=`echo "[raid status]\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
-				$HOME/.cargo/bin/atr p "$raid_body"
+				raid_body=`echo "[raid status]\n${boss_user_bsky}\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
+				tmp=`$HOME/.cargo/bin/atr p "$raid_body"`
+			else
+				raid_end=`date +"%H:%M"`
+				raid_body=`echo "[raid status]\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
+				tmp=`$HOME/.cargo/bin/atr p "$raid_body"`
 			fi
 		else
 			echo $cp_bb >! $f_raid
@@ -215,6 +252,7 @@ function battle_raid(){
 		fi
 
 		if [ $cp_i -gt $cp_bb ];then
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 			sleep 5
 			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
 		else
@@ -264,7 +302,6 @@ fi
 data_tmp=`curl -sL $url_user_all`
 data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
-raid_start=`date +"%H:%M"`
 raid_last=$1
 
 if [ -z "$data" ];then
@@ -285,7 +322,6 @@ if [ -z "$data" ];then
 fi
 next=`echo $data|jq -r .next`
 if [ "$next" = "null" ];then
-	exit
 	echo null error
 fi
 
@@ -306,6 +342,43 @@ updated_at=`date -d "$updated_at" +"%Y%m%d"`
 day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
+
+f_raid=$HOME/.config/atr/txt/card_raid.txt
+raid_boss_admin=shino3.bsky.social
+boss_id=47
+if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
+	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
+		rm $f_raid
+		echo "admin : $raid_boss_admin"
+		echo "raid start!"
+	else
+		echo no raid admin
+	fi
+	exit
+fi
+
+if [ "$3" = "-raidstop" ] || [ "$3" = "raidstop" ] || [ "$3" = "raid-stop" ];then
+	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
+		echo 0 >! $f_raid
+		echo "admin : $raid_boss_admin"
+		echo "raid stop!"
+	else
+		echo no raid admin
+	fi
+	exit
+fi
+
+if [ "$3" = "-raidstatus" ] || [ "$3" = "raidstatus" ] || [ "$3" = "raid-status" ];then
+	if [ -f $f_raid ];then
+		boss_cp=`cat $f_raid`
+	else
+		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
+		boss_cp=$((${boss_l/%?/}))
+	fi
+	echo "[boss]${raid_boss_admin}"
+	echo "cp : $boss_cp"
+	exit
+fi
 
 if [ "$3" = "-raid" ] || [ "$3" = "-r" ] || [ "$3" = "r" ];then
 	battle_raid $1 $2
@@ -346,6 +419,7 @@ fi
 if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 	if [ $updated_at -ge $d ];then
 		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
+			echo "limit battle"
 			exit
 		else
 			echo "limit battle"
@@ -391,9 +465,11 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 		cp_i=`echo $tt |awk "NR==$rs"`
 		cp_b=`echo $ttt |awk "NR==$rss"`
 		if [ -z "$cp_i" ];then
+			echo "null error"
 			exit
 		fi
 		if [ -z "$cp_b" ];then
+			echo "null error"
 			exit
 		fi
 
@@ -463,6 +539,7 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
 	next=`echo $data|jq -r .next`
 	if [ "$next" = "null" ];then
+		echo "null error"
 		exit
 	fi
 	d=`date +"%Y%m%d"`
@@ -516,6 +593,7 @@ fi
 
 if [ $next -gt $d ];then
 	if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
+		echo limit 1 day
 		exit
 	else
 		echo limit 1 day
