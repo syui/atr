@@ -251,13 +251,24 @@ function battle_raid(){
 			fi
 		fi
 
-		if [ $cp_i -gt $cp_bb ];then
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-			sleep 5
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
-		else
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+		data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		card_check=`echo $data_uu|jq -r ".[]|select(.card == 25)"`
+		if [ -n "$card_check" ];then
+			echo "---"
+			echo "[card]"
+			echo "you already have"
+			exit
 		fi
+
+		sleep 1
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":25,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+		#if [ $cp_i -gt $cp_bb ];then
+		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+		#	sleep 2
+		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+		#else
+		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+		#fi
 
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
@@ -344,7 +355,7 @@ day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
 
 f_raid=$HOME/.config/atr/txt/card_raid.txt
-raid_boss_admin=shino3.bsky.social
+#raid_boss_admin=shino3.bsky.social
 boss_id=47
 if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
 	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
