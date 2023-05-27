@@ -6,8 +6,6 @@ case $OSTYPE in
 		;;
 esac
 
-
-
 function user_data(){
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
@@ -105,25 +103,19 @@ function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
-	boss_user_bool=true
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 30000))
+	boss_cp=$((boss_cp + 40000))
 
-		# ai
-		boss_user=ai
-		boss_id=2
-		boss_user_time=ai
+	if [ -n "$raid_boss_admin" ];then
+		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
+		boss_user_bsky=$raid_boss_admin
+		boss_cp=100000
+		boss_id=$raid_boss_id
+		boss_card=23
+		boss_card_win=24
+	fi
 
-		if [ "$boss_user_bool" = "true" ];then
-			boss_user=shino3
-			boss_user_bsky=${boss_user}.bsky.social
-			boss_cp=100000
-			boss_id=47
-			boss_card=23
-			boss_card_win=24
-		fi
-
-	if [ "$boss_user_bool" = "true" ] && [ ! -f $f_raid ];then
+	if [ -n "$raid_boss_admin" ] && [ ! -f $f_raid ];then
 		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
 		boss_cp=$((${boss_l/%?/}))
 	fi
@@ -158,28 +150,23 @@ function battle_raid(){
 
 	# time attack
 	rr=`date +"%H:%M"`
-	if [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "$boss_user_time" ];then
+	if [ -n "$raid_boss_admin" ] && [ "$boss_user" = "$boss_user_time" ];then
 		echo "time : $rr ---> $raid_time"
 	fi
 
-	if [ "$raid_time" = "$rr" ] && [ "$boss_user_bool" = "true" ] && [ "$boss_user" = "$boss_user_time" ];then
+	if [ "$raid_time" = "$rr" ] && [ -n "$raid_boss_admin" ] && [ "$boss_user" = "$boss_user_time" ];then
 		echo "boss win!"
 		cp_b=`cat $f_raid`
 		echo "cp : $cp_b"
-		echo "1" >! $f_raid
+		echo 1 >! $f_raid
 		body=`echo "\n[card]\nid : $boss_card_win\ncp : 0"`
 		sleep 3
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card_win,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
 		tmp=`$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"`
 	fi
 
-	if [ $updated_at -ge $d ];then
-		if [ "$updated_at" = "$d" ] && { [ "$updated_at_m" = "$day_m" ] || [ "$updated_at_m" = "$day_mm" ] || [ "$updated_at_m" = "$day_mmm" ] };then
-			echo "limit battle"
-			exit
-		else
-			echo "limit battle"
-		fi
+	if [ $raid_at -ge $d ];then
+		echo "limit battle"
 	else
 		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
@@ -197,7 +184,9 @@ function battle_raid(){
 		cp_b=`cat $f_raid`
 		cp_bb=`expr $cp_b - $cp_i`
 		echo "[raid battle]"
-		echo "@${boss_user_bsky}\nhttps://card.syui.ai/${boss_user}"
+		if [ -n "$boss_user_bsky" ];then
+			echo "@${boss_user_bsky}\nhttps://card.syui.ai/${boss_user}"
+		fi
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			echo "⚡  $cp_i vs $cp_b ---> $cp_bb"
 		else
@@ -219,11 +208,12 @@ function battle_raid(){
 
 		if [ 0 -ge $cp_bb ];then
 			echo "win!"
-			echo "0" >! $f_raid
+			echo 0 >! $f_raid
+			rm $cfg
 			card=`echo $(($RANDOM % 15))`
-			if [ "$boss_user_bool" = "true" ];then
+			if [ -n "$raid_boss_admin" ];then
 				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
-				sleep 3
+				sleep 1
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$boss_id,\"card\":$boss_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
 				tmp=`$HOME/.cargo/bin/atr @ ${boss_user_bsky} -p "$body"`
 				raid_end=`date +"%H:%M"`
@@ -251,24 +241,30 @@ function battle_raid(){
 			fi
 		fi
 
-		data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
-		card_check=`echo $data_uu|jq -r ".[]|select(.card == 25)"`
-		if [ -n "$card_check" ];then
-			echo "---"
-			echo "[card]"
-			echo "you already have"
-			exit
+		if [ -n "$raid_boss_admin" ];then
+			data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+			card_check=`echo $data_uu|jq -r ".[]|select(.card == $raid_sp_card)"`
 		fi
 
-		sleep 1
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":25,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
-		#if [ $cp_i -gt $cp_bb ];then
-		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-		#	sleep 2
-		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
-		#else
-		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-		#fi
+		if [ -n "$raid_boss_admin" ] && [ -z "$card_check" ];then
+			sleep 1
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$raid_sp_card,\"status\":\"super\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+			card=`echo $tmp|jq -r .card`
+			card_url=`echo $tmp|jq -r .url`
+			cp=`echo $tmp|jq -r .cp`
+			echo "---"
+			echo "[card]"
+			echo "id : ${card}"
+			echo "cp : ${cp}"
+		fi
+
+		if [ $cp_i -gt $cp_bb ];then
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+			sleep 2
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+		else
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
+		fi
 
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
@@ -278,7 +274,7 @@ function battle_raid(){
 		echo "id : ${card}"
 		echo "cp : ${cp}"
 
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 	fi
 	exit
 }
@@ -296,13 +292,22 @@ function l_cards() {
 	done
 }
 
+url=https://api.syui.ai
+cfg=$HOME/.config/atr/scpt/card_config.json
+if [ -f $cfg ];then
+	raid_boss_admin=`cat $cfg|jq -r .raid_admin`
+	boss_user_time=`cat $cfg|jq -r .raid_time | cut -d . -f 1`
+	boss_user=`echo $raid_boss_admin | cut -d . -f 1`
+	raid_boss_id=`curl -sL "$url/users?itemsPerPage=2000"|jq ".[]|select(.username == \"$boss_user\")"|jq -r .id`
+	raid_sp_card=`cat $cfg|jq -r .raid_card`
+fi
+
 f_raid=$HOME/.config/atr/txt/card_raid.txt
 raid_cp=`cat $f_raid`
 d=`date +"%Y%m%d"`
 nd=`date +"%Y%m%d" -d '1 day'`
 username=`echo $1|cut -d . -f 1`
 #username=$1
-url=https://api.syui.ai
 url_user_all="$url/users?itemsPerPage=2000"
 f=$HOME/.config/atr/scpt/t.webp
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
@@ -350,13 +355,15 @@ updated_at=`echo $data|jq -r .updated_at`
 updated_at_m=`date -d "$updated_at" +"%H%M"`
 updated_at_n=`date --iso-8601=seconds`
 updated_at=`date -d "$updated_at" +"%Y%m%d"`
+raid_at=`echo $data|jq -r .raid_at`
+raid_at=`date -d "$raid_at" +"%Y%m%d"`
+raid_at_n=`date --iso-8601=seconds`
 day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
 
 f_raid=$HOME/.config/atr/txt/card_raid.txt
-#raid_boss_admin=shino3.bsky.social
-boss_id=47
+
 if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
 	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
 		rm $f_raid
@@ -369,25 +376,13 @@ if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];
 fi
 
 if [ "$3" = "-raidstop" ] || [ "$3" = "raidstop" ] || [ "$3" = "raid-stop" ];then
-	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
+	if [ "syui.ai" = "$1" ];then
 		echo 0 >! $f_raid
 		echo "admin : $raid_boss_admin"
 		echo "raid stop!"
 	else
 		echo no raid admin
 	fi
-	exit
-fi
-
-if [ "$3" = "-raidstatus" ] || [ "$3" = "raidstatus" ] || [ "$3" = "raid-status" ];then
-	if [ -f $f_raid ];then
-		boss_cp=`cat $f_raid`
-	else
-		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
-		boss_cp=$((${boss_l/%?/}))
-	fi
-	echo "[boss]${raid_boss_admin}"
-	echo "cp : $boss_cp"
 	exit
 fi
 
