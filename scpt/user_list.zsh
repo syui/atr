@@ -98,10 +98,10 @@ fi
 
 function first(){
 	#https://bsky.app/profile/$1/post/$e
-	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value"
+	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value.text,.value.createdAt"
 }
 
-if [ "$2" = "-f" ];then
+if [ "$2" = "-f" ] || [ "$2" = "f" ];then
 	first $1
 	exit
 fi
@@ -118,8 +118,13 @@ function first_created(){
 	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.value.createdAt"
 }
 
-first_created $1
+if [ -z "$2" ];then
+	first_created $1
+fi
 
+if [ -n "$2" ] ;then
+	first $2
+fi
 
 #for ((i=0;i<=300;i++))
 #do
