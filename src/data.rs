@@ -310,6 +310,7 @@ pub struct Post {
     pub reason: Option<String>,
     pub indexedAt: String,
     pub replyCount: i32,
+    pub postCount: i32,
     pub repostCount: i32,
     pub likeCount: i32,
 }
@@ -345,22 +346,49 @@ pub struct Handle {
 //    pub did: String
 //}
 
+//#[derive(Serialize, Deserialize)]
+//pub struct Labels {
+//}
+//
+//#[derive(Serialize, Deserialize)]
+//pub struct Viewer {
+//    pub muted: bool,
+//    pub blockedBy: bool,
+//}
+
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct Profile {
     pub did: String,
     pub handle: String,
-    //pub followCount: String,
-    //pub followersCount: String,
-    //pub postsCount: String,
-    //pub creator: String,
-    //pub indexedAt: String,
-    //pub avatar: Option<String>,
-    //pub banner: Option<String>,
-    //pub displayName: Option<String>,
-    //pub description: Option<String>,
+    pub followsCount: Option<i32>,
+    pub followersCount: Option<i32>,
+    pub postsCount: i32,
+    pub indexedAt: Option<String>,
+    pub avatar: Option<String>,
+    pub banner: Option<String>,
+    pub displayName: Option<String>,
+    pub description: Option<String>,
+    pub viewer: Viewer,
+    pub labels: Labels,
 }
 
+//
+//  "did": "did:plc:uqzpqmrjnptsxezjx4xuh2mn",
+//  "handle": "syui.ai",
+//  "displayName": "syui",
+//  "avatar": "https://cdn.bsky.social/imgproxy/aSbqSRpqXSxkXBRpRODZUEquXcWOdaBXiwtPcMvmXZM/rs:fill:1000:1000:1:0/plain/bafkreid6kcc5pnn4b3ar7mj6vi3eiawhxgkcrw3edgbqeacyrlnlcoetea@jpeg",
+//  "banner": "https://cdn.bsky.social/imgproxy/OAuuvXAKZpWzPm6pCcAC0R07npMexrWoOiNELnW_iw0/rs:fill:3000:1000:1:0/plain/bafkreih4axx4k243yd5zbj5zrehzm6cramzl6tsygubqgwzagxar7re34u@jpeg",
+//  "followsCount": 1083,
+//  "followersCount": 1044,
+//  "postsCount": 3925,
+//  "indexedAt": "2023-04-15T08:30:29.809Z",
+//  "viewer": {
+//    "muted": false,
+//    "blockedBy": false
+//  },
+//  "labels": []
+//
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
 pub struct Deep {

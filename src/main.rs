@@ -380,7 +380,12 @@ fn main() {
                 .usage("atr profile")
                 .description("profile\n\t\t\t$ atr pro\n\t\t\t$ atr pro yui.bsky.social")
                 .alias("pro")
-                .action(profile),
+                .action(profile)
+                .flag(
+                    Flag::new("post", FlagType::Bool)
+                    .description("user flag(ex: $ atr pro syui.bsky.social -p)")
+                    .alias("p"),
+                    )
                 )
             .command(
                 Command::new("notify")
@@ -792,17 +797,28 @@ fn pro(u: String) {
         let str = at_profile::get_request(u.to_string());
         println!("{}", str.await);
     };
-
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
 }
 
-fn profile(_c: &Context) {
+fn prop(u: String) {
+    let h = async {
+        let str = at_profile::get_request(u.to_string());
+        let profile: Profile = serde_json::from_str(&str.await).unwrap();
+        println!("{}", profile.postsCount);
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn profile(c: &Context) {
     aa().unwrap();
-    let m = _c.args[0].to_string();
+    let m = c.args[0].to_string();
     let user = cfg(&"user");
-    if _c.args.len() == 0 {
+    if c.args.len() == 0 {
         pro(user);
+    } else if c.bool_flag("post") {
+        prop(m);
     } else {
         pro(m);
     }
