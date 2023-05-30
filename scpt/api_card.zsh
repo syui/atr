@@ -172,6 +172,8 @@ function battle_raid(){
 		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 		skill=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].skill"`
 		ss=$(($RANDOM % 2))
+		ss_post=$(($RANDOM % 2))
+		#ss_post=$(($RANDOM % 10))
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			cp_i=$((cp_i + cp_i))
 		fi
@@ -189,7 +191,11 @@ function battle_raid(){
 		fi
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			echo "⚡  $cp_i vs $cp_b ---> $cp_bb"
-		else
+		elif [ "$skill" = "post" ] && [ $ss_post -eq 1 ];then
+			cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
+			cp_i=$((cp_i + cp_post))
+			echo "🔥 $cp_i vs $cp_b ---> $cp_bb"
+		else 
 			echo "$cp_i vs $cp_b ---> $cp_bb"
 		fi
 
@@ -566,13 +572,22 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 		s=normal
 	fi
 	skill=$(($RANDOM % 2))
+	#if [ $skill -eq 1 ];then
+	#	skill=critical
+	#	plus=$(($RANDOM % 400))
+	#	cp=$((cp + plus))
+	#else
+	#	skill=normal
+	#fi
+	#skill=$(($RANDOM % 10))
 	if [ $skill -eq 1 ];then
-		skill=critical
+		skill=post
 		plus=$(($RANDOM % 400))
 		cp=$((cp + plus))
 	else
 		skill=normal
 	fi
+
 	if [ $card -eq 13 ];then
 		plus=$(($RANDOM % 500 + 800))
 		cp=$((cp + plus))
