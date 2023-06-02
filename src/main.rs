@@ -40,6 +40,7 @@ pub mod at_notify_read;
 pub mod at_reply;
 pub mod at_reply_link;
 pub mod at_reply_media;
+pub mod at_reply_og;
 pub mod at_post;
 pub mod at_post_link;
 pub mod at_profile;
@@ -202,7 +203,37 @@ fn main() {
                 )
             )
         .command(
-            Command::new("handle")
+            Command::new("reply-og")
+            .usage("atr repost")
+            .description("repost\n\t\t\t$ atr repost\n\t\t\t$ atr repost subject")
+            .action(reply_og)
+            .flag(
+                Flag::new("uri", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            .flag(
+                Flag::new("cid", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            .flag(
+                Flag::new("link", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            .flag(
+                Flag::new("title", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            .flag(
+                Flag::new("description", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            .flag(
+                Flag::new("img", FlagType::String)
+                .description("uri(ex: $ atr repost <cid> -u <uri>)")
+                )
+            )
+            .command(
+                Command::new("handle")
             .usage("atr h")
             .description("handle update\n\t\t\t$ atr -h example.com\n\t\t\t$ atr -h user.bsky.social")
             .alias("h")
@@ -347,6 +378,12 @@ fn main() {
                 .description("media post\n\t\t\t$ atr m ~/test.png")
                 .alias("m")
                 .action(m)
+                )
+            .command(
+                Command::new("notify-all")
+                .usage("atr m {} -p text")
+                .description("media post\n\t\t\t$ atr m ~/test.png")
+                .action(notify_all)
                 )
             .command(
                 Command::new("img-upload")
@@ -916,6 +953,27 @@ fn img_post(c: &Context) {
     }
 }
 
+fn reply_og(c: &Context) {
+    let m = c.args[0].to_string();
+    if let Ok(link) = c.string_flag("link") {
+        if let Ok(cid) = c.string_flag("cid") {
+            if let Ok(uri) = c.string_flag("uri") {
+                if let Ok(title) = c.string_flag("title") {
+                    if let Ok(description) = c.string_flag("description") {
+                        if let Ok(img) = c.string_flag("img") {
+                            let h = async {
+                                let str = at_reply_og::post_request(m.to_string(),link.to_string(),cid.to_string(),uri.to_string(), img.to_string(), title.to_string(), description.to_string());
+                                println!("{}",str.await);
+                            };
+                            tokio::runtime::Runtime::new().unwrap().block_on(h);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn hh(c: &Context) {
     let m = c.args[0].to_string();
     let h = async {
@@ -1014,6 +1072,16 @@ fn nn(c: &Context, limit: i32, check: bool) {
                 }
             }
         }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn notify_all(_c: &Context) {
+    aa().unwrap();
+    let h = async {
+        let j = at_notify_limit::get_request(100).await;
+        println!("{}", j);
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
@@ -1636,7 +1704,21 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_notify);
                                 cid_write(cid.to_string());
                             }
+                        } else if com == "占って" || com == "占い" || com == "占って！" || com == "占い！" || com == "/fortune" || com == "fortune" || com == "占って〜" {
+                            cid_write(cid.to_string());
+                            //let prompt = &vec[2..].join(" ");
+                            let file = "/.config/atr/scpt/card_fortune.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            
+                            println!("{}", d);
+                            
                         } else if com == "card" || com == "/card" {
+                            cid_write(cid.to_string());
                             let prompt = &vec[2..].join(" ");
                             //let str_notify = at_notify_read::post_request(time.to_string()).await;
                             //println!("{}", str_notify);
@@ -1667,7 +1749,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
-                                cid_write(cid.to_string());
+                                //cid_write(cid.to_string());
                             }
 
                         } else if reason == "mention" {

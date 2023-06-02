@@ -75,6 +75,7 @@ function yui_card() {
 function user_card(){
 	id=$1
 	data=`curl -sL "$url/users/$id"`
+	luck=`echo $data|jq -r .luck`
 	u=`echo $data|jq -r .username`
 	data_u=`curl -sL "$url/users/$id/card?itemsPerPage=2000"`
 	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
@@ -88,6 +89,7 @@ function user_card(){
 		exit
 	fi
 	echo "user : $u"
+	echo "luck : $luck"
 	echo "[card]"
 	echo "cp : $cp_i"
 	echo "cp : $cp_ii"
@@ -550,6 +552,7 @@ fi
 if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
 	next=`echo $data|jq -r .next`
+	luck=`echo $data|jq -r .luck`
 	if [ "$next" = "null" ];then
 		echo "null error"
 		exit
@@ -571,21 +574,29 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	else
 		s=normal
 	fi
+
 	skill=$(($RANDOM % 2))
-	#if [ $skill -eq 1 ];then
-	#	skill=critical
-	#	plus=$(($RANDOM % 400))
-	#	cp=$((cp + plus))
-	#else
-	#	skill=normal
-	#fi
-	#skill=$(($RANDOM % 10))
+	if [ $skill -eq 1 ];then
+		skill=critical
+		plus=$(($RANDOM % 400))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
+
+	skill=$(($RANDOM % 10))
 	if [ $skill -eq 1 ];then
 		skill=post
 		plus=$(($RANDOM % 400))
 		cp=$((cp + plus))
 	else
 		skill=normal
+	fi
+
+	if [ $luck -eq 7 ];then
+		skill=luck
+		plus=$(($RANDOM % 1000))
+		cp=$((cp + plus))
 	fi
 
 	if [ $card -eq 13 ];then
@@ -600,7 +611,7 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	echo "\n[card]"
 	echo "id : $card"
 	echo "cp : $cp"
-	if [ "$skill" = "critical" ];then
+	if [ "$skill" = "critical" ] || [ "$skill" = "post" ] || [ "$skill" = "luck" ];then
 		echo "skill : $skill"
 	fi
 
