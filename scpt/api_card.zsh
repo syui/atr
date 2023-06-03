@@ -72,10 +72,31 @@ function yui_card() {
 	echo "cp : ${cp}"
 }
 
+function moji_mode_card() {
+	card=$1
+	cp=$2
+	skills=$3
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have"
+		exit
+	fi
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	cp=`echo $tmp|jq -r .cp`
+	ascii_moji_b
+	echo "---"
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+	echo "skill : ${skill}"
+	sleep 2
+}
+
 function user_card(){
 	id=$1
 	data=`curl -sL "$url/users/$id"`
-	luck=`echo $data|jq -r .luck`
 	u=`echo $data|jq -r .username`
 	data_u=`curl -sL "$url/users/$id/card?itemsPerPage=2000"`
 	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
@@ -89,7 +110,6 @@ function user_card(){
 		exit
 	fi
 	echo "user : $u"
-	echo "luck : $luck"
 	echo "[card]"
 	echo "cp : $cp_i"
 	echo "cp : $cp_ii"
@@ -248,11 +268,7 @@ function battle_raid(){
 				cp=$((cp + plus))
 			fi
 		fi
-		if [ $luck -eq 7 ] && [ $card -eq 27 ];then
-			s=luck
-			plus=$(($RANDOM % 1500 + 300))
-			cp=$((cp + plus))
-		fi
+
 
 		if [ -n "$raid_boss_admin" ];then
 			data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
@@ -333,7 +349,7 @@ if [ -z "$1" ];then
 fi
 data_tmp=`curl -sL $url_user_all`
 data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
-luck=`echo "$data|jq -r .luck"`
+
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
 raid_last=$1
 
@@ -431,6 +447,35 @@ fi
 
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
 	yui_card 19 123
+	exit
+fi
+
+if [ "$3" = "moji" ] || [ "$3" = "-moji" ];then
+	echo "not open"
+	exit
+	plus=$(($RANDOM % 1000 + 400))
+	cp=$((cp + plus))
+
+	skill=$(($RANDOM % 2))
+	if [ $skill -eq 1 ];then
+		skill=critical
+		plus=$(($RANDOM % 400))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
+
+	skill=$(($RANDOM % 10))
+	if [ $skill -eq 1 ];then
+		skill=post
+		plus=$(($RANDOM % 400))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
+
+	moji_mode_card 27 $cp $skill
+
 	exit
 fi
 
@@ -561,7 +606,6 @@ fi
 if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
 	next=`echo $data|jq -r .next`
-	luck=`echo $data|jq -r .luck`
 	if [ "$next" = "null" ];then
 		echo "null error"
 		exit
@@ -600,12 +644,6 @@ if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 		cp=$((cp + plus))
 	else
 		skill=normal
-	fi
-
-	if [ $luck -eq 7 ];then
-		skill=luck
-		plus=$(($RANDOM % 1000))
-		cp=$((cp + plus))
 	fi
 
 	if [ $card -eq 13 ];then
