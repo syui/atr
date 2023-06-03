@@ -106,7 +106,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 40000))
+	boss_cp=$((boss_cp + 50000))
 
 	if [ -n "$raid_boss_admin" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -248,6 +248,11 @@ function battle_raid(){
 				cp=$((cp + plus))
 			fi
 		fi
+		if [ $luck -eq 7 ] && [ $card -eq 27 ];then
+			s=luck
+			plus=$(($RANDOM % 1500 + 300))
+			cp=$((cp + plus))
+		fi
 
 		if [ -n "$raid_boss_admin" ];then
 			data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
@@ -281,6 +286,9 @@ function battle_raid(){
 		echo "[card]"
 		echo "id : ${card}"
 		echo "cp : ${cp}"
+		if [ "$s" = "critical" ] || [ "$s" = "luck" ] || [ "$s" = "post" ];then
+			echo "skill : ${s}"
+		fi
 
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 	fi
@@ -325,6 +333,7 @@ if [ -z "$1" ];then
 fi
 data_tmp=`curl -sL $url_user_all`
 data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
+luck=`echo "$data|jq -r .luck"`
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
 raid_last=$1
 

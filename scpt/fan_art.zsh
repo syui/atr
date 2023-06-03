@@ -70,12 +70,12 @@ if [ "$3" = "-l" ];then
 	exit
 fi
 
-if ! echo $3|grep "bsky.app/profile/">/dev/null 2>&1;then
+if ! echo $3|grep -e "bsky.app/profile/" -e "nostter.vercel.app" >/dev/null 2>&1;then
 	echo "please url : bsky.app/profile/$1/post/xxx"
 	exit
 fi
 
-if ! echo $4|grep "https://cdn.bsky.social/imgproxy/">/dev/null 2>&1;then
+if ! echo $4|grep -e "https://cdn.bsky.social/imgproxy/" -e "https://nostr.build/i/" >/dev/null 2>&1;then
 	if [ "$opt" != "-d" ];then
 		echo "please url : cdn.bsky.social/imgproxy"
 		exit
@@ -85,9 +85,16 @@ fi
 function fan_art(){
 	add=$1
 	did=$2
-	link=$3
+	if echo $3|grep "nostter.vercel.app" >/dev/null 2>&1;then
+		link=`echo $3|cut -d / -f 1-4`
+	else
+		link=$3
+	fi
 	img=`echo $4|tr -d "'"`
 	author=`echo $3|cut -d / -f 5`
+	if [ -z "$author" ];then
+		author="nostr"
+	fi
 	cd $dir_git_card_page
 	check_null=`cat $file_fanart|jq ".[]|select(.img == \"$img\")"`
 	if [ -n "$check_null" ];then
