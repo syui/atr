@@ -39,8 +39,6 @@ fi
 cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[].card"|sort|uniq|sed -e '1d'`
 cp_n=`echo $cp_i|wc -l`
 
-echo $cp_i
-echo $cp_n
 if [ 3 -gt $cp_n ];then
 	$atr r "card rare 3-type required" -c $cid -u $uri
 	exit
@@ -65,11 +63,6 @@ fi
 
 title=`echo $j|jq -r .h`
 desc=`echo $j|jq -r .p`
-
-echo card : $card
-echo luck : $luck/7
-echo title : $title
-echo desc : $desc
 
 if [ 0 -eq $luck ];then
 	desc="危険"
@@ -103,11 +96,9 @@ if [ 7 -eq $luck ];then
 fi
 
 body=`echo "luck : $luck/7"`
-#body=`echo "luck : $luck/7\n+ $sub"`
-if ! $atr reply-og "$body" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link|jq . ;then
-	$atr reply-og "$body" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link
-fi
-
+echo $body
+tmp=`$atr reply-og "$body" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\"}" -s $url/users/$uid`
+exit

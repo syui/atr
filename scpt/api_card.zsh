@@ -394,8 +394,12 @@ raid_at_n=`date --iso-8601=seconds`
 day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
-
 f_raid=$HOME/.config/atr/txt/card_raid.txt
+
+# luck
+luck=`echo $data|jq -r .luck`
+luck_at=`echo $data|jq -r .luck_at`
+luck_at=`date -d "$luck_at" +"%Y%m%d"`
 
 if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
 	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
@@ -693,6 +697,7 @@ if [ -z "$card" ];then
 	cp=`echo $tmp|jq -r .cp`
 	skill=`echo $tmp|jq -r .skill`
 fi
+
 echo "[card]"
 echo id : $card
 echo cp : $cp
@@ -702,3 +707,32 @@ fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
 
+luck_at_d=`date +"%Y%m%d"`
+# luck day
+if [ $luck -eq 7 ] && [ "$luck_at" = "$luck_at_d" ];then
+	skill=luck
+	card=`echo $(($RANDOM % 15))`
+	cp=`echo $(($RANDOM % 300 + 200))`
+	s=$(($RANDOM % 2))
+	if [ $s -eq 1 ];then
+		s=super
+		plus=$(($RANDOM % 500 + 500))
+		cp=$((cp + plus))
+	else
+		s=normal
+	fi
+	if [ $card -eq 13 ];then
+		plus=$(($RANDOM % 1200 + 800))
+		cp=$((cp + plus))
+	fi
+	cp=$((cp + 100))
+	sleep 2
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\", \"skill\": \"$skill\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	card_url=`echo $tmp|jq -r .url`
+	cp=`echo $tmp|jq -r .cp`
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+	echo "skill : ${skill}"
+fi

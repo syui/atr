@@ -1705,54 +1705,55 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 cid_write(cid.to_string());
                             }
                         } else if com == "占って" || com == "占い" || com == "占って！" || com == "占い！" || com == "/fortune" || com == "fortune" || com == "占って〜" {
-                            if read == false {
-                                //let prompt = &vec[2..].join(" ");
-                                let file = "/.config/atr/scpt/card_fortune.zsh";
-                                let mut f = shellexpand::tilde("~").to_string();
-                                f.push_str(&file);
-                                use std::process::Command;
+                            //let prompt = &vec[2..].join(" ");
+                            let file = "/.config/atr/scpt/card_fortune.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
 
-                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).output().expect("zsh");
-                                let d = String::from_utf8_lossy(&output.stdout);
-
-                                println!("{}", d);
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d = d.to_string();
+                            let text_limit = char_c(d);
+                            if text_limit.len() > 3 {
+                                println!("{}", text_limit);
                                 cid_write(cid.to_string());
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
                             }
                         } else if com == "card" || com == "/card" {
-                            if read == false {
-                                //cid_write(cid.to_string());
-                                let prompt = &vec[2..].join(" ");
-                                //let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                //println!("{}", str_notify);
-                                let file = "/.config/atr/scpt/api_card.zsh";
-                                let mut f = shellexpand::tilde("~").to_string();
-                                f.push_str(&file);
-                                use std::process::Command;
+                            //cid_write(cid.to_string());
+                            let prompt = &vec[2..].join(" ");
+                            //let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            //println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/api_card.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
 
-                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
-                                let d = String::from_utf8_lossy(&output.stdout);
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
 
-                                // test reply link
-                                let handlev: Vec<&str> = handle.split('.').collect();
-                                let handlev = handlev[0].trim().to_string();
-                                let link = "https://card.syui.ai/".to_owned() + &handlev;
-                                let s = 0;
-                                let e = link.chars().count();
-                                println!("{}", link);
-                                println!("{}", e);
+                            // test reply link
+                            let handlev: Vec<&str> = handle.split('.').collect();
+                            let handlev = handlev[0].trim().to_string();
+                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
 
-                                let d = "\n".to_owned() + &d.to_string();
-                                println!("{}", d);
-                                let text_limit = char_c(d);
-                                println!("{}", text_limit);
+                            let d = "\n".to_owned() + &d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            println!("{}", text_limit);
 
-                                if text_limit.len() > 3 {
-                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                    println!("{}", str_rep);
-                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                    println!("{}", str_notify);
-                                    cid_write(cid.to_string());
-                                }
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
                         } else if reason == "mention" {
                             cid_write(cid.to_string());
