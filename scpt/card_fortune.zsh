@@ -30,6 +30,7 @@ luck_at=`echo $data|jq -r .luck_at`
 luck_at_n=`date --iso-8601=seconds`
 luck_at=`date -d "$luck_at" +"%Y%m%d"`
 day_at=`date +"%Y%m%d"`
+nd=`date +"%Y%m%d" -d '1 days ago'`
 
 if [ "$luck_at" = "$day_at" ];then
 	$atr r "limit day" -c $cid -u $uri
@@ -62,6 +63,7 @@ if [ -z $img ] || [ "$img" = "null" ];then
 fi
 
 title=`echo $j|jq -r .h`
+title="今日の運勢"
 desc=`echo $j|jq -r .p`
 
 if [ 0 -eq $luck ];then
@@ -77,7 +79,7 @@ if [ 2 -eq $luck ];then
 fi
 
 if [ 3 -eq $luck ];then
-	desc="問題なし"
+	desc="普通"
 fi
 
 if [ 4 -eq $luck ];then
@@ -92,7 +94,7 @@ if [ 6 -eq $luck ];then
 fi
 
 if [ 7 -eq $luck ];then
-	desc="超える"
+	desc="超越"
 fi
 
 body=`echo "luck : $luck/7"`
@@ -100,5 +102,10 @@ echo $body
 tmp=`$atr reply-og "$body" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
-tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\"}" -s $url/users/$uid`
+
+if [ $luck -eq 7 ];then
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\", \"next\": \"$nd\"}" -s $url/users/$uid`
+else
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\"}" -s $url/users/$uid`
+fi
 exit

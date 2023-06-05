@@ -1435,7 +1435,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                     let text = &n[i].record.text.as_ref().unwrap();
                     let vec: Vec<&str> = text.split_whitespace().collect();
                     if reason == "reply" {
-                        cid_write(cid.to_string());
                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                         println!("{}", str_notify);
                         let prompt = &vec[0..].join(" ");
@@ -1448,6 +1447,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                         let text_limit = char_c(str_openai);
                         let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                         println!("{}", str_rep);
+                        cid_write(cid.to_string());
                     }
                     if vec.len() > 1 {
                         let com = vec[1].trim().to_string();
@@ -1756,7 +1756,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 cid_write(cid.to_string());
                             }
                         } else if reason == "mention" {
-                            cid_write(cid.to_string());
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
                             let prompt = &vec[1..].join(" ");
@@ -1769,6 +1768,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let text_limit = char_c(str_openai);
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
+                            cid_write(cid.to_string());
                         }
                     }
                 }
