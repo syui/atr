@@ -34,6 +34,7 @@ use std::io::Read;
 use std::io::Write;
 
 pub mod openai;
+pub mod openai_char;
 pub mod deepl;
 pub mod at_notify_limit;
 pub mod at_notify_read;
@@ -92,6 +93,22 @@ struct OpenData {
 #[derive(Serialize, Deserialize, Debug)]
 struct Choices {
     text: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(tag = "type")]
+struct OpenChar {
+    choices: Vec<ChoicesChar>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct ChoicesChar {
+    message: OpenContent,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct OpenContent {
+    content: String,
 }
 
 fn main() {
@@ -487,6 +504,11 @@ fn main() {
                     Flag::new("model", FlagType::String)
                     .description("model flag")
                     .alias("m"),
+                    )
+                .flag(
+                    Flag::new("char", FlagType::Bool)
+                    .description("model flag")
+                    .alias("c"),
                     )
                 )
             .command(
@@ -1354,6 +1376,8 @@ fn ppd(c: &Context, lang: &str, check_post: bool) {
 fn openai_read(c: &Context) {
     if let Ok(model) = c.string_flag("model") {
         ppc(c, &model, false);
+    } else if c.bool_flag("char") {
+        ppc_char(c);
     } else {
         let model = "text-davinci-003";
         ppc(c, &model, false);
@@ -1383,7 +1407,19 @@ fn ppc(c: &Context, model: &str, check_post: bool) {
             let text_limit = char_c(str_openai);
             let str_rep = at_post::post_request(text_limit.to_string()).await;
             println!("{}", str_rep); 
+        } else { 
+            println!("{}", str_openai); 
         }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn ppc_char(c: &Context) {
+    let m = c.args[0].to_string();
+    let h = async {
+        let str_openai = openai_char::post_request(m.to_string()).await;
+        println!("{}", str_openai); 
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
     return res
@@ -1441,10 +1477,19 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                         println!("prompt:{}", prompt);
                         println!("cid:{}, uri:{}", cid, uri);
                         println!("{}", text);
-                        let model = "text-davinci-003";
-                        let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                        //let model = "text-davinci-003";
+                        //let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                        let str_openai = openai_char::post_request(prompt.to_string()).await;
                         println!("{}", str_openai);
                         let text_limit = char_c(str_openai);
+
+                        // save like
+                        let file = "/.config/atr/scpt/openai_like.zsh";
+                        let mut f = shellexpand::tilde("~").to_string();
+                        f.push_str(&file);
+                        use std::process::Command;
+                        Command::new(&f).arg(&handle).arg(&did).arg(&text_limit).output().expect("zsh");
+
                         let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                         println!("{}", str_rep);
                         cid_write(cid.to_string());
@@ -1535,6 +1580,21 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             f.push_str(&file);
                             use std::process::Command;
                             let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let d =  d.to_string();
+                            println!("{}", d);
+                            let text_limit = char_c(d);
+                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                            println!("{}", str_rep);
+                            cid_write(cid.to_string());
+                        } else if com == "/reset" {
+                            let str_notify = at_notify_read::post_request(time.to_string()).await;
+                            println!("{}", str_notify);
+                            let file = "/.config/atr/scpt/openai_like_bot.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let output = Command::new(&f).arg(&handle).arg("reset").output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
                             let d =  d.to_string();
                             println!("{}", d);
@@ -1762,10 +1822,19 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("prompt:{}", prompt);
                             println!("cid:{}, uri:{}", cid, uri);
                             println!("{}", text);
-                            let model = "text-davinci-003";
-                            let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                            //let model = "text-davinci-003";
+                            //let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
+                            let str_openai = openai_char::post_request(prompt.to_string()).await;
                             println!("{}", str_openai);
                             let text_limit = char_c(str_openai);
+
+                            // save like
+                            let file = "/.config/atr/scpt/openai_like.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            Command::new(&f).arg(&handle).arg(&did).arg(&text_limit).output().expect("zsh");
+
                             let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                             println!("{}", str_rep);
                             cid_write(cid.to_string());

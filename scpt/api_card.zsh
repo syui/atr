@@ -747,7 +747,7 @@ fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
 
-s=`echo $(($RANDOM % 10))`
+s=`echo $(($RANDOM % 3))`
 luck_at_d=`date +"%Y%m%d"`
 # luck day
 if [ $luck -eq 7 ] && [ "$luck_at" = "$luck_at_d" ] && [ $s -eq 1 ];then

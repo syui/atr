@@ -104,8 +104,8 @@ pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 
 if [ $luck -eq 7 ];then
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\", \"next\": \"$nd\"}" -s $url/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": $luck, \"next\": \"$nd\"}" -s $url/users/$uid`
 else
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": \"$luck\"}" -s $url/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"luck_at\":\"$luck_at_n\",\"token\":\"$token\",\"luck\": $luck}" -s $url/users/$uid`
 fi
 exit
