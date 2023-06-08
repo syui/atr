@@ -2,10 +2,16 @@
 
 atr=$HOME/.cargo/bin/atr 
 url_j=https://card.syui.ai/json/card.json
+tcid=$HOME/.config/atr/txt/tmp_notify_cid.txt
+
 handle=$1
 did=$2
 cid=$3
 uri=$4
+
+if [ ! -d $HOME/.config/atr/txt ];then
+	mkdir -p $HOME/.config/atr/txt
+fi
 
 case $OSTYPE in
 	darwin*)
@@ -16,11 +22,24 @@ esac
 url=https://api.syui.ai
 username=`echo $1|cut -d . -f 1`
 link=https://card.syui.ai/$username
+ran=$(($RANDOM % 10))
+
+if [ $ran -eq 1 ];then
+	uranai="今日の運勢をルーン占いでやってください。結果を120文字以内で教えてください"
+else
+	uranai="今日の運勢をタロット占いでやってください。結果を120文字以内で教えてください"
+fi
 
 uid=`curl -sL "$url/users?itemsPerPage=2000"|jq ".[]|select(.username == \"$username\")"|jq -r .id`
 
 if [ -z $uid ] || [ "$uid" = "null" ];then
-	$atr r "api error" -c $cid -u $uri
+	body=`$atr chat "$uranai" -c`
+	body=`echo "占いにはアイのカードが3枚以上必要です\n\n$body"`
+	if [ "`cat $tcid`" != "$cid" ];then
+		if $atr r "$body" -c $cid -u $uri;then
+			echo $cid >! $tcid
+		fi
+	fi
 	exit
 fi
 
@@ -33,7 +52,12 @@ day_at=`date +"%Y%m%d"`
 nd=`date +"%Y%m%d" -d '1 days ago'`
 
 if [ "$luck_at" = "$day_at" ];then
-	$atr r "limit day" -c $cid -u $uri
+	body=`$atr chat "$uranai" -c`
+	if [ "`cat $tcid`" != "$cid" ];then
+		if $atr r "$body" -c $cid -u $uri;then
+			echo $cid >! $tcid
+		fi
+	fi
 	exit
 fi
 
@@ -41,7 +65,13 @@ cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[].card"|sort|uniq|sed -e '1d
 cp_n=`echo $cp_i|wc -l`
 
 if [ 3 -gt $cp_n ];then
-	$atr r "card rare 3-type required" -c $cid -u $uri
+	body=`$atr chat "$uranai" -c`
+	body=`echo "占いにはアイのカードが3枚以上必要です\n\n$body"`
+	if [ "`cat $tcid`" != "$cid" ];then
+		if $atr r "$body" -c $cid -u $uri;then
+			echo $cid >! $tcid
+		fi
+	fi
 	exit
 fi
 
@@ -62,44 +92,50 @@ if [ -z $img ] || [ "$img" = "null" ];then
 	exit
 fi
 
+text="アイ・カード占い"
 title=`echo $j|jq -r .h`
-title="今日の運勢"
-desc=`echo $j|jq -r .p`
+title="[${title}]"
+#desc=`echo $j|jq -r .p`
 
 if [ 0 -eq $luck ];then
-	desc="危険"
+	desc="0"
 fi
 
 if [ 1 -eq $luck ];then
-	desc="要注意"
+	desc="1"
 fi
 
 if [ 2 -eq $luck ];then
-	desc="注意"
+	desc="2"
 fi
 
 if [ 3 -eq $luck ];then
-	desc="普通"
+	desc="3"
 fi
 
 if [ 4 -eq $luck ];then
-	desc="順調"
+	desc="4"
 fi
 if [ 5 -eq $luck ];then
-	desc="好調"
+	desc="5"
 fi
 
 if [ 6 -eq $luck ];then
-	desc="絶好調"
+	desc="6"
 fi
 
 if [ 7 -eq $luck ];then
-	desc="超越"
+	desc="7"
 fi
 
-body=`echo "luck : $luck/7"`
-echo $body
-tmp=`$atr reply-og "$body" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
+desc=`echo "アイ数字は${luck}"`
+
+if [ "`cat $tcid`" != "$cid" ];then
+	if $atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link;then
+		echo $cid >! $tcid
+	fi
+fi
+
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 

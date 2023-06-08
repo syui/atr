@@ -134,7 +134,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 30000))
+	boss_cp=$((boss_cp + 50000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -555,8 +555,12 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 
 		data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 		data_u=`curl -sL "$url/users/$r/card?itemsPerPage=2000"`
-		tt=`echo $data_uu|jq ".[].cp"|sort -n -r`
-		ttt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		# 革命前
+		#tt=`echo $data_uu|jq ".[].cp"|sort -n -r`
+		#ttt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		# 革命後
+		tt=`echo $data_uu|jq ".[].cp"|sort -n`
+		ttt=`echo $data_u|jq ".[].cp"|sort -n`
 
 		#echo $data_u|jq ".[].cp"
 		nl=`echo $data_uu|jq length`
@@ -591,13 +595,17 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 		echo $ttt | sed -n 1,3p
 		echo "---"
 		echo $cp_i vs $cp_b
-		if [ $cp_i -gt $cp_b ];then
+		# 革命前
+		#if [ $cp_i -gt $cp_b ];then
+		# 革命後
+		if [ $cp_b -gt $cp_i ];then
 			echo "win!"
 		else
 			echo loss
 		fi
 
-		if [ $cp_i -gt $cp_b ];then
+		#if [ $cp_i -gt $cp_b ];then
+		if [ $cp_b -gt $cp_i ];then
 			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
