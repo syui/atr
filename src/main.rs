@@ -535,6 +535,22 @@ fn main() {
                     )
                 )
             .command(
+                Command::new("bot-tl")
+                .usage("atr bot-tl {}")
+                .description("bot\n\t\t\t$ atr bot-tl")
+                .action(bot_timeline)
+                .flag(
+                    Flag::new("limit", FlagType::Int)
+                    .description("nofity limit")
+                    .alias("l"),
+                    )
+                .flag(
+                    Flag::new("admin", FlagType::String)
+                    .description("set admin")
+                    .alias("a"),
+                    )
+                )
+            .command(
                 Command::new("test")
                 .usage("atr test{}")
                 .description("test\n\t\t\t$ atr test")
@@ -1219,6 +1235,42 @@ fn get_domain_zsh() {
     f.write_all(e.as_bytes()).unwrap();
 }
 
+//#[allow(unused_must_use)]
+//fn account_switch_bot(i: String)  {
+//    let o = shellexpand::tilde("~") + "/.config/atr/config.toml";
+//    let o = o.to_string();
+//    if &i == "-d" {
+//        let i = shellexpand::tilde("~") + "/.config/atr/setting.toml";
+//        let i = i.to_string();
+//        println!("{:#?} -> {:#?}", i, o);
+//        let check = Path::new(&i).exists();
+//        if check == false {
+//            fs::copy(o, i);
+//        } else {
+//            fs::copy(i, o);
+//        }
+//    } else if &i == "-s" {
+//        let i = shellexpand::tilde("~") + "/.config/atr/social.toml";
+//        let i = i.to_string();
+//        println!("{:#?} -> {:#?}", i, o);
+//        let check = Path::new(&i).exists();
+//        if check == false {
+//            fs::copy(o, i);
+//        } else {
+//            fs::copy(i, o);
+//        }
+//    } else {
+//        println!("{:#?} -> {:#?}", i, o);
+//        let check = Path::new(&i).exists();
+//        if check == false {
+//            fs::copy(o, i);
+//        } else {
+//            fs::copy(i, o);
+//        }
+//    }
+//    aa().unwrap();
+//}
+
 #[allow(unused_must_use)]
 fn account_switch(c: &Context)  {
     let i = c.args[0].to_string();
@@ -1448,6 +1500,68 @@ pub fn char_c(i: String) -> String {
         }
     }
     return s
+}
+
+#[allow(unused_must_use)]
+fn bot_run_timeline(_c: &Context) {
+    //account_switch_bot("-s".to_string());
+    let h = async {
+        let j = at_timeline::get_request().await;
+        let timeline: Timeline = serde_json::from_str(&j).unwrap();
+        let n = timeline.feed;
+
+        let length = &n.len();
+        for i in 0..*length {
+            let _reason = &n[i].post.reason;
+            let handle = &n[i].post.author.handle;
+            let did = &n[i].post.author.did;
+            let cid = &n[i].post.cid;
+            let c_ch = cid_check(cid.to_string());
+            if c_ch == false {
+                let _time = &n[i].post.indexedAt;
+                let uri = &n[i].post.uri;
+                if ! n[i].post.record.text.is_none() { 
+                    let text = &n[i].post.record.text.as_ref().unwrap();
+                    let vec: Vec<&str> = text.split_whitespace().collect();
+                    let com = vec[0].trim().to_string();
+                    if com.contains("/fortune") == true || com.contains("/占") == true || com.contains("/うらな") == true {
+                        let file = "/.config/atr/scpt/card_fortune.zsh";
+                        let mut f = shellexpand::tilde("~").to_string();
+                        f.push_str(&file);
+                        use std::process::Command;
+
+                        let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).output().expect("zsh");
+                        let d = String::from_utf8_lossy(&output.stdout);
+                        let d = d.to_string();
+                        let text_limit = char_c(d);
+                        if text_limit.len() > 3 {
+                            println!("{}", text_limit);
+                            cid_write(cid.to_string());
+                        }
+                    } else if com.contains("アイ") == true || com.contains("ユイ") == true || com.contains("ai") == true || com.contains("yui") == true {
+
+                        let prompt = &vec[1..].join(" ");
+
+                        let file = "/.config/atr/scpt/openai_like_timeline.zsh";
+                        let mut f = shellexpand::tilde("~").to_string();
+                        f.push_str(&file);
+                        use std::process::Command;
+                        let output = Command::new(&f).arg(&cid).arg(&uri).arg(&prompt).output().expect("zsh");
+                        let d = String::from_utf8_lossy(&output.stdout);
+                        println!("{}", d);
+                        cid_write(cid.to_string());
+                    }
+                }
+            }
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn bot_timeline(c: &Context) {
+    aa().unwrap();
+    bot_run_timeline(c);
 }
 
 fn bot_run(_c: &Context, limit: i32, admin: String) {
@@ -1764,7 +1878,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", str_notify);
                                 cid_write(cid.to_string());
                             }
-                        } else if com == "占って" || com == "占い" || com == "占って！" || com == "占い！" || com == "/fortune" || com == "fortune" || com == "占って〜" {
+                        } else if com.contains("fortune") == true || com.contains("占") == true || com.contains("うらな") == true {
                             //let prompt = &vec[2..].join(" ");
                             let file = "/.config/atr/scpt/card_fortune.zsh";
                             let mut f = shellexpand::tilde("~").to_string();

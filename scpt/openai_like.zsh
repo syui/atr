@@ -34,6 +34,12 @@ token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 echo nolike $nolike
 echo like $like
 
+#if [ $like_old -eq 100 ];then
+#	$atr follow $did
+#	like=$((1 + like_old))
+#	curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"like\": $like}" -s $url/users/$uid
+#fi
+
 if { [ $like -eq 1 ] && echo $text|grep -e "ありがとう" -e "うれしい" } || [ $nolike -eq 1 ];then
 	echo ok
 	$atr @ $handle -p "♡"

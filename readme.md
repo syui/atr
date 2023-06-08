@@ -200,6 +200,16 @@ $ atr img-post $text -l $link
 $ link=`atr img-upload ~/icloud/icon/ai_circle.png|jq -r .blob.ref.'"$link"'`;atr img-post test -l $link
 ```
 
+```sh
+# timeline bot
+$ atr bot-tl
+
+# timeline
+$ atr ss -s
+# post
+$ atr ss -d
+```
+
 ### ref
 
 openai : https://github.com/syui/msr/tree/openai

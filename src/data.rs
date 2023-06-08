@@ -310,7 +310,7 @@ pub struct Post {
     pub reason: Option<String>,
     pub indexedAt: String,
     pub replyCount: i32,
-    pub postCount: i32,
+    pub postCount: Option<i32>,
     pub repostCount: i32,
     pub likeCount: i32,
 }
