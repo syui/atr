@@ -1,7 +1,14 @@
 #!/bin/zsh
 
 admin_password=`cat $HOME/.config/atr/api_card.json|jq -r .pds_admin_password`
-host=bsky.syui.ai
+if [ -n "$1" ];then
+	host=$1
+else
+	host=bsky.syui.ai
+fi
 url=https://$host/xrpc/com.atproto.server.createInviteCode
 json="{\"useCount\":2}"
+echo $url
+echo $admin_password
 curl -X POST -u admin:${admin_password} -H "Content-Type: application/json" -d "$json" -sL $url | jq -r .code
+curl -X POST -u admin:${admin_password} -H "Content-Type: application/json" -d "$json" -sL $url

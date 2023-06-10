@@ -1,5 +1,6 @@
 #!/bin/zsh
 
+echo ""
 # raid-boss-admin
 cfg=$HOME/.config/atr/scpt/card_config.json
 # {
@@ -19,6 +20,7 @@ function user_data(){
 	id=`echo $data|jq -r .id`
 	did=`echo $data|jq -r .did`
 	next=`echo $data|jq -r .next`
+	aiten=`echo $data|jq -r .aiten`
 	d=`date +"%Y%m%d"`
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y-%m-%d"`
@@ -29,6 +31,7 @@ function user_data(){
 	echo "card : $next_at"
 	echo "battle : $updated_at"
 	echo "boss : $raid_cp"
+	echo "aiten : $aiten"
 }
 
 function ascii_moji_a() {
@@ -362,7 +365,7 @@ raid_cp=`cat $f_raid`
 d=`date +"%Y%m%d"`
 nd=`date +"%Y%m%d" -d '1 day'`
 username=`echo $1|cut -d . -f 1`
-#username=$1
+handle=$1
 url_user_all="$url/users?itemsPerPage=2000"
 f=$HOME/.config/atr/scpt/t.webp
 pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
@@ -372,14 +375,21 @@ if [ -z "$1" ];then
 fi
 data_tmp=`curl -sL $url_user_all`
 data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
-
+data_did_check=`echo $data|jq -r .did`
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
+data_did_check_b=`echo $data_did|jq -r .did`
 raid_last=$1
 
+# check did
+if [ "$data_did_check" != "$2" ] && [ "$data_did_check_b" = "$2" ];then
+	data=$data_did
+	new_handle=`echo $data|jq -r .username`
+	echo "handle : $username -> $new_handle"
+	username=$new_handle
+fi
+
+# user create
 if [ -z "$data" ];then
-	#echo "we are currently experiencing problems and are suspending new registrations"
-	#echo "---"
-	#exit
 	if [ -n "$data_did" ];then
 		old_user=`echo $data_did|jq -r .username`
 		old_id=`echo $data_did|jq -r .id`
@@ -387,6 +397,20 @@ if [ -z "$data" ];then
 	fi
 	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s "$url/users"`
 	echo $data|jq -r .username
+	if [ -n "$data_did" ];then
+		uid=`echo $data|jq -r ".id"|tail -n 1`
+		l_cards
+	fi
+fi
+next=`echo $data|jq -r .next`
+if [ "$next" = "null" ];then
+	echo null error
+fi
+
+# user create (did)
+if [ -n "$data" ] && [ -z "$data_did" ];then
+	username=`echo $handle|tr '.' '-'`
+	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s "$url/users"`
 	if [ -n "$data_did" ];then
 		uid=`echo $data|jq -r ".id"|tail -n 1`
 		l_cards
@@ -523,6 +547,35 @@ if [ "$3" = "moji" ] || [ "$3" = "-moji" ];then
 	exit
 fi
 
+if [ "$3" = "wa" ] || [ "$3" = "-wa" ];then
+	echo "not open"
+	exit
+	plus=$(($RANDOM % 800 + 400))
+	cp=$((cp + plus))
+
+	skill=$(($RANDOM % 2))
+	if [ $skill -eq 1 ];then
+		skill=critical
+		plus=$(($RANDOM % 500))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
+
+	skill=$(($RANDOM % 10))
+	if [ $skill -eq 1 ];then
+		skill=post
+		plus=$(($RANDOM % 500))
+		cp=$((cp + plus))
+	else
+		skill=normal
+	fi
+
+	moji_mode_card 28 $cp $skill
+
+	exit
+fi
+
 if [ "$3" = "zen" ] || [ "$3" = "-zen" ];then
 	yui_card 20 123
 	exit
@@ -556,11 +609,11 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 		data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 		data_u=`curl -sL "$url/users/$r/card?itemsPerPage=2000"`
 		# 革命前
-		#tt=`echo $data_uu|jq ".[].cp"|sort -n -r`
-		#ttt=`echo $data_u|jq ".[].cp"|sort -n -r`
+		tt=`echo $data_uu|jq ".[].cp"|sort -n -r`
+		ttt=`echo $data_u|jq ".[].cp"|sort -n -r`
 		# 革命後
-		tt=`echo $data_uu|jq ".[].cp"|sort -n`
-		ttt=`echo $data_u|jq ".[].cp"|sort -n`
+		#tt=`echo $data_uu|jq ".[].cp"|sort -n`
+		#ttt=`echo $data_u|jq ".[].cp"|sort -n`
 
 		#echo $data_u|jq ".[].cp"
 		nl=`echo $data_uu|jq length`
@@ -596,16 +649,18 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 		echo "---"
 		echo $cp_i vs $cp_b
 		# 革命前
-		#if [ $cp_i -gt $cp_b ];then
+		if [ $cp_i -gt $cp_b ];then
 		# 革命後
-		if [ $cp_b -gt $cp_i ];then
+		#if [ $cp_b -gt $cp_i ];then
 			echo "win!"
 		else
 			echo loss
 		fi
 
-		#if [ $cp_i -gt $cp_b ];then
-		if [ $cp_b -gt $cp_i ];then
+		# 革命前
+		if [ $cp_i -gt $cp_b ];then
+		# 革命後
+		#if [ $cp_b -gt $cp_i ];then
 			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
