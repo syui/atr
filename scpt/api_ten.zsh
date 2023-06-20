@@ -6,6 +6,22 @@ case $OSTYPE in
 		;;
 esac
 
+help_body="[AITEN]
+/ten start : ゲームスタート
+/ten pay : aitenを貯めてカードをゲット
+文字カードの組み合わせで点数を上げていきます
+1ターンにつき1枚またはすべてのカードをten dで入れ替えられます。7ターンで終了
+数字を指定すると、たまにmissをします
+カードの組み合わせはten pで発動します
+[AA] : [通] 50
+[KKK] : [揃] 100
+[AAM] : [天ノ川] 1200"
+
+if [ -z "$5" ];then
+	echo "$help_body"
+	exit
+fi
+
 card_pay=$HOME/.config/atr/scpt/card_pay.zsh
 atr=$HOME/.cargo/bin/atr
 host=https://api.syui.ai
@@ -39,6 +55,7 @@ username=`echo $1|cut -d . -f 1`
 cid=$3
 uri=$4
 option=$5
+
 sub_option=$6
 ten_kai=0
 
@@ -64,6 +81,7 @@ function ten_yak_check() {
 }
 
 function ten_char() {
+	unset miss
 	old_ten_char=$ten_char
 	char_a=`cat $f_cfg| cut -c $ran_a`
 	char_b=`cat $f_cfg| cut -c $ran_b`
@@ -74,12 +92,15 @@ function ten_char() {
 		ten_char=CHO
 	fi
 	if [ ${#ten_char} -eq 0 ];then
+		miss="[miss]"
 		ten_char=AAA
 	fi
 	if [ ${#ten_char} -eq 1 ];then
+		miss="[miss]"
 		ten_char=AA${ten_char}
 	fi
 	if [ ${#ten_char} -eq 2 ];then
+		miss="[miss]"
 		ten_char=A${ten_char}
 	fi
 
@@ -147,8 +168,12 @@ if { [ "$handle" = "syui.ai" ] && [ "$option" = "reset" ] } || [ "$handle" = "re
 fi
 
 function ten_user_stop() {
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"0\", \"ten_kai\":0,\"ten_su\":0,\"ten\": false,\"token\":\"$token\", \"ten_at\": \"$ten_at_n\"}" -s $host/users/$uid`
 	echo stop
+	echo user : $handle
+	echo ten :	$ten_su
+	echo aiten :	$((aiten + ten_su))
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"0\", \"ten_kai\":0,\"ten_su\":$ten_su,\"ten\": false,\"token\":\"$token\", \"ten_at\": \"$ten_at_n\",\"aiten\": $((aiten + ten_su))}" -s $host/users/$uid`
+	exit
 }
 
 function ten_start() {
@@ -259,6 +284,61 @@ function ten_env() {
 	fi
 }
 
+function ten_yak_shutdown() {
+	unset card
+	case $ten_char in
+		EMY)
+			card=1
+			;;
+		KOS)
+			card=2
+			;;
+		CHI)
+			card=3
+			;;
+		AIT)
+			card=4
+			;;
+		OYZ)
+			card=5
+			;;
+		IKY)
+			card=6
+			;;
+		AKM)
+			card=7
+			;;
+		KUY)
+			card=8
+			;;
+		AW*)
+			card=9
+			;;
+		AHK)
+			card=10
+			;;
+		IKT)
+			card=11
+			;;
+		AAM)
+			card=12
+			;;
+		OSZ)
+			card=13
+			;;
+		CHO)
+			card=14
+			;;
+		OUY)
+			card=29
+			;;
+	esac
+	ten_su=$((ten_su + ${card}00))
+	if [ $card -ne 0 ];then
+		echo "last : +${card}00"
+	fi
+}
+
 function ten_shutdown(){
 	if [ -z "$1" ];then 
 		shut_opt=7
@@ -266,6 +346,7 @@ function ten_shutdown(){
 		shut_opt=$1
 	fi
 	if [ $ten_kai -ge $shut_opt ];then
+
 		all_data=`curl -sL "$host/users?itemsPerPage=3000"`
 		ten_data=`echo $all_data|jq ".|sort_by(.ten_su)|reverse|.[]|select(.ten_su != 0)"`
 		echo shutdown
@@ -562,7 +643,12 @@ function ten_delete_get() {
 	ten_yak_check $ten_char
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":$ten_kai, \"token\":\"$token\"}" -s $host/users/$uid`
 	ten_yak_check $ten_char
-	echo "$ten_kai : $ten_su ---> $ten_char $ten_yak_ok"
+	echo "$ten_kai : $ten_su ---> $ten_char $ten_yak_ok $miss"
+
+	ten_yak_check $ten_char
+	if [ -n "$ten_yak_ok" ] && [ $ten_kai -ge 7 ];then
+		ten_yak_shutdown
+	fi
 }
 
 case "$option" in
@@ -576,7 +662,9 @@ case "$option" in
 		$card_pay $handle $did $cid $uri
 		exit
 		;;
-	stop)
+	stop|close)
+		user_env
+		ten_env
 		ten_user_stop
 		exit
 		;;
@@ -589,16 +677,8 @@ case "$option" in
 		exit
 		;;
 	h*|"")
-		echo "[AITEN]
-/ten start : ゲームスタート
-/ten pay : aitenを貯めてカードをゲット
-文字カードの組み合わせで点数を上げていきます
-1ターンにつき1枚またはすべてのカードをten dで入れ替えられます。7ターンで終了
-カードの組み合わせはten pで発動します
-[AA] : [通] 50
-[KKK] : [揃] 100
-[AAM] : [天ノ川] 1200"
-exit
+		echo "$help_body"
+		exit
 		;;
 esac
 
@@ -612,9 +692,6 @@ case "$option" in
 	d*)
 		ten_env
 		ten_yak_check $ten_char
-		if [ $ten_kai -ge 7 ] && [ -n "$ten_yak_ok" ];then
-			ten_yak
-		fi
 		ten_delete_get
 		;;
 	start)
@@ -629,5 +706,4 @@ case "$option" in
 esac
 
 ten_shutdown
-
 exit

@@ -380,12 +380,19 @@ data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
 data_did_check_b=`echo $data_did|jq -r .did`
 raid_last=$1
 
-# check did
-if [ "$data_did_check" != "$2" ] && [ "$data_did_check_b" = "$2" ];then
-	data=$data_did
-	new_handle=`echo $data|jq -r .username`
-	echo "handle : $username -> $new_handle"
-	username=$new_handle
+# user create (did)
+if [ -n "$data" ] && [ -z "$data_did" ];then
+	username=`echo $handle|tr '.' '-'`
+	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\",\"handle\": true}" -s "$url/users"`
+	handle_change=true
+	if [ -n "$data_did" ];then
+		uid=`echo $data|jq -r ".id"|tail -n 1`
+		l_cards
+	fi
+fi
+next=`echo $data|jq -r .next`
+if [ "$next" = "null" ];then
+	echo null error
 fi
 
 # user create
@@ -407,23 +414,18 @@ if [ "$next" = "null" ];then
 	echo null error
 fi
 
-# user create (did)
-if [ -n "$data" ] && [ -z "$data_did" ];then
-	username=`echo $handle|tr '.' '-'`
-	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s "$url/users"`
-	if [ -n "$data_did" ];then
-		uid=`echo $data|jq -r ".id"|tail -n 1`
-		l_cards
-	fi
-fi
-next=`echo $data|jq -r .next`
-if [ "$next" = "null" ];then
-	echo null error
-fi
-
 uid=`echo $data|jq -r ".id"`
 delete=`echo $data|jq -r ".delete"`
 did=`echo $data|jq -r ".did"`
+handle_change=`echo $data|jq -r ".handle"`
+
+# check did
+if [ "$data_did_check" != "$2" ] && [ "$data_did_check_b" = "$2" ] && [ "$handle_change" = "true" ];then
+	data=$data_did
+	new_handle=`echo $data|jq -r .username`
+	echo "handle : $username -> $new_handle"
+	username=$new_handle
+fi
 
 if [ "$delete" = "true" ];then
 	echo change account $did
