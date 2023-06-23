@@ -1,6 +1,5 @@
 #!/bin/zsh
 
-echo ""
 # raid-boss-admin
 cfg=$HOME/.config/atr/scpt/card_config.json
 # {

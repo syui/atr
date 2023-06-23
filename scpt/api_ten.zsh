@@ -469,6 +469,7 @@ function ten_plus() {
 		card_post
 	else
 		echo "$ten_kai : $ten_su ---> $ten_char $ten_yak_ok"
+		ten_shutdown
 		#ten_data_reset
 	fi
 	exit

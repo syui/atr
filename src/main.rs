@@ -1634,61 +1634,37 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let e = link.chars().count();
                             println!("{}", link);
                             println!("{}", e);
-                            if d.contains("handle") == false {
-                                let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                println!("{}", str_rep);
-                            } else {
-                                let handlev = handle.replace(".", "-").to_string();
-                                let link = "https://card.syui.ai/".to_owned() + &handlev;
-                                let s = 0;
-                                let e = link.chars().count();
-                                let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                println!("{}", str_rep);
+                            let dd = "\n".to_owned() + &d.to_string();
+                            let text_limit = char_c(dd);
+                            println!("{}", text_limit);
+                            if text_limit.len() > 3 {
+                                if d.contains("handle") == false {
+                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                    println!("{}", str_rep);
+                                } else {
+                                    let handlev = handle.replace(".", "-").to_string();
+                                    let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                    let s = 0;
+                                    let e = link.chars().count();
+                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                    println!("{}", str_rep);
+                                }
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                                cid_write(cid.to_string());
                             }
-                            let str_notify = at_notify_read::post_request(time.to_string()).await;
-                            println!("{}", str_notify);
-                            cid_write(cid.to_string());
                         }
                     } else if reason == "reply" && rep_com.contains("ten") == true {
                         let option = &vec[1..].join(" ");
                         let file = "/.config/atr/scpt/api_ten.zsh";
+                        let sub_option = &vec[2..].join(" ");
                         let mut f = shellexpand::tilde("~").to_string();
                         f.push_str(&file);
                         use std::process::Command;
                         let cc_ch = cid_check(cid.to_string());
-                        if cc_ch == false && vec.len() == 2 {
-                            let sub_option = &vec[2..].join(" ");
+                        if cc_ch == false {
                             let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).output().expect("zsh");
                             let d = String::from_utf8_lossy(&output.stdout);
-
-                            // test reply link
-                            let handlev: Vec<&str> = handle.split('.').collect();
-                            let handlev = handlev[0].trim().to_string();
-                            let link = "https://card.syui.ai/".to_owned() + &handlev;
-                            let s = 0;
-                            let e = link.chars().count();
-                            println!("{}", link);
-                            println!("{}", e);
-
-                            let d = "\n".to_owned() + &d.to_string();
-                            println!("{}", d);
-                            let text_limit = char_c(d);
-                            println!("{}", text_limit);
-                            if text_limit.len() > 3 {
-                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                println!("{}", str_rep);
-                                let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                println!("{}", str_notify);
-                                cid_write(cid.to_string());
-                            } else {
-                                let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                println!("{}", str_notify);
-                                cid_write(cid.to_string());
-                            }
-                        } else if cc_ch == false {
-                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).output().expect("zsh");
-                            let d = String::from_utf8_lossy(&output.stdout);
-
                             // test reply link
                             let handlev: Vec<&str> = handle.split('.').collect();
                             let handlev = handlev[0].trim().to_string();
@@ -2148,42 +2124,51 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 let e = link.chars().count();
                                 println!("{}", link);
                                 println!("{}", e);
-                                if d.contains("handle") == false {
-                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                    println!("{}", str_rep);
-                                } else {
-                                    let handlev = handle.replace(".", "-").to_string();
-                                    let link = "https://card.syui.ai/".to_owned() + &handlev;
-                                    let s = 0;
-                                    let e = link.chars().count();
-                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                    println!("{}", str_rep);
+                                let dd = "\n".to_owned() + &d.to_string();
+                                let text_limit = char_c(dd);
+                                println!("{}", text_limit);
+                                if text_limit.len() > 3 {
+                                    if d.contains("handle") == false {
+                                        let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        println!("{}", str_rep);
+                                    } else {
+                                        let handlev = handle.replace(".", "-").to_string();
+                                        let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                        let s = 0;
+                                        let e = link.chars().count();
+                                        let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        println!("{}", str_rep);
+                                    }
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
                                 }
+                            }
+                        } else if { com == "ten" || com == "/ten" } && cccc_ch == false {
+                            let handlev: Vec<&str> = handle.split('.').collect();
+                            let handlev = handlev[0].trim().to_string();
+                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+                            if vec.len() == 0 {
+                                let str_rep = at_reply_link::post_request("/ten start : ゲームスタート\n/ten help : ヘルプ".to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                                 cid_write(cid.to_string());
                             }
-                        } else if { com == "ten" || com == "/ten" } && cccc_ch == false {
-                            //cid_write(cid.to_string());
                             let option = &vec[2..].join(" ");
+                            let sub_option = &vec[3..].join(" ");
                             let file = "/.config/atr/scpt/api_ten.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
                             use std::process::Command;
                             let cc_ch = cid_check(cid.to_string());
-                            if cc_ch == false && vec.len() == 3 {
-                                let sub_option = &vec[3..].join(" ");
+                            if cc_ch == false {
                                 let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).output().expect("zsh");
                                 let d = String::from_utf8_lossy(&output.stdout);
-                                // test reply link
-                                let handlev: Vec<&str> = handle.split('.').collect();
-                                let handlev = handlev[0].trim().to_string();
-                                let link = "https://card.syui.ai/".to_owned() + &handlev;
-                                let s = 0;
-                                let e = link.chars().count();
-                                println!("{}", link);
-                                println!("{}", e);
-
                                 let d = "\n".to_owned() + &d.to_string();
                                 println!("{}", d);
                                 let text_limit = char_c(d);
@@ -2194,40 +2179,8 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                     let str_notify = at_notify_read::post_request(time.to_string()).await;
                                     println!("{}", str_notify);
                                     cid_write(cid.to_string());
-                                } else {
-                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                    println!("{}", str_notify);
-                                    cid_write(cid.to_string());
                                 }
-                            } else if cc_ch == false {
-                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).output().expect("zsh");
-                                let d = String::from_utf8_lossy(&output.stdout);
-
-                                // test reply link
-                                let handlev: Vec<&str> = handle.split('.').collect();
-                                let handlev = handlev[0].trim().to_string();
-                                let link = "https://card.syui.ai/".to_owned() + &handlev;
-                                let s = 0;
-                                let e = link.chars().count();
-                                println!("{}", link);
-                                println!("{}", e);
-
-                                let d = "\n".to_owned() + &d.to_string();
-                                println!("{}", d);
-                                let text_limit = char_c(d);
-                                println!("{}", text_limit);
-                                if text_limit.len() > 3 {
-                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                    println!("{}", str_rep);
-                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                    println!("{}", str_notify);
-                                    cid_write(cid.to_string());
-                                } else {
-                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
-                                    println!("{}", str_notify);
-                                    cid_write(cid.to_string());
-                                }
-                            }
+                            } 
                         } else if reason == "mention" {
                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                             println!("{}", str_notify);
