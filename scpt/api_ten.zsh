@@ -72,7 +72,7 @@ function ten_yak_check() {
 		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
 			export ten_yak_ok="⚠"
 			;;
-		OUY)
+		OUY|AIK)
 			if [ -n "$skill_card" ];then
 				export ten_yak_ok="⚠"
 			fi
@@ -422,7 +422,7 @@ function ten_plus() {
 		ten_char=EMY
 	fi
 	if [ "$char_a" = "A" ] && [ "$char_b" = "I" ];then
-		ten_char=KYU
+		ten_char=KUY
 	fi
 	if [ $card -eq 1 ] && [ $ran_cm -eq 0 ];then
 		ten_char=IKY
@@ -506,11 +506,6 @@ function ten_yak() {
 	char_b=`echo $ten_post|cut -b 2`
 	char_c=`echo $ten_post|cut -b 3`
 
-	if [ "$ten_post" = "OUY" ] && [ -z "$skill_card" ];then
-		echo "[空] -300"
-		ten_main 300
-	fi
-
 	if [ "$ten_post" = "AAA" ] && [ -n "$skill_card" ];then
 		card=30
 		ten_plus 300
@@ -519,6 +514,26 @@ function ten_yak() {
 	if [ "$ten_post" = "OUY" ] && [ -n "$skill_card" ];then
 		card=29
 		ten_plus ${card}00
+	fi
+
+	if [ "$ten_post" = "AIK" ] && [ -n "$skill_card" ];then
+		card=33
+		ten_plus ${card}00
+	fi
+
+	if [ "$ten_post" = "OUY" ] && [ -z "$skill_card" ];then
+		echo "[空] -300"
+		ten_main 300
+	fi
+
+	if [ "$ten_post" = "AIK" ] && [ -z "$skill_card" ];then
+		echo "[] -300"
+		ten_main 300
+	fi
+
+	if [ "$ten_post" = "AAA" ] && [ -z "$skill_card" ];then
+		echo "[揃] +100"
+		ten_plus 100
 	fi
 
 	case $ten_post in
@@ -582,6 +597,12 @@ function ten_yak() {
 		OUY)
 			card=29
 			ten_plus ${card}00
+			;;
+		AIK)
+			card=33
+			ten_plus ${card}00
+			;;
+		AAA)
 			;;
 
 	esac

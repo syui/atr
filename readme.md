@@ -193,6 +193,12 @@ $ f=$HOME/.config/atr/notify_cid.txt;cat $f |tail -n 1000 >! $f.back;mv $f.back 
 ```
 
 ```sh
+# x) curbing double mention and reply
+# cron : * * * * * atr bot
+# cron : * */1 * * * atr bot -m true
+```
+
+```sh
 # img-upload & img-post
 $ atr img-upload ~/img.png
 $ atr img-post $text -l $link

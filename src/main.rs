@@ -534,8 +534,13 @@ fn main() {
                     .description("set admin")
                     .alias("a"),
                     )
+                .flag(
+                    Flag::new("mode", FlagType::Bool)
+                    .description("model flag")
+                    .alias("m"),
+                    )
                 )
-            .command(
+                .command(
                 Command::new("bot-tl")
                 .usage("atr bot-tl {}")
                 .description("bot\n\t\t\t$ atr bot-tl")
@@ -1118,6 +1123,68 @@ fn notify_all(_c: &Context) {
     return res
 }
 
+fn cid_check_run(cid :String) -> bool {
+    let file = "/.config/atr/notify_cid_run.txt";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    let mut file = match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .append(true)
+        .open(f.clone())
+        {
+            Err(why) => panic!("Couldn't open {}: {}", f, why),
+            Ok(file) => file,
+        };
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Couldn't read {}: {}", f, why),
+        Ok(_) => (),
+    }
+    if contents.contains(&cid) == false {
+        let check = false;
+        return check
+    } else { 
+        let check = true;
+        return check 
+    }
+}
+
+fn cid_write_run(cid :String) -> bool {
+    let file = "/.config/atr/notify_cid_run.txt";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    let mut file = match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .append(true)
+        .open(f.clone())
+        {
+            Err(why) => panic!("Couldn't open {}: {}", f, why),
+            Ok(file) => file,
+        };
+    let mut contents = String::new();
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Couldn't read {}: {}", f, why),
+        Ok(_) => (),
+    }
+    if contents.contains(&cid) == false {
+        let cid = cid + "\n";
+        println!("contents:\n{}", contents);
+        match file.write_all(cid.as_bytes()) {
+            Err(why) => panic!("Couldn't write \"{}\" to {}: {}", contents, f, why),
+            Ok(_) => println!("finished"),
+        }
+        let check = false;
+        return check
+    } else { 
+        let check = true;
+        return check 
+    }
+}
+
 fn cid_check(cid :String) -> bool {
     let file = "/.config/atr/notify_cid.txt";
     let mut f = shellexpand::tilde("~").to_string();
@@ -1558,7 +1625,7 @@ fn bot_timeline(c: &Context) {
     bot_run_timeline(c);
 }
 
-fn bot_run(_c: &Context, limit: i32, admin: String) {
+fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
@@ -1571,8 +1638,13 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
             let read = n[i].isRead;
             let cid = &n[i].cid;
             let c_ch = cid_check(cid.to_string());
+            let c_ch_run = cid_check_run(cid.to_string());
             println!("{}", read);
-            if c_ch == false && { reason == "mention" || reason == "reply" } {
+            if c_ch_run == false && { reason == "mention" || reason == "reply" } || mode == true && c_ch_run == true && c_ch == false && { reason == "mention" || reason == "reply" } {
+                cid_write_run(cid.to_string());
+                if mode == true {
+                    println!("---\nmode:{}\ncid:{}\n---", mode, cid);
+                }
                 let time = &n[i].indexedAt;
                 let uri = &n[i].uri;
                 if ! n[i].record.text.is_none() { 
@@ -1639,7 +1711,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             println!("{}", text_limit);
                             if text_limit.len() > 3 {
                                 if d.contains("handle") == false {
-                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                                     println!("{}", str_rep);
                                 } else {
                                     let handlev = handle.replace(".", "-").to_string();
@@ -1690,7 +1762,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 cid_write(cid.to_string());
                             }
                         }
-                    } else if reason == "reply" {
+                    } else if reason == "reply"  && rep_com.contains("off") == false {
                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                         println!("{}", str_notify);
                         let prompt = &vec[0..].join(" ");
@@ -2129,7 +2201,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                                 println!("{}", text_limit);
                                 if text_limit.len() > 3 {
                                     if d.contains("handle") == false {
-                                        let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                                         println!("{}", str_rep);
                                     } else {
                                         let handlev = handle.replace(".", "-").to_string();
@@ -2152,7 +2224,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
                             let e = link.chars().count();
                             println!("{}", link);
                             println!("{}", e);
-                            if vec.len() == 0 {
+                            if vec.len() == 1 {
                                 let str_rep = at_reply_link::post_request("/ten start : ゲームスタート\n/ten help : ヘルプ".to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                                 println!("{}", str_rep);
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
@@ -2218,16 +2290,17 @@ fn bot_run(_c: &Context, limit: i32, admin: String) {
 
 fn bot(c: &Context) {
     aa().unwrap();
+    let mode = c.bool_flag("mode");
     let admin = "syui.ai".to_string();
     if let Ok(limit) = c.int_flag("limit") {
         let l: i32 = limit.try_into().unwrap();
         if let Ok(admin) = c.string_flag("admin") {
-            bot_run(c,l,admin);
+            bot_run(c,l,admin, mode);
         } else {
-            bot_run(c,l,admin);
+            bot_run(c,l,admin, mode);
         }
     } else {
-        bot_run(c,7, admin);
+        bot_run(c,7, admin, mode);
     }
 }
 

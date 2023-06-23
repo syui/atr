@@ -27,7 +27,8 @@ function tl(){
 	echo $uri
 	echo $text
 	find=`echo $text|grep "card.syui.ai"`
-	if [ -n "$find" ];then
+	find_t=`echo $text|grep "ten : "`
+	if [ -n "$find" ] || [ -n "$find_t" ];then
 		exit
 	fi
 	text=`$atr chat "$text" -c`
