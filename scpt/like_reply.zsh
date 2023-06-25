@@ -6,23 +6,18 @@ data=`curl -sL "$host/users?itemsPerPage=3000"|jq ".|sort_by(.like)|reverse|.[]|
 tmp=`echo $data|jq -s`
 n=`echo $tmp|jq "length"`
 ran=$(($RANDOM % n - 1))
+echo $ran
 
 function did() {
-	for ((i=0;i<$n;i++))
-	do
-		user=`echo $tmp|jq -r ".[$i].username"`
-		did=`echo $tmp|jq -r ".[$i].did"`
-		if [ $ran -eq $i ];then
-			echo $did
-		fi
-	done
+		user=`echo $tmp|jq -r ".[$ran].username"`
+		did=`echo $tmp|jq -r ".[$ran].did"`
 }
 
 function tl(){
-	did=`did`
-	cid=`$atr f $did|jq  -r ".[]|.[0]?|.post.cid"`
-	uri=`$atr f $did|jq  -r ".[]|.[0]?|.post.uri"`
-	text=`$atr f $did|jq  -r ".[]|.[0]?|.post.record.text"`
+	did
+	cid=`$atr f $did|jq  -r ".records|.[0].cid"`
+	uri=`$atr f $did|jq  -r ".records|.[0].uri"`
+	text=`$atr f $did|jq -r ".records|.[0].value.text"`
 	echo $cid
 	echo $uri
 	echo $text
