@@ -1626,17 +1626,14 @@ fn bot_timeline(c: &Context) {
 }
 
 fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
-    let su = if mode == true {
-        10
-    } else {
-        0
-    };
     let h = async {
         let str = at_notify_limit::get_request(limit);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
         let n = notify.notifications;
         let length = &n.len();
-        for i in su..*length {
+        //let su = 0..*length;
+        let su = (0..*length).rev();
+        for i in su {
             let reason = &n[i].reason;
             let handle = &n[i].author.handle;
             let did = &n[i].author.did;

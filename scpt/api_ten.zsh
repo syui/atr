@@ -69,13 +69,13 @@ function ten_yaku() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
+		OUY|AIK|AAA)
+			if `$ten_skill`;then
+				export ten_yak_ok="⚡"
+			fi
+			;;
 		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
 			export ten_yak_ok="⚠"
-			;;
-		OUY|AIK)
-			if [ -n "$skill_card" ];then
-				export ten_yak_ok="⚠"
-			fi
 			;;
 	esac
 }
@@ -186,10 +186,6 @@ function ten_start() {
 		ten_old_yak=$ten_post
 	fi
 
-	if [ ${data_user_card_power} -gt 3 ] && [ 0 -ne $data_user_card_skill ] && [ $data_user_card_skill -gt 0 ] && [ 1 -eq $(($RANDOM % 2)) ] ;then
-		ten_char=`echo $host_card_json |jq -r ".[]|select(.ten != null)|select(.id == $data_user_card_skill)|.ten"`
-	fi
-
 	if [ ${#ten_char} -eq 0 ];then
 		ten_char=AAA
 	fi
@@ -202,6 +198,14 @@ function ten_start() {
 	ten_yak_check $ten_char
 	if [ -z "$ten_yak_ok" ] && [ $ran_first -eq 1 ];then
 		ten_char=EMY
+	fi
+	if [ -z "$ten_yak_ok" ] && [ $ran_first -eq 2 ];then
+		card=29
+		if `ten_skill`;then
+			ten_char=OUY
+		else
+			unset card
+		fi
 	fi
 
 	if [ -n "$ten_old_yak" ];then
@@ -265,22 +269,15 @@ function ten_env() {
 	ten_get=`echo $data|jq -r .ten_get`
 	ten_at=`echo $data|jq -r .ten_at`
 	ten_at_n=`date --iso-8601=seconds`
+}
+
+function ten_skill() {
 	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
-	data_user_card_skill_check=`echo $data_user_card|jq -r ".[]|select(.skill == \"ten\")"`
-	if [ -n "$data_user_card_skill_check" ];then
-		data_user_skill_n=`echo $data_user_card_skill_check|jq -r .card|wc -l`
-		data_user_skill_n=$(($RANDOM % data_user_skill_n + 1))
-		data_user_skill_card=`echo $data_user_card_skill_check|jq -r .card|awk "NR==$data_user_skill_n"`
-		data_user_skill_cp=`echo $data_user_card_skill_check|jq -r .cp|awk "NR==$data_user_skill_n"`
-		skill_name=`echo $host_card_json|jq -r ".[]|select(.id == $data_user_skill_card)|.ten"`
-		skill_card=`echo $host_card_json|jq -r ".[]|select(.id == $data_user_skill_card)|.card"`
-	fi
-	data_user_card_z=`echo $data_user_card|jq ".[].card"|sort|uniq -d -c|awk "NR==2"|tr ' ' '\n'|sed '/^$/d'`
-	data_user_card_power=`echo $data_user_card_z|awk "NR==1"`
-	data_user_card_skill=`echo $data_user_card_z|awk "NR==2"`
-	if [ -z "$data_user_card_power" ] || [ -z "$data_user_card_skill" ];then
-		data_user_card_power=0
-		data_user_card_skill=0
+	skill_card=`echo $data_user_card|jq -r ".[]|select(.skill == \"ten\")|select(.card == $card)"`
+	if [ -n "$skill_card" ];then
+		echo true
+	else
+		echo false
 	fi
 }
 
@@ -329,8 +326,23 @@ function ten_yak_shutdown() {
 		CHO)
 			card=14
 			;;
+		AAA)
+			card=30
+			if [ `ten_skill` = false ];then
+				unset card
+			fi
+			;;
 		OUY)
 			card=29
+			if [ `ten_skill` = false ];then
+				unset card
+			fi
+			;;
+		AIK)
+			card=33
+			if [ `ten_skill` = false ];then
+				unset card
+			fi
 			;;
 	esac
 	ten_su=$((ten_su + ${card}00))
@@ -381,8 +393,6 @@ function ten_shutdown(){
 }
 
 function card_post() {
-	#data_user_card_post=`echo $data_user_card |jq ".[]|select(.card == $card)"`
-	#body_reset=`ten_data_reset`
 	j=`echo $host_card_json|jq ".[]|select(.id == $card)"`
 	img=`echo $j|jq -r .img`
 	if [ $card -eq 30 ];then
@@ -506,36 +516,6 @@ function ten_yak() {
 	char_b=`echo $ten_post|cut -b 2`
 	char_c=`echo $ten_post|cut -b 3`
 
-	if [ "$ten_post" = "AAA" ] && [ -n "$skill_card" ];then
-		card=30
-		ten_plus 300
-	fi
-
-	if [ "$ten_post" = "OUY" ] && [ -n "$skill_card" ];then
-		card=29
-		ten_plus ${card}00
-	fi
-
-	if [ "$ten_post" = "AIK" ] && [ -n "$skill_card" ];then
-		card=33
-		ten_plus ${card}00
-	fi
-
-	if [ "$ten_post" = "OUY" ] && [ -z "$skill_card" ];then
-		echo "[空] -300"
-		ten_main 300
-	fi
-
-	if [ "$ten_post" = "AIK" ] && [ -z "$skill_card" ];then
-		echo "[] -300"
-		ten_main 300
-	fi
-
-	if [ "$ten_post" = "AAA" ] && [ -z "$skill_card" ];then
-		echo "[揃] +100"
-		ten_plus 100
-	fi
-
 	case $ten_post in
 
 		EMY)
@@ -596,16 +576,30 @@ function ten_yak() {
 			;;
 		OUY)
 			card=29
-			ten_plus ${card}00
+			if `ten_skill`;then
+				ten_plus ${card}00
+			fi
+			;;
+		AAA)
+			card=30
+			if `ten_skill`;then
+				ten_plus 300
+			fi
 			;;
 		AIK)
 			card=33
-			ten_plus ${card}00
+			if `ten_skill`;then
+				ten_plus ${card}00
+			fi
 			;;
-		AAA)
-			;;
-
 	esac
+
+	unset card
+
+	if [ "$ten_post" = "AAA" ];then
+		echo "[揃] +100"
+		ten_plus 100
+	fi
 
 	if [ "$char_a" = "A" ] && [ "$char_b" = "I" ];then
 		echo "[名] +150"
