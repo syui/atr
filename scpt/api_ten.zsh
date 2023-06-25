@@ -92,15 +92,15 @@ function ten_char() {
 		ten_char=CHO
 	fi
 	if [ ${#ten_char} -eq 0 ];then
-		miss="[miss]"
+		#miss="[miss]"
 		ten_char=AAA
 	fi
 	if [ ${#ten_char} -eq 1 ];then
-		miss="[miss]"
+		#miss="[miss]"
 		ten_char=AA${ten_char}
 	fi
 	if [ ${#ten_char} -eq 2 ];then
-		miss="[miss]"
+		#miss="[miss]"
 		ten_char=A${ten_char}
 	fi
 
@@ -153,7 +153,7 @@ function ten_user_reset() {
 			u_s=`echo $ten_u_tmp|jq -r ".[$i].ten_su"`
 			u_i=`echo $ten_u_tmp|jq -r ".[$i].id"`
 			ten_kai=0
-			tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"\", \"ten_kai\":0,\"ten_su\":0,\"ten\": false,\"token\":\"$token\", \"ten_at\": \"$limit_reset_at\"}" -s $host/users/$u_i`
+			tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten\": false,\"token\":\"$token\", \"ten_at\": \"$limit_reset_at\"}" -s $host/users/$u_i`
 		done
 		echo reset
 	else
