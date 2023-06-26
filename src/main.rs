@@ -541,28 +541,34 @@ fn main() {
                     )
                 )
                 .command(
-                Command::new("bot-tl")
-                .usage("atr bot-tl {}")
-                .description("bot\n\t\t\t$ atr bot-tl")
-                .action(bot_timeline)
-                .flag(
-                    Flag::new("limit", FlagType::Int)
-                    .description("nofity limit")
-                    .alias("l"),
+                    Command::new("bot-tl")
+                    .usage("atr bot-tl {}")
+                    .description("bot\n\t\t\t$ atr bot-tl")
+                    .action(bot_timeline)
+                    .flag(
+                        Flag::new("limit", FlagType::Int)
+                        .description("nofity limit")
+                        .alias("l"),
+                        )
+                    .flag(
+                        Flag::new("admin", FlagType::String)
+                        .description("set admin")
+                        .alias("a"),
+                        )
                     )
-                .flag(
-                    Flag::new("admin", FlagType::String)
-                    .description("set admin")
-                    .alias("a"),
+                .command(
+                    Command::new("bot-ch")
+                    .usage("atr bot-ch {}")
+                    .description("bot\n\t\t\t$ atr bot-ch")
+                    .action(bot_change)
                     )
-                )
-            .command(
-                Command::new("test")
-                .usage("atr test{}")
-                .description("test\n\t\t\t$ atr test")
-                .action(test),
-                )
-            ;
+                .command(
+                    Command::new("test")
+                    .usage("atr test{}")
+                    .description("test\n\t\t\t$ atr test")
+                    .action(test),
+                    )
+                ;
     app.run(args);
 }
 
@@ -1623,6 +1629,48 @@ fn bot_run_timeline(_c: &Context) {
 fn bot_timeline(c: &Context) {
     aa().unwrap();
     bot_run_timeline(c);
+}
+
+fn bot_run_change(_c: &Context, mode: bool) {
+    let h = async {
+        let str = at_notify_limit::get_request(30);
+        let notify: Notify = serde_json::from_str(&str.await).unwrap();
+        let n = notify.notifications;
+        let length = &n.len();
+        let su = (0..*length).rev();
+        for i in su {
+            let reason = &n[i].reason;
+            let read = n[i].isRead;
+            let cid = &n[i].cid;
+            let c_ch = cid_check(cid.to_string());
+            let c_ch_run = cid_check_run(cid.to_string());
+            println!("{}", read);
+            if c_ch_run == false && { reason == "mention" || reason == "reply" } || mode == true && c_ch_run == true && c_ch == false && { reason == "mention" || reason == "reply" } {
+                cid_write_run(cid.to_string());
+                if mode == true {
+                    println!("---\nmode:{}\ncid:{}\n---", mode, cid);
+                }
+                let uri = &n[i].uri;
+                if ! n[i].record.text.is_none() { 
+                    let cc_ch = cid_check(cid.to_string());
+                    if cc_ch == false {
+                        let text_limit = "change -> @yui.syui.ai\n/off";
+                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                        println!("{}", str_rep);
+                        cid_write(cid.to_string());
+                    }
+                }
+            }
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn bot_change(c: &Context) {
+    aa().unwrap();
+    let mode = c.bool_flag("mode");
+    bot_run_change(c, mode);
 }
 
 fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {

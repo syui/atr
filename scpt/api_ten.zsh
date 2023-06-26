@@ -66,12 +66,23 @@ function ten_yaku() {
 	echo $host_card_json |jq -r ".[]|select(.ten != null)|.ten,.h"
 }
 
+function ten_skill() {
+	skill_card_id=`echo $host_card_json |jq -r ".[]|select(.ten == \"$1\")|.id"`
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	skill_card=`echo $data_user_card|jq -r ".[]|select(.skill == \"ten\")|select(.card == $skill_card_id)"`
+	if [ -n "$skill_card" ];then
+		echo true
+	else
+		echo false
+	fi
+}
+
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK|AAA)
-			if `$ten_skill`;then
-				export ten_yak_ok="⚡"
+		OUY|AIK)
+			if `$ten_skill $1`;then
+				export ten_yak_ok="☑"
 			fi
 			;;
 		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
@@ -199,20 +210,31 @@ function ten_start() {
 	if [ -z "$ten_yak_ok" ] && [ $ran_first -eq 1 ];then
 		ten_char=EMY
 	fi
-	if [ -z "$ten_yak_ok" ] && [ $ran_first -eq 2 ];then
-		card=29
-		if `ten_skill`;then
+
+	if [ -n "$ten_old_yak" ];then
+		ten_char=$ten_old_yak
+	fi
+
+	if [ -z "$ten_yak_ok" ] && [ 2 -eq 2 ];then
+		if `ten_skill OUY`;then
+			card=29
 			ten_char=OUY
 		else
 			unset card
 		fi
 	fi
 
-	if [ -n "$ten_old_yak" ];then
-		ten_char=$ten_old_yak
+	if [ -z "$ten_yak_ok" ] && [ 3 -eq 3 ];then
+		if `ten_skill AIK`;then
+			card=33
+			ten_char=AIK
+		else
+			unset card
+		fi
 	fi
 
 	ten_yak_check $ten_char
+
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
@@ -271,15 +293,7 @@ function ten_env() {
 	ten_at_n=`date --iso-8601=seconds`
 }
 
-function ten_skill() {
-	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
-	skill_card=`echo $data_user_card|jq -r ".[]|select(.skill == \"ten\")|select(.card == $card)"`
-	if [ -n "$skill_card" ];then
-		echo true
-	else
-		echo false
-	fi
-}
+
 
 function ten_yak_shutdown() {
 	unset card
@@ -326,21 +340,15 @@ function ten_yak_shutdown() {
 		CHO)
 			card=14
 			;;
-		AAA)
-			card=30
-			if [ `ten_skill` = false ];then
-				unset card
-			fi
-			;;
 		OUY)
 			card=29
-			if [ `ten_skill` = false ];then
+			if [ `ten_skill $ten_char` = false ];then
 				unset card
 			fi
 			;;
 		AIK)
 			card=33
-			if [ `ten_skill` = false ];then
+			if [ `ten_skill $ten_char` = false ];then
 				unset card
 			fi
 			;;
@@ -576,19 +584,19 @@ function ten_yak() {
 			;;
 		OUY)
 			card=29
-			if `ten_skill`;then
+			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi
 			;;
 		AAA)
 			card=30
-			if `ten_skill`;then
+			if `ten_skill $ten_post`;then
 				ten_plus 300
 			fi
 			;;
 		AIK)
 			card=33
-			if `ten_skill`;then
+			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi
 			;;

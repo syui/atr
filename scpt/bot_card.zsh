@@ -17,7 +17,7 @@ do
 	uri=`curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$handle&collection=app.bsky.feed.post" |jq -r ".[]|.[$i]?|.uri"`
 	t=`curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$handle&collection=app.bsky.feed.post" |jq -r ".[]|.[$i]?|.value.text"`
 	echo $t $cid $uri
-	if [ "@yui.bsky.social /card" = "$t" ];then
+	if [ "@yui.syui.ai /card" = "$t" ];then
 		if [ "$cid" = "`cat $f`" ];then
 			exit
 		fi
@@ -26,7 +26,7 @@ do
 		~/.cargo/bin/atr r "$card" -c $cid -u "$uri" -l "$link"
 		echo $cid >! $f
 	fi
-	if [ "@yui.bsky.social /card -b" = "$t" ];then
+	if [ "@yui.syui.ai /card -b" = "$t" ];then
 		if [ "$cid" = "`cat $f`" ];then
 			exit
 		fi
