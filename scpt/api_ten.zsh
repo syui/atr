@@ -217,6 +217,16 @@ function ten_start() {
 
 	ten_yak_check $ten_char
 
+	if [ -z "$ten_yak_ok" ] && [ 3 -eq 3 ];then
+		if `ten_skill AIK`;then
+			card=33
+			ten_char=AIK
+			export ten_yak_ok="☑"
+		else
+			unset card
+		fi
+	fi
+
 	if [ -z "$ten_yak_ok" ] && [ 2 -eq 2 ];then
 		if `ten_skill OUY`;then
 			card=29
@@ -227,15 +237,6 @@ function ten_start() {
 		fi
 	fi
 
-	if [ -z "$ten_yak_ok" ] && [ 3 -eq 3 ];then
-		if `ten_skill AIK`;then
-			card=33
-			ten_char=AIK
-			export ten_yak_ok="☑"
-		else
-			unset card
-		fi
-	fi
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
@@ -245,7 +246,7 @@ function ten_start() {
 	echo "---"
 	echo "[1-7]"
 	echo "ten d : shuffle[${ten_char}${ten_yak_ok}]"
-	echo "ten p : post[⚠]"
+	echo "ten p : post"
 	echo "---"
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":0,\"ten_su\":$first_ten,\"ten\": true,\"token\":\"$token\"}" -s $host/users/$uid`
 	text_one=`echo $ten_data|jq -r .username,.ten_su`
@@ -471,6 +472,10 @@ function ten_plus() {
 		ten_char=EMY
 	fi
 	ten_yak_check $ten_char
+
+	if [ $card -eq 33 ] || [ $card -eq 29 ];then
+		export ten_yak_ok="☑"
+	fi
 
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":$ten_kai,\"ten_su\":$ten_su, \"token\":\"$token\"}" -s $host/users/$uid`
 

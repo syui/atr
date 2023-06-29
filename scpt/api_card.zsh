@@ -481,7 +481,7 @@ if [ "admin" = "`echo $3|cut -d = -f 1`" ];then
 		{
 			\"raid_admin\":\"`echo $3|cut -d = -f 2`\",
 			\"raid_time\": null,
-			\"raid_card\": 25
+			\"raid_card\": 23
 		}" | jq . >! $cfg
 			cat $cfg
 	else
@@ -555,7 +555,7 @@ fi
 if [ "$3" = "bingo" ] || [ "$3" = "-bingo" ];then
 	card=35
 	bingo=`curl -sL https://bingo.b35.jp/bonus.csv`
-	bingo_data=`echo $bingo|grep $1|head -n 1`
+	bingo_data=`echo $bingo|grep $1|tail -n 1`
 	bingo_d=`echo $bingo_data|cut -d , -f 1`
 	bingo_w=`echo $bingo_data|cut -d , -f 2`
 

@@ -1684,6 +1684,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
         for i in su {
             let reason = &n[i].reason;
             let handle = &n[i].author.handle;
+            //let d_name = &n[i].author.displayName;
             let did = &n[i].author.did;
             let read = n[i].isRead;
             let cid = &n[i].cid;
@@ -2267,6 +2268,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                 }
                             }
                         } else if { com == "ten" || com == "/ten" } && cccc_ch == false {
+                            use std::process::Command;
                             let handlev: Vec<&str> = handle.split('.').collect();
                             let handlev = handlev[0].trim().to_string();
                             let link = "https://card.syui.ai/".to_owned() + &handlev;
@@ -2274,9 +2276,23 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                             let e = link.chars().count();
                             println!("{}", link);
                             println!("{}", e);
-                            if vec.len() == 1 {
-                                let str_rep = at_reply_link::post_request("/ten start : ゲームスタート\n/ten help : ヘルプ".to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
-                                println!("{}", str_rep);
+                            if vec.len() == 2 {
+                                let file = "/.config/atr/scpt/api_ten_auto.zsh";
+                                let mut f = shellexpand::tilde("~").to_string();
+                                f.push_str(&file);
+                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).output().expect("zsh");
+                                let d = String::from_utf8_lossy(&output.stdout);
+                                let d = "\n".to_owned() + &d.to_string();
+                                println!("{}", d);
+                                let text_limit = char_c(d);
+                                println!("{}", text_limit);
+                                if text_limit.len() > 3 {
+                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                    println!("{}", str_rep);
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
+                                }
                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                 println!("{}", str_notify);
                                 cid_write(cid.to_string());
@@ -2286,7 +2302,6 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                             let file = "/.config/atr/scpt/api_ten.zsh";
                             let mut f = shellexpand::tilde("~").to_string();
                             f.push_str(&file);
-                            use std::process::Command;
                             let cc_ch = cid_check(cid.to_string());
                             if cc_ch == false {
                                 let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).output().expect("zsh");
