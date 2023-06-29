@@ -86,13 +86,14 @@ function moji_mode_card() {
 	card=$1
 	cp=$2
 	skills=$3
+	s=$4
 	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
 	if [ -n "$card_check" ];then
 		echo "you already have"
 		exit
 	fi
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
 	card=`echo $tmp|jq -r .card`
 	cp=`echo $tmp|jq -r .cp`
 	ascii_moji_b
@@ -100,8 +101,9 @@ function moji_mode_card() {
 	echo "[card]"
 	echo "id : ${card}"
 	echo "cp : ${cp}"
+	echo "status : ${s}"
 	echo "skill : ${skill}"
-	sleep 2
+	sleep 1
 }
 
 function user_card(){
@@ -522,6 +524,7 @@ fi
 if [ "$3" = "moji" ] || [ "$3" = "-moji" ];then
 	echo "not open"
 	exit
+	card=27
 	plus=$(($RANDOM % 1000 + 400))
 	cp=$((cp + plus))
 
@@ -543,9 +546,37 @@ if [ "$3" = "moji" ] || [ "$3" = "-moji" ];then
 		skill=normal
 	fi
 
-	moji_mode_card 27 $cp $skill
+	s=super
+	moji_mode_card $card $cp $skill $s
 
 	exit
+fi
+
+if [ "$3" = "bingo" ] || [ "$3" = "-bingo" ];then
+	card=35
+	bingo=`curl -sL https://bingo.b35.jp/bonus.csv`
+	bingo_data=`echo $bingo|grep $1|head -n 1`
+	bingo_d=`echo $bingo_data|cut -d , -f 1`
+	bingo_w=`echo $bingo_data|cut -d , -f 2`
+
+	if [ -z "$bingo_data" ] || [ -z "$bingo_d" ];then
+		echo no bingo
+		exit
+	fi
+	if [ $bingo_w -eq 2 ];then 
+		s=super
+	else
+		s=normal
+	fi
+	if [ "$bingo_d" = "20230630" ] || [ "$bingo_d" = "20230629" ];then 
+		cp=0
+		skill=normal
+		moji_mode_card $card $cp $skill $s
+		exit
+	else
+		echo no bingo day
+		exit
+	fi
 fi
 
 if [ "$3" = "wa" ] || [ "$3" = "-wa" ];then
@@ -572,7 +603,8 @@ if [ "$3" = "wa" ] || [ "$3" = "-wa" ];then
 		skill=normal
 	fi
 
-	moji_mode_card 28 $cp $skill
+	s=super
+	moji_mode_card 28 $cp $skill $s
 
 	exit
 fi

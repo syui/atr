@@ -215,10 +215,13 @@ function ten_start() {
 		ten_char=$ten_old_yak
 	fi
 
+	ten_yak_check $ten_char
+
 	if [ -z "$ten_yak_ok" ] && [ 2 -eq 2 ];then
 		if `ten_skill OUY`;then
 			card=29
 			ten_char=OUY
+			export ten_yak_ok="☑"
 		else
 			unset card
 		fi
@@ -228,13 +231,11 @@ function ten_start() {
 		if `ten_skill AIK`;then
 			card=33
 			ten_char=AIK
+			export ten_yak_ok="☑"
 		else
 			unset card
 		fi
 	fi
-
-	ten_yak_check $ten_char
-
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
