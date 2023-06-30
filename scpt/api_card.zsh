@@ -251,7 +251,6 @@ function battle_raid(){
 		if [ 0 -ge $cp_bb ];then
 			echo "win!"
 			echo 0 >! $f_raid
-			rm $cfg
 			card=`echo $(($RANDOM % 15))`
 			if [ -n "$raid_boss_admin" ];then
 				body=`echo "\n[card]\nid : $boss_card\ncp : 0"`
@@ -261,6 +260,7 @@ function battle_raid(){
 				raid_end=`date +"%H:%M"`
 				raid_body=`echo "[raid status]\n${boss_user_bsky}\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
 				tmp=`$HOME/.cargo/bin/atr p "$raid_body"`
+				rm $cfg
 			else
 				raid_end=`date +"%H:%M"`
 				raid_body=`echo "[raid status]\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
@@ -339,6 +339,7 @@ function battle_raid(){
 
 function l_cards() {
 	data_card=`curl -sL "$url/users/$old_id/card?itemsPerPage=2000"`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"delete\":true,\"token\":\"$token\"}" -s $url/users/$old_id`
 	nn=`echo $data_card|jq length`
 	nn=$((nn - 1))
 	for ((ii=0;ii<=$nn;ii++))
@@ -346,7 +347,8 @@ function l_cards() {
 		card=`echo $data_card|jq -r ".[$ii].card"`
 		s=`echo $data_card|jq -r ".[$ii].status"`
 		cp=`echo $data_card|jq -r ".[$ii].cp"`
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -sL $url/cards`
+		skill=`echo $data_card|jq -r ".[$ii].skill"`
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
 	done
 }
 

@@ -1777,6 +1777,34 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                 cid_write(cid.to_string());
                             }
                         }
+                    } else if reason == "reply" && rep_com.contains("fav") == true {
+                        let prompt = &vec[1..].join(" ");
+                        let file = "/.config/atr/scpt/api_fav.zsh";
+                        let mut f = shellexpand::tilde("~").to_string();
+                        f.push_str(&file);
+                        use std::process::Command;
+                        let cc_ch = cid_check(cid.to_string());
+                        if cc_ch == false {
+                            let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
+                            let d = String::from_utf8_lossy(&output.stdout);
+                            let handlev: Vec<&str> = handle.split('.').collect();
+                            let handlev = handlev[0].trim().to_string();
+                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                            let s = 0;
+                            let e = link.chars().count();
+                            println!("{}", link);
+                            println!("{}", e);
+                            let dd = "\n".to_owned() + &d.to_string();
+                            let text_limit = char_c(dd);
+                            println!("{}", text_limit);
+                            if text_limit.len() > 3 {
+                                let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                println!("{}", str_rep);
+                                let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                println!("{}", str_notify);
+                                cid_write(cid.to_string());
+                            }
+                        }
                     } else if reason == "reply" && rep_com.contains("ten") == true {
                         let option = &vec[1..].join(" ");
                         let file = "/.config/atr/scpt/api_ten.zsh";
@@ -1964,7 +1992,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                 cid_write(cid.to_string());
                             }
                         } else if com == "did" || com == "/did" {
-                            let link = "https://plc.directory/".to_owned() + &did;
+                            let link = "https://plc.directory/".to_owned() + &did + &"/log";
                             let s = 0;
                             let e = link.chars().count();
                             println!("{}", link);
@@ -2262,6 +2290,34 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
                                         println!("{}", str_rep);
                                     }
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
+                                }
+                            }
+                        } else if { com == "fav" || com == "/fav" } && cccc_ch == false {
+                            let prompt = &vec[2..].join(" ");
+                            let file = "/.config/atr/scpt/api_fav.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let cc_ch = cid_check(cid.to_string());
+                            if cc_ch == false {
+                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
+                                let d = String::from_utf8_lossy(&output.stdout);
+                                let handlev: Vec<&str> = handle.split('.').collect();
+                                let handlev = handlev[0].trim().to_string();
+                                let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                let s = 0;
+                                let e = link.chars().count();
+                                println!("{}", link);
+                                println!("{}", e);
+                                let dd = "\n".to_owned() + &d.to_string();
+                                let text_limit = char_c(dd);
+                                println!("{}", text_limit);
+                                if text_limit.len() > 3 {
+                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                    println!("{}", str_rep);
                                     let str_notify = at_notify_read::post_request(time.to_string()).await;
                                     println!("{}", str_notify);
                                     cid_write(cid.to_string());

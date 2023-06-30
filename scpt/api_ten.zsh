@@ -81,7 +81,7 @@ function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
 		OUY|AIK)
-			if `$ten_skill $1`;then
+			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
@@ -473,16 +473,13 @@ function ten_plus() {
 	fi
 	ten_yak_check $ten_char
 
-	if [ $card -eq 33 ] || [ $card -eq 29 ];then
-		export ten_yak_ok="☑"
-	fi
-
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":$ten_kai,\"ten_su\":$ten_su, \"token\":\"$token\"}" -s $host/users/$uid`
 
 	if [ $ran_z -eq 1 ] && [ $card -ne 0 ] && [ -n "$card" ];then
 		echo "$ten_kai : $ten_su ---> $ten_char $ten_yak_ok"
 		skill=ten
 		cp=${card}00
+		cp=$(($RANDOM % 1200 + 200))
 		echo "[card] ---> 14%"
 		echo "id:${card}"
 		echo "skill:${skill}"
