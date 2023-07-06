@@ -103,9 +103,9 @@ function fav_battle() {
 	cp_b=$(($RANDOM % 1400))
 
 	if [ $cp_i -gt $cp_b ];then
-		cp_plus=$(($RANDOM % 30))
+		cp_plus=$(($RANDOM % 37 + 1))
 	else
-		cp_plus=$(($RANDOM % 5))
+		cp_plus=$(($RANDOM % 7 + 1))
 	fi
 	echo "\n✧${cp_i} vs $cp_b"
 	echo "----"

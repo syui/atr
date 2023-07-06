@@ -228,6 +228,7 @@ function battle_raid(){
 		elif [ "$skill" = "post" ] && [ $ss_post -eq 1 ];then
 			cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
 			cp_i=$((cp_i + cp_post))
+			cp_bb=$((cp_bb - cp_post))
 			echo "🔥 $cp_i vs $cp_b ---> $cp_bb"
 		elif [ "$skill" = "luck" ] && [ $ss_post -eq 1 ];then
 			echo "✨ $cp_i vs $cp_b ---> $cp_bb"
@@ -486,6 +487,7 @@ if [ "admin" = "`echo $3|cut -d = -f 1`" ];then
 			\"raid_card\": 23
 		}" | jq . >! $cfg
 			cat $cfg
+			echo please : /card raid-start
 	else
 		echo no admin
 	fi
