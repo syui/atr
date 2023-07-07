@@ -66,9 +66,19 @@ function card_check(){
 	data_uu=`curl -sL "$host/users/$uid/card?itemsPerPage=2000"`
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
 	if [ -n "$card_check" ];then
+		card=0
+		cp=1
+		s=super
+		skill=lost
 		echo "$body_user"
-		echo "lost, you already have..."
+		echo "lost, you chose the card you already have..."
+		echo "try again next time!"
+		echo "[card]"
+		echo "id : $card"
+		echo "cp : $cp"
+		echo "skill : $skill"
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 		exit
 	fi
 }

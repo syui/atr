@@ -80,12 +80,12 @@ function ten_skill() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK)
+		OUY|AIK|YUI)
 			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
-		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
+		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*|YUI)
 			export ten_yak_ok="⚠"
 			;;
 	esac
@@ -217,7 +217,17 @@ function ten_start() {
 
 	ten_yak_check $ten_char
 
-	if [ -z "$ten_yak_ok" ] && [ 3 -eq 3 ];then
+	if [ -z "$ten_yak_ok" ];then
+		if `ten_skill AIK`;then
+			card=36
+			ten_char=YUI
+			export ten_yak_ok="☑"
+		else
+			unset card
+		fi
+	fi
+
+	if [ -z "$ten_yak_ok" ];then
 		if `ten_skill AIK`;then
 			card=33
 			ten_char=AIK
@@ -227,7 +237,7 @@ function ten_start() {
 		fi
 	fi
 
-	if [ -z "$ten_yak_ok" ] && [ 2 -eq 2 ];then
+	if [ -z "$ten_yak_ok" ];then
 		if `ten_skill OUY`;then
 			card=29
 			ten_char=OUY
@@ -468,6 +478,9 @@ function ten_plus() {
 	if [ $card -eq 29 ] && [ $ran_cm -eq 0 ];then
 		ten_char=OSZ
 	fi
+	if [ $card -eq 36 ] && [ $ran_cm -eq 0 ];then
+		ten_char=IKT
+	fi
 	if [ $card -eq 13 ];then
 		ten_char=EMY
 	fi
@@ -599,6 +612,12 @@ function ten_yak() {
 			;;
 		AIK)
 			card=33
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		YUI)
+			card=36
 			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi

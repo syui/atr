@@ -14,6 +14,9 @@ case $OSTYPE in
 		;;
 esac
 
+# 1=handle, 2=did, 3=opt, 4=sub
+fav_com=$HOME/.config/atr/scpt/api_fav.zsh
+
 function user_data(){
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
@@ -138,7 +141,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 50000))
+	boss_cp=$((boss_cp + 150000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -301,12 +304,25 @@ function battle_raid(){
 			echo "cp : ${cp}"
 		fi
 
-		if [ $cp_i -gt $cp_bb ];then
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-			#tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
-		else
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-		fi
+		#data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		#card_check=`echo $data_uu|jq -r ".[]|select(.card == 36)"`
+		#if [ "$card_check" ];then
+		#	card=36
+		#	cp=`echo $(($RANDOM % 1000 + 400))`
+		#	s=$(($RANDOM % 7))
+		#	if [ $s -eq 1 ];then
+		#		s=super
+		#		skill=post
+		#		plus=$(($RANDOM % 1000 + 300))
+		#		cp=$((cp + plus))
+		#	else
+		#		s=normal
+		#		skill=ten
+		#	fi
+		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
+		#fi
+
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
@@ -453,6 +469,7 @@ f_raid=$HOME/.config/atr/txt/card_raid.txt
 luck=`echo $data|jq -r .luck`
 luck_at=`echo $data|jq -r .luck_at`
 luck_at=`date -d "$luck_at" +"%Y%m%d"`
+fav_cid=`echo $data|jq -r .fav`
 
 if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
 	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
@@ -679,12 +696,34 @@ if [ "$3" = "-b" ] || [ "$3" = "b" ];then
 			exit
 		fi
 
+		if [ -n "$fav_cid" ] && [ $fav_cid -ne 0 ];then
+			fav_card=`echo $data_uu|jq -r ".[]|select(.id == $fav_cid)"`
+			fav_card_id=`echo $fav_card|jq -r ".id"`
+			fav_card_cp=`echo $fav_card|jq -r ".cp"`
+			fav_card_name=`echo $fav_card|jq -r ".card"`
+			fav_card_status=`echo $fav_card|jq -r ".status"`
+			fav_card_skill=`echo $fav_card|jq -r ".skill"`
+			fav_card_ran=$(($RANDOM % 4))
+			if [ $fav_card_ran -eq 0 ];then
+				cp_i=$fav_card_cp
+			fi
+		fi
+
 		echo $tt | sed -n 1,3p
+		if [ -n "$fav_cid" ] && [ $fav_cid -ne 0 ];then
+			echo "$fav_card_cp ✧"
+		fi
 		echo "---"
 		echo id : $r
 		echo $ttt | sed -n 1,3p
 		echo "---"
 		echo $cp_i vs $cp_b
+
+		if [ -n "$fav_card_id" ] && [ $fav_card_ran -eq 0 ];then
+			$fav_com $username $did b $cp_b
+			exit
+		fi
+
 		# 革命前
 		if [ $cp_i -gt $cp_b ];then
 		# 革命後

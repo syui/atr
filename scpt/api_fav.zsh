@@ -91,6 +91,12 @@ function fav_status() {
 }
 
 function fav_battle() {
+	if [ -n "$1" ];then
+		cp_b=$1
+	else
+		cp_b=$(($RANDOM % 1400))
+	fi
+
 	if [ $updated_at -ge $d ] || [ "$updated_at" = "$d" ];then
 		echo "limit battle"
 		exit
@@ -100,7 +106,6 @@ function fav_battle() {
 	card_name=`echo $fav_card|jq -r ".card"`
 	card_status=`echo $fav_card|jq -r ".status"`
 	card_skill=`echo $fav_card|jq -r ".skill"`
-	cp_b=$(($RANDOM % 1400))
 
 	if [ $cp_i -gt $cp_b ];then
 		cp_plus=$(($RANDOM % 37 + 1))
@@ -137,7 +142,7 @@ function fav_add() {
 
 case "$opt" in
 	[bB]|-[bB]|[bB]attle)
-		fav_battle
+		fav_battle $4
 		;;
 	[sS]|-[sS]|[sS]tatus)
 		fav_status
