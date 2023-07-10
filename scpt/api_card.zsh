@@ -495,6 +495,40 @@ if [ "$3" = "-raidstop" ] || [ "$3" = "raidstop" ] || [ "$3" = "raid-stop" ];the
 	exit
 fi
 
+if [ "ap" = "`echo $3|cut -d = -f 1`" ];then
+	echo activitypub mode
+	b=`echo $3|cut -d = -f 2`
+	case $b in
+		true|false)
+			data=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\",\"mastodon\":$b}" -sL "$url/users/$uid"`
+			echo ok
+			echo $data|jq -r .mastodon
+			exit
+			;;
+		*)
+			echo true,false
+			exit
+			;;
+	esac
+fi
+
+if [ "atp" = "`echo $3|cut -d = -f 1`" ];then
+	echo atproto mode
+	b=`echo $3|cut -d = -f 2`
+	case $b in
+		true|false)
+			data=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\",\"bsky\":$b}" -sL "$url/users/$uid"`
+			echo ok
+			echo $data|jq -r .bsky
+			exit
+			;;
+		*)
+			echo true,false
+			exit
+			;;
+	esac
+fi
+
 if [ "admin" = "`echo $3|cut -d = -f 1`" ];then
 	if [ "syui.ai" = "$1" ] || [ "ai" = "$1" ];then
 		echo "

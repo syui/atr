@@ -30,29 +30,51 @@ data_url=`echo $j|jq -r ".url"`
 data_server=`echo $j|jq -r ".url"|cut -d / -f 3`
 data_user=`echo $j|jq -r ".user"`
 
+function user_create() {
+	if [ -n "$ap" ] && [ -n "$url" ];then
+		data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$ap\",\"password\":\"$pass\",\"did\":\"$url\",\"next\":\"$nd_o\",\"updated_at\":\"$updated_at_o\"}" -sL "$host/users"`
+		uid=`echo $data|jq -r ".id"`
+		echo id $uid
+	else
+		echo error user create
+	fi
+}
+
 function card_env() {
 	card_url=https://card.syui.ai
 	host=https://api.syui.ai
 	d=`date +"%Y%m%d"`
 	nd=`date +"%Y%m%d" -d '1 day'`
+	nd_o=`date +"%Y%m%d" -d '-1 day'`
+	updated_at_o=`date --iso-8601=seconds -d '-1 day'`
 	username=`echo $1|cut -d . -f 1`
 	url_user_all="$host/users?itemsPerPage=2000"
 	pass=`cat $HOME/.config/atr/api_card.json|jq -r .password`
 	token=`cat $HOME/.config/atr/api_card.json|jq -r .token`
 	data_tmp=`curl -sL $url_user_all`
-	data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
+	data=`echo "$data_tmp"|jq ".[]|select(.username == \"$ap\")"`
+	if [ -z "$data" ];then
+		data=`echo "$data_tmp"|jq ".[]|select(.username == \"$username\")"`
+	fi
+	if [ -z "$data" ];then
+		echo no $username
+		user_create
+	fi
+	username=`echo $data|jq -r .username`
 	data_did_check=`echo $data|jq -r .did`
 	uid=`echo $data|jq -r ".id"`
 	delete=`echo $data|jq -r ".delete"`
+	mastodon=`echo $data|jq -r ".mastodon"`
 	did=`echo $data|jq -r ".did"`
 	handle_change=`echo $data|jq -r ".handle"`
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y%m%d"`
 	updated_at_n=`date --iso-8601=seconds`
 	next=`echo $data|jq -r .next`
-	if [ -z "$data" ];then
-		echo no $username
-		exit
+	if [ "$mastodon" = false ];then
+		echo "bsky @${username}"
+		echo "no activitypub-mode"
+		return 0
 	fi
 	echo "$card_url/$username"
 }
@@ -61,16 +83,16 @@ function card_day() {
 	card_env $1
 	if [ $next -gt $d ] || [ "$updated_at" = "$d" ];then
 		echo limit 1 day
-		exit
+		return 0
 	fi
 
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $host/cards`
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -sL $host/cards`
 	card=`echo $tmp|jq -r .card`
 	card_url=`echo $tmp|jq -r .url`
 	cp=`echo $tmp|jq -r .cp`
 	skill=`echo $tmp|jq -r .skill`
 	if [ -z "$card" ];then
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $host/cards`
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -sL $host/cards`
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
 		cp=`echo $tmp|jq -r .cp`
@@ -84,14 +106,14 @@ function card_day() {
 		echo skill : $skill
 	fi
 	t=`echo $tmp|jq -r .card`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $host/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -sL $host/users/$uid`
 }
 
 function card_b() {
 	card_env $1
 	if [ $updated_at -ge $d ] || [ "$updated_at" = "$d" ];then
 		echo "limit battle"
-		exit
+		return 0
 	fi
 	id_all=`curl -sL "$host/users?itemsPerPage=2000"|jq ".[]|.id"`
 	id_n=`echo "$id_all"|wc -l`
@@ -135,11 +157,11 @@ function card_b() {
 		cp_b=`echo $ttt |awk "NR==$rss"`
 		if [ -z "$cp_i" ];then
 			echo "null error"
-			exit
+			return 0
 		fi
 		if [ -z "$cp_b" ];then
 			echo "null error"
-			exit
+			return 0
 		fi
 
 		echo $tt | sed -n 1,3p
@@ -156,12 +178,12 @@ function card_b() {
 		fi
 
 		if [ $cp_i -gt $cp_b ];then
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $host/cards`
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -sL $host/cards`
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
 			cp=`echo $tmp|jq -r .cp`
 			if [ -z "$card" ];then
-				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $host/cards`
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -sL $host/cards`
 				card=`echo $tmp|jq -r .card`
 				card_url=`echo $tmp|jq -r .url`
 				cp=`echo $tmp|jq -r .cp`
@@ -172,7 +194,7 @@ function card_b() {
 			t=`echo $tmp|jq -r .card`
 		fi
 
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -s $host/users/$uid`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -sL $host/users/$uid`
 	}
 
 function mastodon_notify() {
@@ -189,6 +211,7 @@ function mastodon_notify() {
 		user=`echo $data_user|awk "NR==$i"`
 		text=`echo $data_text|awk "NR==$i"`
 		server=`echo $data_server|awk "NR==$i"`
+		ap="@${user}@${server}"
 
 		if [ -f "$GOPATH/bin/pup" ];then
 			text=`echo ${text}|pup "p text{}"|tail -n 1|cut -d " " -f 2-|tr -d '"'|sed -e "s/&#39;/'/g" -e 's/&quot;/"/g'`
