@@ -141,7 +141,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 150000))
+	boss_cp=$((boss_cp + 50000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -245,7 +245,7 @@ function battle_raid(){
 		fi
 
 		s=normal
-		ss=$(($RANDOM % 10))
+		ss=`echo $(($RANDOM % 10))`
 		if [ $ss -eq 1 ];then
 			card=`echo $(($RANDOM % 15))`
 		else
@@ -264,7 +264,9 @@ function battle_raid(){
 				raid_end=`date +"%H:%M"`
 				raid_body=`echo "[raid status]\n${boss_user_bsky}\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
 				tmp=`$HOME/.cargo/bin/atr p "$raid_body"`
-				rm $cfg
+				if [ "$raid_run" = "true" ];then
+					rm $cfg
+				fi
 			else
 				raid_end=`date +"%H:%M"`
 				raid_body=`echo "[raid status]\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
@@ -279,7 +281,7 @@ function battle_raid(){
 			cp=`echo $(($RANDOM % 100 + 50))`
 		else
 			cp=`echo $(($RANDOM % 500 + 200))`
-			s=$(($RANDOM % 2))
+			s=`echo $(($RANDOM % 2))`
 			if [ $s -eq 1 ];then
 				s=super
 				plus=$(($RANDOM % 500 + 300))
@@ -287,14 +289,17 @@ function battle_raid(){
 			fi
 		fi
 
-		if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
-			data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
-			card_check=`echo $data_uu|jq -r ".[]|select(.card == $raid_sp_card)"`
-		fi
+		#if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
+		#	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+		#	card_check=`echo $data_uu|jq -r ".[]|select(.card == $raid_sp_card)"`
+		#fi
 
 		if [ -n "$raid_boss_admin" ] && [ -z "$card_check" ] && [ "$raid_run" = "true" ];then
-			sleep 1
-			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$raid_sp_card,\"status\":\"normal\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
+			ss=`echo $(($RANDOM % 10))`
+			if [ $ss -eq 1 ];then
+				s=super
+			fi
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$raid_sp_card,\"status\":\"$s\",\"cp\":0,\"password\":\"$pass\"}" -s $url/cards`
 			card=`echo $tmp|jq -r .card`
 			card_url=`echo $tmp|jq -r .url`
 			cp=`echo $tmp|jq -r .cp`
@@ -302,6 +307,7 @@ function battle_raid(){
 			echo "[card]"
 			echo "id : ${card}"
 			echo "cp : ${cp}"
+			echo "status : ${s}"
 		fi
 
 		#data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`

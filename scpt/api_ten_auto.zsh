@@ -160,11 +160,15 @@ function user_env() {
 function ten_shutdown(){
 	ten_kai=0
 	all_data=`curl -sL "$host/users?itemsPerPage=3000"`
+	ten=`echo $((ten_su + 200))`
+	ten_su=$ten
+	aiten=`echo $((aiten + ten_su))`
+	echo "+100"
 	echo "---"
 	echo user : $handle
-	echo ten :	$ten_su
-	echo aiten :	$((aiten + ten_su))
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_kai\":$ten_kai, \"ten_su\":$ten_su, \"ten\": false, \"token\":\"$token\", \"ten_at\" : \"$ten_at_n\", \"aiten\": $((aiten + ten_su))}" -s $host/users/$uid`
+	echo ten :	$ten
+	echo aiten :	
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_kai\":$ten_kai, \"ten_su\":$ten_su, \"ten\": false, \"token\":\"$token\", \"ten_at\" : \"$ten_at_n\", \"aiten\": $aiten}" -s $host/users/$uid`
 }
 
 user_env

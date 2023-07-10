@@ -33,6 +33,8 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 
+use std::{thread, time};
+
 pub mod openai;
 pub mod openai_char;
 pub mod deepl;
@@ -1679,8 +1681,8 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
         let n = notify.notifications;
         let length = &n.len();
-        //let su = 0..*length;
-        let su = (0..*length).rev();
+        let su = 0..*length;
+        //let su = (0..*length).rev();
         for i in su {
             let reason = &n[i].reason;
             let handle = &n[i].author.handle;
@@ -2323,6 +2325,27 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     cid_write(cid.to_string());
                                 }
                             }
+                        } else if { com == "nyan" || com == "/nyan" } && cccc_ch == false {
+                            let prompt = &vec[2..].join(" ");
+                            let file = "/.config/atr/scpt/nyancat.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let cc_ch = cid_check(cid.to_string());
+                            if cc_ch == false {
+                                let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&prompt).output().expect("zsh");
+                                let d = String::from_utf8_lossy(&output.stdout);
+                                let dd = "\n".to_owned() + &d.to_string();
+                                let text_limit = char_c(dd);
+                                println!("{}", text_limit);
+                                if text_limit.len() > 3 {
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    println!("{}", str_rep);
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
+                                }
+                            }
                         } else if { com == "ten" || com == "/ten" } && cccc_ch == false {
                             use std::process::Command;
                             let handlev: Vec<&str> = handle.split('.').collect();
@@ -2410,18 +2433,22 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
 }
 
 fn bot(c: &Context) {
-    aa().unwrap();
-    let mode = c.bool_flag("mode");
-    let admin = "syui.ai".to_string();
-    if let Ok(limit) = c.int_flag("limit") {
-        let l: i32 = limit.try_into().unwrap();
-        if let Ok(admin) = c.string_flag("admin") {
-            bot_run(c,l,admin, mode);
+    loop {
+        //let _ = aa();
+        aa().unwrap();
+        let mode = c.bool_flag("mode");
+        let admin = "syui.ai".to_string();
+        if let Ok(limit) = c.int_flag("limit") {
+            let l: i32 = limit.try_into().unwrap();
+            if let Ok(admin) = c.string_flag("admin") {
+                bot_run(c,l,admin, mode);
+            } else {
+                bot_run(c,l,admin, mode);
+            }
         } else {
-            bot_run(c,l,admin, mode);
+            bot_run(c,20, admin, mode);
         }
-    } else {
-        bot_run(c,20, admin, mode);
+        //thread::sleep(time::Duration::from_secs(5));
     }
 }
 
