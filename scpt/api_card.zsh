@@ -23,6 +23,7 @@ function user_data(){
 	did=`echo $data|jq -r .did`
 	next=`echo $data|jq -r .next`
 	aiten=`echo $data|jq -r .aiten`
+	fav=`echo $data|jq -r .fav`
 	d=`date +"%Y%m%d"`
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y-%m-%d"`
@@ -107,6 +108,48 @@ function moji_mode_card() {
 	echo "status : ${s}"
 	echo "skill : ${skill}"
 	sleep 1
+}
+
+function egg_card() {
+	card=39
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have, dragon"
+		exit
+	fi
+
+	card=40
+	cp=0
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have, egg"
+		exit
+	fi
+
+	card=42
+	cp=0
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have, nyan"
+		exit
+	fi
+
+	#if [ "$book" != true ];then
+	#	echo no book
+	#	exit
+	#fi
+
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"cp\":$cp,\"password\":\"$pass\"}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	cp=`echo $tmp|jq -r .cp`
+	ascii_moji_b
+	echo "---"
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
 }
 
 function user_card(){
@@ -209,10 +252,14 @@ function battle_raid(){
 		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 		skill=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].skill"`
 		ss=$(($RANDOM % 2))
+		sss=$(($RANDOM % 3))
 		ss_post=$(($RANDOM % 2))
 		#ss_post=$(($RANDOM % 10))
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			cp_i=$((cp_i + cp_i))
+		fi
+		if [ "$skill" = "dragon" ] && [ $sss -eq 1 ];then
+			cp_i=$((cp_i + cp_i + cp_i))
 		fi
 
 		if [[ "$cp_i" =~ ^[0-9]+$ ]]; then
@@ -235,6 +282,8 @@ function battle_raid(){
 			echo "🔥 $cp_i vs $cp_b ---> $cp_bb"
 		elif [ "$skill" = "luck" ] && [ $ss_post -eq 1 ];then
 			echo "✨ $cp_i vs $cp_b ---> $cp_bb"
+		elif [ "$skill" = "dragon" ] && [ $ss_post -eq 1 ];then
+			echo "🐉 $cp_i vs $cp_b ---> $cp_bb"
 		else 
 			echo "$cp_i vs $cp_b ---> $cp_bb"
 		fi
@@ -360,7 +409,135 @@ function battle_raid(){
 	exit
 }
 
+function battle_server(){
+	rr=`date +"%H%M"`
+	a_team=bluesky
+	b_team=mastodon
+	f_server=$HOME/.config/atr/txt/card_server.txt
+	f_server_user_at=$HOME/.config/atr/txt/card_server_user_at.txt
+	f_server_user_ap=$HOME/.config/atr/txt/card_server_user_ap.txt
+	f_server_ap=$HOME/.config/atr/txt/card_server_ap.txt
+	f_server_at=$HOME/.config/atr/txt/card_server_at.txt
+	f_server_start_time=$HOME/.config/atr/txt/card_server_start_time.txt
+
+	if [ `cat $f_server` -eq 1 ];then
+		echo shutdown server battle
+		exit
+	fi
+
+	if [ ! -f $f_server_start_time ];then
+		server_start=`date +"%H%M"`
+		echo "$server_start" >! $f_server_start_time
+		echo 0 >! $f_server_at
+		echo 0 >! $f_server_ap
+	fi
+
+	cp_ap=`cat $f_server_ap`
+	cp_at=`cat $f_server_at`
+
+	if [ -f $f_server_start_time ];then
+		server_start=`cat $f_server_start_time`
+		server_time=`date -d "$server_start 5 min" +"%H%M"`
+	fi
+
+	echo "limit-time:`date -d "$server_time" +"%H:%M"`"
+
+	if [ $raid_at -ge $d ];then
+		#echo "limit battle"
+		#exit
+	fi
+
+	data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=4000"`
+	fav_card=`echo $data_u|jq -r ".[]|select(.id == $fav)"`
+	cid=$fav
+
+	if [ -z "$fav_card" ];then
+		echo "/fav <CID>"
+		echo https://card.syui.ai/pr
+		exit
+	fi
+
+	if [ ! -f $f_server_user_at ];then
+		echo $username >> $f_server_user_at
+	fi
+	if [ ! -f $f_server_user_ap ];then
+		echo null >> $f_server_user_ap
+	fi
+	commit_user_at=`cat $f_server_user_at|tail -n 1`
+	commit_user_ap=`cat $f_server_user_ap|tail -n 1`
+	echo $username >> $f_server_user_at
+
+	cp_i=`echo $fav_card|jq -r ".cp"`
+	cp_ii=$cp_i
+	card_name=`echo $fav_card|jq -r ".card"`
+	card_status=`echo $fav_card|jq -r ".status"`
+	card_skill=`echo $fav_card|jq -r ".skill"`
+	skill=$card_skill
+
+	if [ "$skill" = "critical" ];then
+		cp_i=$((cp_i + cp_i))
+	fi
+	if [ "$skill" = "dragon" ];then
+		cp_i=$((cp_i * 3))
+	fi
+
+	cp_all=$((cp_i + cp_at))
+	echo $cp_all >! $f_server_at
+
+	echo "${cp_ap}/$b_team <--- ${commit_user_ap}"
+	echo
+	echo "${commit_user_at} ---> ${cp_at}/$a_team"
+	echo
+	if [ "$skill" = "critical" ];then
+		echo "⚡  $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "post" ];then
+		cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
+		cp_i=$((cp_i + cp_post))
+		echo "🔥 $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "luck" ];then
+		echo "✨ $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "dragon" ];then
+		echo "🐉 $cp_i ---> $cp_all/$a_team"
+	else 
+		echo "✧ $cp_i ---> $cp_all/$a_team"
+	fi
+	echo "----"
+	echo "${cp_all}/$a_team"
+	echo "vs"
+	echo "${cp_ap}/$b_team"
+
+	if [ $rr -gt $server_time ];then
+		echo "timeup!"
+		if [ $cp_at -gt $cp_ap ];then
+			echo "$a_team server win!"
+			body=`echo "${cp_all} vs ${cp_ap}\nwin/$a_team"`
+			tmp=`$HOME/.cargo/bin/atr p "$body"`
+		else
+			echo "$b_team server win!"
+			body=`echo "${cp_all} vs ${cp_ap}\nwin/$b_team"`
+			tmp=`$HOME/.cargo/bin/atr p "$body"`
+		fi
+		echo 1 >! $f_server
+		rm $f_server_start_time
+		rm $f_server_at
+		rm $f_server_ap
+		rm $f_server_user_at
+		rm $f_server_user_ap
+	fi
+
+	echo "----"
+	cp_plus=$(($RANDOM % 100 + 1))
+	cp=$((cp_ii + cp_plus))
+	body="level up!"
+	echo "${body} ✧${cp}(+${cp_plus})"
+	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+	exit
+}
+
+
 function l_cards() {
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"aiten\":$old_aiten,\"token\":\"$token\"}" -s $url/users/$uid`
 	data_card=`curl -sL "$url/users/$old_id/card?itemsPerPage=2000"`
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"delete\":true,\"token\":\"$token\"}" -s $url/users/$old_id`
 	nn=`echo $data_card|jq length`
@@ -417,8 +594,10 @@ if [ -n "$data" ] && [ -z "$data_did" ];then
 	fi
 fi
 next=`echo $data|jq -r .next`
+fav=`echo $data|jq -r .fav`
 if [ "$next" = "null" ];then
 	echo null error
+	exit
 fi
 
 # user create
@@ -426,6 +605,7 @@ if [ -z "$data" ];then
 	if [ -n "$data_did" ];then
 		old_user=`echo $data_did|jq -r .username`
 		old_id=`echo $data_did|jq -r .id`
+		old_aiten=`echo $data_did|jq -r .aiten`
 		echo https://card.syui.ai/$old_user
 	fi
 	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\"}" -s "$url/users"`
@@ -438,6 +618,7 @@ fi
 next=`echo $data|jq -r .next`
 if [ "$next" = "null" ];then
 	echo null error
+	exit
 fi
 
 uid=`echo $data|jq -r ".id"`
@@ -476,6 +657,12 @@ luck=`echo $data|jq -r .luck`
 luck_at=`echo $data|jq -r .luck_at`
 luck_at=`date -d "$luck_at" +"%Y%m%d"`
 fav_cid=`echo $data|jq -r .fav`
+
+# member
+member=`echo $data|jq -r .member`
+manga=`echo $data|jq -r .manga`
+book=`echo $data|jq -r .book`
+badge=`echo $data|jq -r .badge`
 
 if [ "$3" = "-raidstart" ] || [ "$3" = "raidstart" ] || [ "$3" = "raid-start" ];then
 	if [ "$raid_boss_admin" = "$1" ] || [ "syui.ai" = "$1" ];then
@@ -555,6 +742,10 @@ if [ "$3" = "-raid" ] || [ "$3" = "-r" ] || [ "$3" = "r" ];then
 	battle_raid $1 $2
 fi
 
+if [ "$3" = "-server" ] || [ "$3" = "-s" ] || [ "$3" = "s" ] || [ "$3" = "server" ];then
+	battle_server $1 $2
+fi
+
 if [ "$3" = "-u" ] || [ "$3" = "u" ];then
 	user_data
 	echo "---"
@@ -579,6 +770,11 @@ fi
 
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
 	yui_card 19 123
+	exit
+fi
+
+if [ "$3" = "-egg" ] || [ "$3" = "egg" ];then
+	egg_card
 	exit
 fi
 
@@ -828,6 +1024,10 @@ fi
 
 if [ "$3" = "ai" ] || [ "$3" = "-ai" ];then
 	data=`echo "$data_tmp"|jq ".[]|select(.username == \"ai\")"`
+	if [ -z "$data" ];then
+		exit
+	fi
+
 	next=`echo $data|jq -r .next`
 	if [ "$next" = "null" ];then
 		echo "null error"

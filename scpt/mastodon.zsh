@@ -71,7 +71,7 @@ function card_env() {
 	updated_at=`date -d "$updated_at" +"%Y%m%d"`
 	updated_at_n=`date --iso-8601=seconds`
 	next=`echo $data|jq -r .next`
-	if [ "$mastodon" = false ];then
+	if [ "$a_team" = false ];then
 		echo "bsky @${username}"
 		echo "no activitypub-mode"
 		return 0
@@ -195,7 +195,133 @@ function card_b() {
 		fi
 
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -sL $host/users/$uid`
-	}
+}
+
+function card_s(){
+	username=$1
+	a_team=mastodon
+	b_team=bluesky
+	rr=`date +"%H%M"`
+	f_server=$HOME/.config/atr/txt/card_server.txt
+	f_server_user_at=$HOME/.config/atr/txt/card_server_user_at.txt
+	f_server_user_ap=$HOME/.config/atr/txt/card_server_user_ap.txt
+	f_server_ap=$HOME/.config/atr/txt/card_server_ap.txt
+	f_server_at=$HOME/.config/atr/txt/card_server_at.txt
+	f_server_start_time=$HOME/.config/atr/txt/card_server_start_time.txt
+
+	if [ `cat $f_server` -eq 1 ];then
+		echo shutdown server battle
+		exit
+	fi
+
+	if [ ! -f $f_server_start_time ];then
+		server_start=`date +"%H%M"`
+		echo "$server_start" >! $f_server_start_time
+		echo 0 >! $f_server_at
+		echo 0 >! $f_server_ap
+	fi
+
+	cp_ap=`cat $f_server_ap`
+	cp_at=`cat $f_server_at`
+
+	if [ -f $f_server_start_time ];then
+		server_start=`cat $f_server_start_time`
+		server_time=`date -d "$server_start 5 min" +"%H%M"`
+	fi
+
+	echo "time:`date -d "$server_time" +"%H:%M"`"
+
+	if [ $raid_at -ge $d ];then
+		echo "limit battle"
+		exit
+	fi
+
+	data_u=`curl -sL "$host/users/$uid/card?itemsPerPage=2000"`
+	fav_card=`echo $data_u|jq -r ".[]|select(.id == $fav)"`
+	cid=$fav
+
+	if [ -z "$fav_card" ];then
+		echo "/fav <CID>"
+		echo https://card.syui.ai/pr
+		exit
+	fi
+
+	if [ ! -f $f_server_user_at ];then
+		echo null >> $f_server_user_ap
+	fi
+	if [ ! -f $f_server_user_ap ];then
+		echo $username >> $f_server_user_at
+	fi
+	commit_user_at=`cat $f_server_user_at|tail -n 1`
+	commit_user_ap=`cat $f_server_user_ap|tail -n 1`
+	echo $username >> $f_server_user_ap
+
+	cp_i=`echo $fav_card|jq -r ".cp"`
+	cp_ii=$cp_i
+	card_name=`echo $fav_card|jq -r ".card"`
+	card_status=`echo $fav_card|jq -r ".status"`
+	card_skill=`echo $fav_card|jq -r ".skill"`
+	skill=$card_skill
+
+	if [ "$skill" = "critical" ];then
+		cp_i=$((cp_i + cp_i))
+	fi
+	if [ "$skill" = "dragon" ];then
+		cp_i=$((cp_i * 3))
+	fi
+
+	cp_all=$((cp_i + cp_at))
+	echo $cp_all >! $f_server_at
+
+	echo "${cp_ap}/$a_team <--- ${commit_user_ap}"
+	echo
+	echo "${commit_user_at} ---> ${cp_at}/$b_team"
+	echo
+	if [ "$skill" = "critical" ];then
+		echo "⚡  $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "post" ];then
+		cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
+		cp_i=$((cp_i + cp_post))
+		echo "🔥 $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "luck" ];then
+		echo "✨ $cp_i ---> $cp_all/$a_team"
+	elif [ "$skill" = "dragon" ];then
+		echo "🐉 $cp_i ---> $cp_all/$a_team"
+	else 
+		echo "✧ $cp_i ---> $cp_all/$a_team"
+	fi
+	echo "----"
+	echo "${cp_all}/$a_team"
+	echo "vs"
+	echo "${cp_ap}/$b_team"
+
+	if [ $rr -gt $server_time ];then
+		echo "timeup!"
+		if [ $cp_at -gt $cp_ap ];then
+			echo "$a_team server win!"
+			body=`echo "${cp_all} vs ${cp_ap}\nwin/$a_team"`
+			#tmp=`$HOME/.cargo/bin/atr p "$body"`
+		else
+			echo "$b_team server win!"
+			body=`echo "${cp_all} vs ${cp_ap}\nwin/$b_team"`
+			#tmp=`$HOME/.cargo/bin/atr p "$body"`
+		fi
+		echo 1 >! $f_server
+		rm $f_server_start_time
+		rm $f_server_at
+		rm $f_server_ap
+		rm $f_server_user_at
+		rm $f_server_user_ap
+	fi
+
+	echo "----"
+	cp_plus=$(($RANDOM % 100 + 1))
+	cp=$((cp_ii + cp_plus))
+	body="level up!"
+	echo "${body} ✧${cp}(+${cp_plus})"
+	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $host/cards/$fav`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $host/users/$uid`
+}
 
 function mastodon_notify() {
 	for ((i=1;i<=$n;i++))
@@ -227,6 +353,14 @@ function mastodon_notify() {
 
 			if [ "b" = "$opt" ] || [ "-b" = "$opt" ];then
 				text=`card_b $user`
+				echo $user $text
+				msr cn "@${user}@${server} `echo $text`" -mm $mid
+				echo $mid >> $f
+				continue
+			fi
+
+			if [ "s" = "$opt" ] || [ "-s" = "$opt" ];then
+				text=`card_s $user`
 				echo $user $text
 				msr cn "@${user}@${server} `echo $text`" -mm $mid
 				echo $mid >> $f

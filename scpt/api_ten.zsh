@@ -42,7 +42,7 @@ ran_a=$(($RANDOM % nn))
 ran_b=$(($RANDOM % nn))
 ran_c=$(($RANDOM % nn))
 ran_d=$(($RANDOM % nn))
-ran_z=$(($RANDOM % 340))
+ran_z=$(($RANDOM % 540))
 ran_cm=$(($RANDOM % 3))
 ran_first=$(($RANDOM % 6))
 

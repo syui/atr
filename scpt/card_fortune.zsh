@@ -92,7 +92,21 @@ if [ -z $img ] || [ "$img" = "null" ];then
 	exit
 fi
 
-text="アイ・カード占い"
+test_ran=`echo $(($RANDOM % 3))`
+
+#text="アイ・カード占い"
+case $test_ran in
+	1)
+		text=`$atr chat "アイのカード占いを作ってやってみて。感じる答えを出して。できれば140文字以内でお願い。" -c`
+		;;
+	2)
+		text=`$atr chat "今、アイが自分で考えた占いやってみて。気分が乗らなかったらやらなくていいよ。できれば140文字以内で答えてね。" -c`
+		;;
+	*)
+		text=`$atr chat "今のアイの気分で適当に占ってみて。できれば140文字以内で答えてね。" -c`
+		;;
+esac
+
 title=`echo $j|jq -r .h`
 title="[${title}]"
 #desc=`echo $j|jq -r .p`

@@ -81,7 +81,7 @@ function card_like() {
 	if [ $like -gt 3 ] && [ $ran -eq 	1 ];then
 		echo "happy!"
 		su=`cat $eat_file|wc -l`
-		su=$((su * 100))
+		su=$((su * 50))
 		pay_s=$((aiten + su))
 		body_user=`echo "${aiten} : $aiten + $su = $pay_s"`
 		rm $eat_file
