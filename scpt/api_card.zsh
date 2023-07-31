@@ -68,15 +68,26 @@ echo "
 }
 
 function yui_card() {
+	echo no open
+	exit
 	card=$1
 	cp=$2
-	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+	s=yui
+	skill=yui
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
 	if [ -n "$card_check" ];then
 		echo "you already have"
 		exit
 	fi
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"super\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"critical\"}" -s $url/cards`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == 36)"`
+	if [ -z "$card_check" ];then
+		echo "no yui card"
+		exit
+	else
+		echo "yes yui card"
+	fi
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
 	card=`echo $tmp|jq -r .card`
 	cp=`echo $tmp|jq -r .cp`
 	ascii_moji_b
@@ -84,6 +95,8 @@ function yui_card() {
 	echo "[card]"
 	echo "id : ${card}"
 	echo "cp : ${cp}"
+	echo "status : ${s}"
+	echo "skill : ${s}"
 }
 
 function moji_mode_card() {
@@ -184,7 +197,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 50000))
+	boss_cp=$((boss_cp + 150000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -261,6 +274,11 @@ function battle_raid(){
 		if [ "$skill" = "dragon" ] && [ $sss -eq 1 ];then
 			cp_i=$((cp_i + cp_i + cp_i))
 		fi
+		if [ "$skill" = "yui" ] && [ $sss -eq 1 ];then
+			cp_i=$((cp_i + ten_su))
+			fav=$cid
+			fav_card=`echo $data_u|jq -r ".[]|select(.id == $cid)"`
+		fi
 
 		if [[ "$cp_i" =~ ^[0-9]+$ ]]; then
 		else
@@ -284,6 +302,13 @@ function battle_raid(){
 			echo "✨ $cp_i vs $cp_b ---> $cp_bb"
 		elif [ "$skill" = "dragon" ] && [ $ss_post -eq 1 ];then
 			echo "🐉 $cp_i vs $cp_b ---> $cp_bb"
+		elif [ "$skill" = "yui" ] && [ $ss_post -eq 1 ];then
+			if [ -n "$fav_card" ];then
+				cp_i=$((cp_i * 2))
+				echo "🔅 ${cp_i} vs $cp_b  •*¨*•.¸¸✧  $cp_bb"
+			else
+				echo "🔅 ${cp_i} vs $cp_b ---> $cp_bb"
+			fi
 		else 
 			echo "$cp_i vs $cp_b ---> $cp_bb"
 		fi
@@ -440,11 +465,11 @@ function battle_server(){
 		server_time=`date -d "$server_start 5 min" +"%H%M"`
 	fi
 
-	echo "limit-time:`date -d "$server_time" +"%H:%M"`"
+	echo "time:`date -d "$server_time" +"%H:%M"`"
 
 	if [ $raid_at -ge $d ];then
-		#echo "limit battle"
-		#exit
+		echo "limit battle"
+		exit
 	fi
 
 	data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=4000"`
@@ -458,16 +483,17 @@ function battle_server(){
 	fi
 
 	if [ ! -f $f_server_user_at ];then
-		echo $username >> $f_server_user_at
+		echo start >> $f_server_user_at
 	fi
 	if [ ! -f $f_server_user_ap ];then
-		echo null >> $f_server_user_ap
+		echo start >> $f_server_user_ap
 	fi
 	commit_user_at=`cat $f_server_user_at|tail -n 1`
 	commit_user_ap=`cat $f_server_user_ap|tail -n 1`
 	echo $username >> $f_server_user_at
 
 	cp_i=`echo $fav_card|jq -r ".cp"`
+	cid=`echo $fav_card|jq -r ".id"`
 	cp_ii=$cp_i
 	card_name=`echo $fav_card|jq -r ".card"`
 	card_status=`echo $fav_card|jq -r ".status"`
@@ -480,49 +506,62 @@ function battle_server(){
 	if [ "$skill" = "dragon" ];then
 		cp_i=$((cp_i * 3))
 	fi
+	if [ "$skill" = "yui" ];then
+		cp_i=$((cp_i + ten_su))
+	fi
+	if [ "$skill" = "yui" ] && [ $sss -eq 1 ];then
+		cp_i=$((cp_i + ten_su))
+		fav=$cid
+		fav_card=`echo $data_u|jq -r ".[]|select(.id == $cid)"`
+	fi
 
 	cp_all=$((cp_i + cp_at))
-	echo $cp_all >! $f_server_at
-
-	echo "${cp_ap}/$b_team <--- ${commit_user_ap}"
-	echo
-	echo "${commit_user_at} ---> ${cp_at}/$a_team"
-	echo
 	if [ "$skill" = "critical" ];then
-		echo "⚡  $cp_i ---> $cp_all/$a_team"
+		echo "⚡  $cp_i ---> $cp_at"
 	elif [ "$skill" = "post" ];then
 		cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
 		cp_i=$((cp_i + cp_post))
-		echo "🔥 $cp_i ---> $cp_all/$a_team"
+		cp_all=$((cp_i + cp_at))
+		echo "🔥 $cp_i ---> $cp_at"
 	elif [ "$skill" = "luck" ];then
-		echo "✨ $cp_i ---> $cp_all/$a_team"
+		echo "✨ $cp_i ---> $cp_at"
 	elif [ "$skill" = "dragon" ];then
-		echo "🐉 $cp_i ---> $cp_all/$a_team"
-	else 
-		echo "✧ $cp_i ---> $cp_all/$a_team"
+		echo "🐉 $cp_i ---> $cp_at"
+	elif [ "$skill" = "yui" ];then
+		if [ -n "$fav_card" ];then
+			cp_i=$((cp_i * 2))
+			echo "🔅 ${cp_i} •*¨*•.¸¸✧  $cp_at"
+		else
+			echo "🔅 ${cp_i} ---> $cp_at"
+		fi
 	fi
-	echo "----"
-	echo "${cp_all}/$a_team"
-	echo "vs"
-	echo "${cp_ap}/$b_team"
+
+	echo $cp_all >! $f_server_at
+
+	echo "[${a_team}] ${cp_all}"
+	echo "┣ @${username}"
+	echo "┗ @${commit_user_at}"
+	echo
+	echo "┏━ vs ━┛"
+	echo
+	echo "[${b_team}] ${cp_ap}"
+	echo "┗ @${commit_user_ap}"
+	#echo "[log]"
+	#echo "${commit_user_at} --> ${cp_at}/$a_team"
+	#echo "${cp_ap}/$b_team <-- ${commit_user_ap}"
+	#echo "${username} --> $cp_all/$a_team"
 
 	if [ $rr -gt $server_time ];then
+		echo "----"
 		echo "timeup!"
-		if [ $cp_at -gt $cp_ap ];then
-			echo "$a_team server win!"
-			body=`echo "${cp_all} vs ${cp_ap}\nwin/$a_team"`
-			tmp=`$HOME/.cargo/bin/atr p "$body"`
-		else
-			echo "$b_team server win!"
-			body=`echo "${cp_all} vs ${cp_ap}\nwin/$b_team"`
-			tmp=`$HOME/.cargo/bin/atr p "$body"`
-		fi
+		body="${cp_all}/${a_team} vs ${cp_ap}/${b_team}"
+		tmp=`$HOME/.cargo/bin/atr p "$body"`
 		echo 1 >! $f_server
 		rm $f_server_start_time
 		rm $f_server_at
 		rm $f_server_ap
-		rm $f_server_user_at
-		rm $f_server_user_ap
+		mv $f_server_user_at $f_server_user_at.back
+		mv $f_server_user_ap $f_server_user_ap.back
 	fi
 
 	echo "----"
@@ -595,6 +634,8 @@ if [ -n "$data" ] && [ -z "$data_did" ];then
 fi
 next=`echo $data|jq -r .next`
 fav=`echo $data|jq -r .fav`
+aiten=`echo $data|jq -r .aiten`
+ten_su=`echo $data|jq -r .ten_su`
 if [ "$next" = "null" ];then
 	echo null error
 	exit
@@ -769,7 +810,8 @@ if [ "$3" = "-aa" ] || [ "$3" = "aa" ];then
 fi
 
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
-	yui_card 19 123
+	cp=$(($RANDOM % 2000 + 500))
+	yui_card 47 $cp 
 	exit
 fi
 

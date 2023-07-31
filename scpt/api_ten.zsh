@@ -77,6 +77,16 @@ function ten_skill() {
 	fi
 }
 
+function card_yui_check() {
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_user_card|jq -r ".[]|select(.card == 47)"`
+	if [ -n "$card_check" ];then
+		echo true
+	else
+		echo false
+	fi
+}
+
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
@@ -218,7 +228,7 @@ function ten_start() {
 	ten_yak_check $ten_char
 
 	if [ -z "$ten_yak_ok" ];then
-		if `ten_skill AIK`;then
+		if `ten_skill YUI`;then
 			card=36
 			ten_char=YUI
 			export ten_yak_ok="☑"
@@ -226,6 +236,11 @@ function ten_start() {
 			unset card
 		fi
 	fi
+
+	##test
+	#card=36
+	#ten_char=YUI
+	#export ten_yak_ok="☑"
 
 	if [ -z "$ten_yak_ok" ];then
 		if `ten_skill AIK`;then
@@ -415,6 +430,7 @@ function ten_shutdown(){
 function card_post() {
 	j=`echo $host_card_json|jq ".[]|select(.id == $card)"`
 	img=`echo $j|jq -r .img`
+
 	if [ $card -eq 30 ];then
 		cten=${card}0
 		old_ten_char=AAA
@@ -423,14 +439,27 @@ function card_post() {
 		cten=${card}00
 	fi
 	desc="+$cten"
+	
 	if [ -z $img ] || [ "$img" = "null" ];then
 		exit
 	fi
 	ten_yak_check $ten_char
 	title=`echo $j|jq -r .h`
 	title="[${title}]"
+
+	if [ $card -eq 36 ];then
+		if `card_yui_check`;then
+			cten=${card}00
+			body=`repeat $rr; echo "⚡ +1000"`
+			img="bafkreieh2j3nbnetmux5xaid7iefv2vfgsjwkx5bx66ce6h35rq2oebo54"
+			desc="+$cten (+${card_yui_ten})"
+			title=`echo $j|jq -r .h`
+			title="[${title}・技]"
+		fi
+	fi
+
 	link="https://card.syui.ai/${username}"
-	text=`echo "$title +${cten}\nten : $ten_su\n$ten_kai : $old_ten_char ---> $ten_char $ten_yak_ok"`
+	text=`echo "$title +${cten}\n$body\nten : $ten_su\n$ten_kai : $old_ten_char ---> $ten_char $ten_yak_ok"`
 	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
 	ten_shutdown
 }
@@ -439,6 +468,15 @@ function ten_plus() {
 	ten_shutdown
 	ten_kai=$((ten_kai + 1))
 	ten_su=$((ten_su + $1))
+
+	if [ $card -eq 36 ];then
+		if `$card_yui_check`;then
+		rr=$(($RANDOM % 5 + 1))
+		card_yui_ten=$((1000 * rr))
+		ten_su=$((card_yui_ten + ten_su))
+		fi
+	fi
+
 	ten_char
 
 	char_a=`echo $ten_char|cut -b 1`

@@ -67,10 +67,14 @@ function card_env() {
 	mastodon=`echo $data|jq -r ".mastodon"`
 	did=`echo $data|jq -r ".did"`
 	handle_change=`echo $data|jq -r ".handle"`
+	raid_at=`echo $data|jq -r .raid_at`
+	raid_at=`date -d "$raid_at" +"%Y%m%d"`
+	raid_at_n=`date --iso-8601=seconds`
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y%m%d"`
 	updated_at_n=`date --iso-8601=seconds`
 	next=`echo $data|jq -r .next`
+	aiten=`echo $data|jq -r .aiten`
 	if [ "$a_team" = false ];then
 		echo "bsky @${username}"
 		echo "no activitypub-mode"
@@ -195,9 +199,10 @@ function card_b() {
 		fi
 
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -sL $host/users/$uid`
-}
+	}
 
 function card_s(){
+	card_env $1
 	username=$1
 	a_team=mastodon
 	b_team=bluesky
@@ -231,26 +236,19 @@ function card_s(){
 
 	echo "time:`date -d "$server_time" +"%H:%M"`"
 
-	if [ $raid_at -ge $d ];then
+	if [ $raid_at -ge $d ] || [ "$raid_at" = "$d" ];then
 		echo "limit battle"
 		exit
 	fi
 
-	data_u=`curl -sL "$host/users/$uid/card?itemsPerPage=2000"`
-	fav_card=`echo $data_u|jq -r ".[]|select(.id == $fav)"`
-	cid=$fav
-
-	if [ -z "$fav_card" ];then
-		echo "/fav <CID>"
-		echo https://card.syui.ai/pr
-		exit
-	fi
+	data_uu=`curl -sL "$host/users/$uid/card?itemsPerPage=2000"`
+	fav_card=`echo $data_uu|jq "sort_by(.cp)|reverse|.[0]"`
 
 	if [ ! -f $f_server_user_at ];then
-		echo null >> $f_server_user_ap
+		echo start >> $f_server_user_at
 	fi
 	if [ ! -f $f_server_user_ap ];then
-		echo $username >> $f_server_user_at
+		echo start >> $f_server_user_ap
 	fi
 	commit_user_at=`cat $f_server_user_at|tail -n 1`
 	commit_user_ap=`cat $f_server_user_ap|tail -n 1`
@@ -269,49 +267,52 @@ function card_s(){
 	if [ "$skill" = "dragon" ];then
 		cp_i=$((cp_i * 3))
 	fi
+	if [ "$skill" = "yui" ];then
+		cp_i=$((cp_i + aiten))
+	fi
 
-	cp_all=$((cp_i + cp_at))
-	echo $cp_all >! $f_server_at
-
-	echo "${cp_ap}/$a_team <--- ${commit_user_ap}"
-	echo
-	echo "${commit_user_at} ---> ${cp_at}/$b_team"
-	echo
+	cp_all=$((cp_i + cp_ap))
 	if [ "$skill" = "critical" ];then
-		echo "⚡  $cp_i ---> $cp_all/$a_team"
+		echo "⚡  $cp_i ---> $cp_ap"
 	elif [ "$skill" = "post" ];then
 		cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
 		cp_i=$((cp_i + cp_post))
-		echo "🔥 $cp_i ---> $cp_all/$a_team"
+		cp_all=$((cp_i + cp_ap))
+		echo "🔥 $cp_i ---> $cp_ap"
 	elif [ "$skill" = "luck" ];then
-		echo "✨ $cp_i ---> $cp_all/$a_team"
+		echo "✨ $cp_i ---> $cp_ap"
 	elif [ "$skill" = "dragon" ];then
-		echo "🐉 $cp_i ---> $cp_all/$a_team"
+		echo "🐉 $cp_i ---> $cp_ap"
+	elif [ "$skill" = "yui" ];then
+		echo "🔅 $cp_i ---> $cp_ap"
 	else 
-		echo "✧ $cp_i ---> $cp_all/$a_team"
+		echo "✧ $cp_i ---> $cp_ap"
 	fi
-	echo "----"
-	echo "${cp_all}/$a_team"
-	echo "vs"
-	echo "${cp_ap}/$b_team"
+
+	echo $cp_all >! $f_server_ap
+
+	echo "[${a_team}] ${cp_all}"
+	echo "┣ @${username}"
+	echo "┗ @${commit_user_ap}"
+	echo
+	echo "┏━ vs ━┛"
+	echo
+	echo "[${b_team}] ${cp_at}"
+	echo "┗ @${commit_user_at}"
+	#echo "[log]"
+	#echo "${cp_ap}/$a_team --> ${commit_user_ap}"
+	#echo "${commit_user_at} <-- ${cp_at}/$b_team"
+	#echo "${username} --> $cp_all/$a_team"
 
 	if [ $rr -gt $server_time ];then
+		echo "----"
 		echo "timeup!"
-		if [ $cp_at -gt $cp_ap ];then
-			echo "$a_team server win!"
-			body=`echo "${cp_all} vs ${cp_ap}\nwin/$a_team"`
-			#tmp=`$HOME/.cargo/bin/atr p "$body"`
-		else
-			echo "$b_team server win!"
-			body=`echo "${cp_all} vs ${cp_ap}\nwin/$b_team"`
-			#tmp=`$HOME/.cargo/bin/atr p "$body"`
-		fi
 		echo 1 >! $f_server
 		rm $f_server_start_time
 		rm $f_server_at
 		rm $f_server_ap
-		rm $f_server_user_at
-		rm $f_server_user_ap
+		mv $f_server_user_at $f_server_user_at.back
+		mv $f_server_user_ap $f_server_user_ap.back
 	fi
 
 	echo "----"
@@ -320,7 +321,7 @@ function card_s(){
 	body="level up!"
 	echo "${body} ✧${cp}(+${cp_plus})"
 	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $host/cards/$fav`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $host/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\", \"token\":\"$token\"}" -s $host/users/$uid`
 }
 
 function mastodon_notify() {
