@@ -75,6 +75,7 @@ function card_env() {
 	updated_at_n=`date --iso-8601=seconds`
 	next=`echo $data|jq -r .next`
 	aiten=`echo $data|jq -r .aiten`
+	ten_su=`echo $data|jq -r .ten_su`
 	if [ "$a_team" = false ];then
 		echo "bsky @${username}"
 		echo "no activitypub-mode"
@@ -268,7 +269,7 @@ function card_s(){
 		cp_i=$((cp_i * 3))
 	fi
 	if [ "$skill" = "yui" ];then
-		cp_i=$((cp_i + aiten))
+		cp_i=$((cp_i + ten_su))
 	fi
 
 	cp_all=$((cp_i + cp_ap))

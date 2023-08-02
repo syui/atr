@@ -123,10 +123,10 @@ function fav_battle() {
 }
 
 function fav_add() {
-	card_status=third
+	card_status=fourth
 	u_data=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=2555"|jq -r ".[]|select(.status == \"$card_status\")"`
 	if [ -z "$u_data" ];then
-		d_data=`curl -sL $host/cards/$cid|jq -r "select(.status == \"first\" or .status == \"second\")"`
+		d_data=`curl -sL $host/cards/$cid|jq -r "select(.status == \"first\" or .status == \"second\" or .status == \"third\" or .status == \"yui\" or .status == \"fourth\")"`
 		if [ -z "$d_data" ];then
 			echo status $card_status
 			tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"status\":\"$card_status\",\"token\":\"$token\"}" $host/cards/$cid`

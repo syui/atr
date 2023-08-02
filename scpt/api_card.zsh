@@ -23,6 +23,7 @@ function user_data(){
 	did=`echo $data|jq -r .did`
 	next=`echo $data|jq -r .next`
 	aiten=`echo $data|jq -r .aiten`
+	ten_su=`echo $data|jq -r .ten_su`
 	fav=`echo $data|jq -r .fav`
 	d=`date +"%Y%m%d"`
 	updated_at=`echo $data|jq -r .updated_at`
@@ -35,6 +36,7 @@ function user_data(){
 	echo "battle : $updated_at"
 	echo "boss : $raid_cp"
 	echo "aiten : $aiten"
+	echo "ten : $ten_su"
 }
 
 function ascii_moji_a() {
@@ -263,21 +265,19 @@ function battle_raid(){
 	else
 		data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
 		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
+		cid=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].id"`
 		skill=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].skill"`
 		ss=$(($RANDOM % 2))
 		sss=$(($RANDOM % 3))
 		ss_post=$(($RANDOM % 2))
-		#ss_post=$(($RANDOM % 10))
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			cp_i=$((cp_i + cp_i))
 		fi
 		if [ "$skill" = "dragon" ] && [ $sss -eq 1 ];then
 			cp_i=$((cp_i + cp_i + cp_i))
 		fi
-		if [ "$skill" = "yui" ] && [ $sss -eq 1 ];then
+		if [ "$skill" = "yui" ] && [ $ss -eq 1 ];then
 			cp_i=$((cp_i + ten_su))
-			fav=$cid
-			fav_card=`echo $data_u|jq -r ".[]|select(.id == $cid)"`
 		fi
 
 		if [[ "$cp_i" =~ ^[0-9]+$ ]]; then
@@ -293,22 +293,17 @@ function battle_raid(){
 		fi
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
 			echo "⚡  $cp_i vs $cp_b ---> $cp_bb"
-		elif [ "$skill" = "post" ] && [ $ss_post -eq 1 ];then
+		elif [ "$skill" = "post" ] && [ $sss -eq 1 ];then
 			cp_post=`$HOME/.cargo/bin/atr pro $1 -p`
 			cp_i=$((cp_i + cp_post))
 			cp_bb=$((cp_bb - cp_post))
 			echo "🔥 $cp_i vs $cp_b ---> $cp_bb"
 		elif [ "$skill" = "luck" ] && [ $ss_post -eq 1 ];then
 			echo "✨ $cp_i vs $cp_b ---> $cp_bb"
-		elif [ "$skill" = "dragon" ] && [ $ss_post -eq 1 ];then
+		elif [ "$skill" = "dragon" ] && [ $sss -eq 1 ];then
 			echo "🐉 $cp_i vs $cp_b ---> $cp_bb"
-		elif [ "$skill" = "yui" ] && [ $ss_post -eq 1 ];then
-			if [ -n "$fav_card" ];then
-				cp_i=$((cp_i * 2))
-				echo "🔅 ${cp_i} vs $cp_b  •*¨*•.¸¸✧  $cp_bb"
-			else
-				echo "🔅 ${cp_i} vs $cp_b ---> $cp_bb"
-			fi
+		elif [ "$skill" = "yui" ] && [ $ss -eq 1 ];then
+			echo "🔅 $cp_i vs $cp_b •*¨*•.¸¸✧  $cp_bb"
 		else 
 			echo "$cp_i vs $cp_b ---> $cp_bb"
 		fi
@@ -509,11 +504,6 @@ function battle_server(){
 	if [ "$skill" = "yui" ];then
 		cp_i=$((cp_i + ten_su))
 	fi
-	if [ "$skill" = "yui" ] && [ $sss -eq 1 ];then
-		cp_i=$((cp_i + ten_su))
-		fav=$cid
-		fav_card=`echo $data_u|jq -r ".[]|select(.id == $cid)"`
-	fi
 
 	cp_all=$((cp_i + cp_at))
 	if [ "$skill" = "critical" ];then
@@ -528,12 +518,9 @@ function battle_server(){
 	elif [ "$skill" = "dragon" ];then
 		echo "🐉 $cp_i ---> $cp_at"
 	elif [ "$skill" = "yui" ];then
-		if [ -n "$fav_card" ];then
-			cp_i=$((cp_i * 2))
-			echo "🔅 ${cp_i} •*¨*•.¸¸✧  $cp_at"
-		else
-			echo "🔅 ${cp_i} ---> $cp_at"
-		fi
+		echo "🔅 $cp_i •*¨*•.¸¸✧  $cp_at"
+	else
+		echo "${cp_i} ---> $cp_at"
 	fi
 
 	echo $cp_all >! $f_server_at
