@@ -34,7 +34,7 @@ function user_data(){
 	echo "$did"
 	echo "card : $next_at"
 	echo "battle : $updated_at"
-	echo "boss : $raid_cp"
+	#echo "boss : $raid_cp"
 	echo "aiten : $aiten"
 	echo "ten : $ten_su"
 }
@@ -175,14 +175,27 @@ function user_card(){
 	cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 	cp_ii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[1].cp"`
 	cp_iii=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[2].cp"`
-	boss_l=`curl -sL "https://api.syui.ai/users/$id/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
+	data_u_card=`curl -sL "https://api.syui.ai/users/$id/card?itemsPerPage=3000"`
+	boss_l=`echo $data_u_card|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
 	boss_cp=$((${boss_l/%?/}))
-	owner=`curl -sL card.syui.ai/json/card.json|jq -r ".[]|select(.owner == \"$u\")|.id,.h"|tr -d '\n'`
+	page_card=`curl -sL card.syui.ai/json/card.json`
+	owner=`echo $page_card|jq -r ".[]|select(.owner == \"$u\")|.id,.h"|tr -d '\n'`
+	pay_card=`echo $page_card|jq -r ".[]|select(.ten_skill == true)?|.id"`
+	pay_card_n=`echo $pay_card|wc -l`
+	for ((i=1;i<=$pay_card_n;i++))
+	do
+		t=`echo $pay_card|awk "NR==$i"`
+		ten_card=`echo $data_u_card|jq ".[]|select(.card == $t)"`
+		if [ -z "$ten_card" ];then
+			out=${out}${t},
+		fi
+	done
+	pay_card=`echo $page_card|jq -r ".[]|select(.ten_skill == true)?|.id,.h"|xargs -n2|tr '\n' ,`
 	if [ "$u" = "null" ];then
 		echo no id
 		exit
 	fi
-	echo "user : $u"
+	#echo "user : $u"
 	echo "[card]"
 	echo "cp : $cp_i"
 	echo "cp : $cp_ii"
@@ -192,6 +205,8 @@ function user_card(){
 	if [ -n "$owner" ];then
 		echo "owner : $owner"
 	fi
+	#echo "pay : $pay_card"
+	echo "pay_no : $out"
 }
 
 function battle_raid(){
@@ -303,7 +318,11 @@ function battle_raid(){
 		elif [ "$skill" = "dragon" ] && [ $sss -eq 1 ];then
 			echo "🐉 $cp_i vs $cp_b ---> $cp_bb"
 		elif [ "$skill" = "yui" ] && [ $ss -eq 1 ];then
-			echo "🔅 $cp_i vs $cp_b •*¨*•.¸¸✧  $cp_bb"
+			if [ $cid -eq $fav ];then
+				echo "🔅 $cp_i vs $cp_b •*¨*•.¸¸✧  $cp_bb"
+			else
+				echo "🔅 $cp_i vs $cp_b ---> $cp_bb"
+			fi
 		else 
 			echo "$cp_i vs $cp_b ---> $cp_bb"
 		fi
@@ -518,7 +537,11 @@ function battle_server(){
 	elif [ "$skill" = "dragon" ];then
 		echo "🐉 $cp_i ---> $cp_at"
 	elif [ "$skill" = "yui" ];then
-		echo "🔅 $cp_i •*¨*•.¸¸✧  $cp_at"
+		if [ $cid -eq $fav ];then
+			echo "🔅 $cp_i •*¨*•.¸¸✧  $cp_at"
+		else
+			echo "🔅 $cp_i ---> $cp_at"
+		fi
 	else
 		echo "${cp_i} ---> $cp_at"
 	fi

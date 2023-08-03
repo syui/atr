@@ -56,6 +56,7 @@ cid=$3
 uri=$4
 option=$5
 
+
 sub_option=$6
 ten_kai=0
 
@@ -79,8 +80,8 @@ function ten_skill() {
 
 function card_yui_check() {
 	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
-	card_check=`echo $data_user_card|jq -r ".[]|select(.card == 47)"`
-	if [ -n "$card_check" ];then
+	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == 47)"`
+	if [ -n "$card_yui_check" ];then
 		echo true
 	else
 		echo false
@@ -320,8 +321,6 @@ function ten_env() {
 	ten_at_n=`date --iso-8601=seconds`
 }
 
-
-
 function ten_yak_shutdown() {
 	unset card
 	case $ten_char in
@@ -448,7 +447,7 @@ function card_post() {
 	title="[${title}]"
 
 	if [ $card -eq 36 ];then
-		if `card_yui_check`;then
+		if [ "`card_yui_check`" = "true" ];then
 			cten=${card}00
 			body=`repeat $rr; echo "⚡ +1000"`
 			img="bafkreieh2j3nbnetmux5xaid7iefv2vfgsjwkx5bx66ce6h35rq2oebo54"
@@ -470,10 +469,10 @@ function ten_plus() {
 	ten_su=$((ten_su + $1))
 
 	if [ $card -eq 36 ];then
-		if `$card_yui_check`;then
-		rr=$(($RANDOM % 5 + 1))
-		card_yui_ten=$((1000 * rr))
-		ten_su=$((card_yui_ten + ten_su))
+		if [ "`card_yui_check`" = "true" ];then
+			rr=$(($RANDOM % 5 + 1))
+			card_yui_ten=$((1000 * rr))
+			ten_su=$((card_yui_ten + ten_su))
 		fi
 	fi
 
