@@ -214,7 +214,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 150000))
+	boss_cp=$((boss_cp + 80000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`

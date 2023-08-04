@@ -1779,7 +1779,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                 cid_write(cid.to_string());
                             }
                         }
-                    } else if reason == "reply" && rep_com.contains("fav") == true {
+                    } else if reason == "reply" && { rep_com.contains("fav") == true || rep_com.contains("fab") == true } {
                         let prompt = &vec[1..].join(" ");
                         let file = "/.config/atr/scpt/api_fav.zsh";
                         let mut f = shellexpand::tilde("~").to_string();
@@ -2328,7 +2328,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     cid_write(cid.to_string());
                                 }
                             }
-                        } else if { com == "fav" || com == "/fav" } && cccc_ch == false {
+                        } else if { com == "fav" || com == "/fav" || com == "/fab" || com == "fab" } && cccc_ch == false {
                             let prompt = &vec[2..].join(" ");
                             let file = "/.config/atr/scpt/api_fav.zsh";
                             let mut f = shellexpand::tilde("~").to_string();

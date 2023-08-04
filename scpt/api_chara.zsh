@@ -12,57 +12,46 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ];then
 	exit
 fi
 
-chara_qa="あなたは夢の中、不思議な世界が広がっています。
-どんな世界でしょう。
+chara_qa="あなたはサッカーをしています。
+試合中、ふと目にするのは？
 
-1 : 遠くに見える廃墟が自然の森に飲み込まれる世界
-2 : 賑やかな大都市、時間が光の速さで過ぎ去る世界
-3 : 真っ白な空間に心で思ったものが創造される世界
+1 : 開けた青空
+2 : 真っ白な柱
+3 : 風になびく芝生
 
 数字を入れて答えてね。
 /chara 数字"
 
-chara_qb="あなたは、その世界を一つに染める力があります。
-その一つはなんでしょう。
+chara_qb="ここは研究室。
+実験のため道具を手に持っています。
 
-1 : 青空
-2 : 文字
-3 : 透明"
+1 : 淡い液体が入ったガラス瓶
+2 : 清潔なシーツ
+3 : 観葉植物"
 
-chara_qc="あなたは今、空を飛んでいます。
-どこに向かって飛びますか?
+chara_qc="宇宙に打ち上げられたロケットから地球を見ます。
+何が見えましたか?
 
-1 : ぼんやりと浮かぶ月
-2 : どこまでも遠くの地平線
-3 : 輝く太陽"
-
-chara_qd="
-1 : 鉄をお金に変える
-2 : 瞬間移動
-3 : 巨大爆破"
+1 : 別の宇宙船
+2 : 飛行機
+3 : 大きな島"
 
 chara_ba="
-☑ 独特の感性
-☑ 干渉を嫌う
-☑ 異質のオーラを放つ
+☑ 平和を願う
+☑ 協調性は高いが自己主張は弱い
+☑ 相談がうまい
 ---"
 
 chara_bb="
-☑ 洗礼された感覚
-☑ 不公正を嫌う
-☑ バランス感覚に優れる
+☑ 変化自在
+☑ 世間離れしており常識知らず
+☑ 真面目で芯が強い
 ---"
 
 chara_bc="
-☑ 果敢に挑戦
-☑ 独断を先行しがち
-☑ 困難を乗り越える
----"
-
-chara_bd="
-☑ 面白いことが好き
-☑ 仲間思い
-☑ 行動力がある
+☑ 思慮深い
+☑ 一人の時間が好きで冷たく見える
+☑ 周りを観察している
 ---"
 
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":0,\"ten_su\":$first_ten,\"ten\": true,\"token\":\"$token\"}" -s $host/users/$uid`
@@ -111,7 +100,8 @@ tmp_atr='{"uri":"at://did:plc:uqzpqmrjnptsxezjx4xuh2mn/app.bsky.feed.post/3k3zr5
 
 function chara_check(){
 	#card_check=`echo $data_card|jq -r ".[]|select(.card == 48 or .card == 49 or .card == 50 or .card == 51 or .card == 52 or .card == 53)"`
-	card_check=`echo $data_card|jq -r ".[]|select(.card == 54 or .card == 55 or .card == 56)"`
+	#card_check=`echo $data_card|jq -r ".[]|select(.card == 54 or .card == 55 or .card == 56)"`
+	card_check=`echo $data_card|jq -r ".[]|select(.card == 58 or .card == 53 or .card == 59)"`
 	if [ -n "$card_check" ];then
 		echo you already have chara-card
 		exit
@@ -126,23 +116,23 @@ function chara_start() {
 
 function chara_post(){
 	case $1 in
-		ai)
-			card=54
+		ponta)
+			card=53
 			text=$chara_ba
-			title="[アイ]"
-			desc="アイ・モード"
+			title="[ポンタ]"
+			desc="緑色"
 			;;
-		moji)
-			card=56
+		octo)
+			card=58
 			text=$chara_bb
-			title="[アイ]"
-			desc="モジ・モード"
+			title="[オクトカット]"
+			desc="白色"
 			;;
-		zen)
-			card=55
+		zeusu)
+			card=59
 			text=$chara_bc
-			title="[アイ]"
-			desc="ゼン・モード"
+			title="[ゼウス]"
+			desc="青色"
 			;;
 	esac
 
@@ -195,11 +185,11 @@ function chara_plus() {
 	case $ten_kai in
 		4)
 			if [ $ten_su -eq 9 ] || [ $ten_su -eq 8 ] || [ $ten_su -eq 7 ];then
-				chara=zen
+				chara=ponta
 			elif [ $ten_su -eq 6 ];then
-				chara=moji
+				chara=octo
 			else
-				chara=ai
+				chara=zeusu
 			fi
 			chara_post $chara
 			;;
