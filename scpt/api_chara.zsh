@@ -12,59 +12,51 @@ if [ -z "$1" ] || [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ];then
 	exit
 fi
 
-chara_qa="家にゴキブリが出ました。
-あなたはどうしますか?
-1 : 叩き潰す
-2 : スプレーを吹きかける
-3 : 話しかけて毒の餌をあげる
-4 : 外に逃がす
+chara_qa="あなたは夢の中、不思議な世界が広がっています。
+どんな世界でしょう。
+
+1 : 遠くに見える廃墟が自然の森に飲み込まれる世界
+2 : 賑やかな大都市、時間が光の速さで過ぎ去る世界
+3 : 真っ白な空間に心で思ったものが創造される世界
 
 数字を入れて答えてね。
 /chara 数字"
 
-chara_qb="行動を起こそうとしたあなた。
-しかし、近くにいた親子が悲鳴を上げ、母親がゴキブリを退治しました。
-小さな男の子はゴキブリが死んじゃったと泣いています。
-その時、あなたはどう思いましたか?
-1 : 仕方ないよね
-2 : 泣き虫だな
-3 : 昔の自分だ
-4 : 自分と同じ"
+chara_qb="あなたは、その世界を一つに染める力があります。
+その一つはなんでしょう。
 
-chara_qc="潜んでいたもう一匹のゴキブリ。
-あなためがけて飛んできます。
-とっさに避けようするあなたでしたが、すっ転んで頭を強く打ち付けます。
-...気がつくとそこは異世界。
-誰もいない不思議な空間です。
-あなたが最初に手に取るのは?
-1 : 剣
-2 : 盾
-3 : 魔法の杖
-4 : モンスターボックス"
+1 : 青空
+2 : 文字
+3 : 透明"
 
-chara_qd="あなたの選択で不思議な力が宿りました。
-あなたの能力は?
+chara_qc="あなたは今、空を飛んでいます。
+どこに向かって飛びますか?
+
+1 : ぼんやりと浮かぶ月
+2 : どこまでも遠くの地平線
+3 : 輝く太陽"
+
+chara_qd="
 1 : 鉄をお金に変える
 2 : 瞬間移動
-3 : 巨大爆破
-4 : 空を飛ぶ"
+3 : 巨大爆破"
 
 chara_ba="
-☑ 情報の整理や分析が好き
-☑ 独立精神が高く、個人主義
-☑ 好奇心が旺盛
+☑ 独特の感性
+☑ 干渉を嫌う
+☑ 異質のオーラを放つ
 ---"
 
 chara_bb="
-☑ 愛と自由
-☑ お昼寝してる
-☑ 優しさと純粋さを併せ持つ稀有な存在
+☑ 洗礼された感覚
+☑ 不公正を嫌う
+☑ バランス感覚に優れる
 ---"
 
 chara_bc="
-☑ 優秀である
-☑ 能力が高い
-☑ 孤独になりがち
+☑ 果敢に挑戦
+☑ 独断を先行しがち
+☑ 困難を乗り越える
 ---"
 
 chara_bd="
@@ -118,10 +110,11 @@ data_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
 tmp_atr='{"uri":"at://did:plc:uqzpqmrjnptsxezjx4xuh2mn/app.bsky.feed.post/3k3zr5b336o2u","cid":"bafyreierpw23cxvx4e3cjzd3h6r4crz646zb2ana6cmmsxn4z5rpupl35e"}'
 
 function chara_check(){
-	card_check=`echo $data_card|jq -r ".[]|select(.card == 48 or .card == 49 or .card == 50 or .card == 51 or .card == 52 or .card == 53)"`
+	#card_check=`echo $data_card|jq -r ".[]|select(.card == 48 or .card == 49 or .card == 50 or .card == 51 or .card == 52 or .card == 53)"`
+	card_check=`echo $data_card|jq -r ".[]|select(.card == 54 or .card == 55 or .card == 56)"`
 	if [ -n "$card_check" ];then
 		echo you already have chara-card
-		#exit
+		exit
 	fi
 }
 
@@ -133,29 +126,23 @@ function chara_start() {
 
 function chara_post(){
 	case $1 in
-		zen)
-			card=48
-			text=$chara_ba
-			title="[ゼン]"
-			desc="知恵"
-			;;
 		ai)
-			card=49
+			card=54
+			text=$chara_ba
+			title="[アイ]"
+			desc="アイ・モード"
+			;;
+		moji)
+			card=56
 			text=$chara_bb
 			title="[アイ]"
-			desc="意思"
+			desc="モジ・モード"
 			;;
-		octo)
-			card=51
+		zen)
+			card=55
 			text=$chara_bc
-			title="[オクトカット]"
-			desc="才能"
-			;;
-		kyosuke)
-			card=52
-			text=$chara_bd
-			title="[キョウスケ]"
-			desc="勇気"
+			title="[アイ]"
+			desc="ゼン・モード"
 			;;
 	esac
 
@@ -168,9 +155,13 @@ function chara_post(){
 	s=super
 	skill=chara
 	link="https://card.syui.ai/$username"
-	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
-	card=`echo $tmp|jq -r .card`
-	cp=`echo $tmp|jq -r .cp`
+
+	card_check=`echo $data_card|jq -r ".[]|select(.card == $card)"`
+	if [ -z "$card_check" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+	fi
 	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
  uri_post=`echo $tmp_atr|jq -r .uri|cut -d / -f 5`
 	post_url="https://bsky.app/profile/$yui_did/post/$uri_post"
@@ -187,44 +178,29 @@ function chara_plus() {
 		3)
 			chara_q=$chara_qc
 			;;
-		4)
-			chara_q=$chara_qd
-			;;
+		#4)
+		#	chara_q=$chara_qd
+		#	;;
 	esac
 	echo "$chara_q"
 
 	case $1 in
-		1|2|3|4)
+		1|2|3)
 			tmp_su=$1
-			if [ $ten_kai -eq 2 ] && [ $tmp_su -eq 1 ];then
-				tmp_su=0
-			fi
-			if [ $ten_kai -eq 3 ] && [ $tmp_su -eq 2 ];then
-				tmp_su=0
-			fi
-			if [ $ten_kai -eq 2 ] && [ $tmp_su -eq 4 ];then
-				tmp_su=5
-			fi
-			if [ $ten_kai -eq 3 ] && [ $tmp_su -eq 4 ];then
-				tmp_su=5
-			fi
 			ten_su=$((ten_su + $tmp_su))
 			;;
 	esac
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_su\":$ten_su, \"ten_kai\":$ten_kai, \"token\":\"$token\"}" -s $host/users/$uid`
 
 	case $ten_kai in
-		5)
-			if [ $ten_su -ge 15 ];then
-				chara=ai
-			elif [ $ten_su -ge 11 ];then
+		4)
+			if [ $ten_su -eq 9 ] || [ $ten_su -eq 8 ] || [ $ten_su -eq 7 ];then
 				chara=zen
-			elif [ $ten_su -ge 6 ];then
-				chara=octo
+			elif [ $ten_su -eq 6 ];then
+				chara=moji
 			else
-				chara=kyosuke
+				chara=ai
 			fi
-
 			chara_post $chara
 			;;
 	esac
@@ -236,13 +212,13 @@ case "$option" in
 	start)
 		chara_start
 		;;
-	1|2|3|4)
+	1|2|3)
 		ten_kai=$((ten_kai + 1))
 		chara_plus $option
 		;;
 	*)
 		echo "/chara start"
-		echo "/chara 1,2,3,4"
+		echo "/chara 1,2,3"
 		;;
 esac
 
