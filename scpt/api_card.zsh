@@ -70,10 +70,10 @@ echo "
 }
 
 function yui_card() {
-	echo no open
-	exit
 	card=$1
 	cp=$2
+	echo no open
+	exit
 	s=yui
 	skill=yui
 	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
@@ -83,11 +83,9 @@ function yui_card() {
 		exit
 	fi
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == 36)"`
-	if [ -z "$card_check" ];then
+	if [ -z "$card_check" ] && [ $card -eq 47 ];then
 		echo "no yui card"
 		exit
-	else
-		echo "yes yui card"
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
 	card=`echo $tmp|jq -r .card`
@@ -214,7 +212,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 180000))
+	boss_cp=$((boss_cp + 80000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -398,7 +396,7 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		s=`echo $(($RANDOM % 4))`
+		s=`echo $(($RANDOM % 400))`
 		if [ $s -eq 1 ];then
 			card_t=46
 			echo "[new]"
@@ -827,6 +825,12 @@ fi
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
 	cp=$(($RANDOM % 2000 + 500))
 	yui_card 47 $cp 
+	exit
+fi
+
+if [ "$3" = "chou" ] || [ "$3" = "-chou" ];then
+	cp=$(($RANDOM % 1500 + 500))
+	yui_card 60 $cp 
 	exit
 fi
 

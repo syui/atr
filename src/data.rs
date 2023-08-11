@@ -286,8 +286,6 @@ pub struct Viewer {
     pub muted: bool,
 }
 
-
-
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct Record {

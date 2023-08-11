@@ -75,9 +75,9 @@ if ! echo $3|grep -e "bsky.app/profile/" -e "nostter.vercel.app" >/dev/null 2>&1
 	exit
 fi
 
-if ! echo $4|grep -e "https://cdn.bsky.social/imgproxy/" -e "https://nostr.build/i/" >/dev/null 2>&1;then
+if ! echo $4|grep -e "https://av-cdn.bsky.app/img" -e "https://nostr.build/i/" >/dev/null 2>&1;then
 	if [ "$opt" != "-d" ];then
-		echo "please url : cdn.bsky.social/imgproxy"
+		echo "please url : av-cdn.bsky.social/img"
 		exit
 	fi
 fi
