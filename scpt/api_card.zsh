@@ -214,7 +214,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 80000))
+	boss_cp=$((boss_cp + 180000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -398,23 +398,28 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		#data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
-		#card_check=`echo $data_uu|jq -r ".[]|select(.card == 36)"`
-		#if [ "$card_check" ];then
-		#	card=36
-		#	cp=`echo $(($RANDOM % 1000 + 400))`
-		#	s=$(($RANDOM % 7))
-		#	if [ $s -eq 1 ];then
-		#		s=super
-		#		skill=post
-		#		plus=$(($RANDOM % 1000 + 300))
-		#		cp=$((cp + plus))
-		#	else
-		#		s=normal
-		#		skill=ten
-		#	fi
-		#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
-		#fi
+		s=`echo $(($RANDOM % 4))`
+		if [ $s -eq 1 ];then
+			card_t=46
+			echo "[new]"
+			echo id : $card_t
+			card_check=`echo $data_u|jq -r ".[]|select(.card == $card_t)"`
+			if [ -z "$card_check" ];then
+				card=$card_t
+				cp=`echo $(($RANDOM % 1000 + 400))`
+				s=`echo $(($RANDOM % 5))`
+				if [ $s -eq 1 ];then
+					s=super
+					skill=ten
+					plus=`echo $(($RANDOM % 1000 + 300))`
+					cp=$((cp + plus))
+				else
+					s=normal
+					skill=ten
+				fi
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
+			fi
+		fi
 
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
 
