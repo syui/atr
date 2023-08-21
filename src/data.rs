@@ -250,9 +250,11 @@ pub struct Notifications {
     pub cid: String,
     pub author: Author,
     pub reason: String,
+    //pub reasonSubject: String,
     pub record: Record,
     pub isRead: bool,
     pub indexedAt: String,
+    //pub labels: Labels,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -265,12 +267,18 @@ pub struct Author {
     pub handle: String,
     pub avatar: Option<String>,
     pub viewer: Viewer,
-    pub labels: Labels,
+    //pub labels: Labels,
 }
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct Labels {
+    pub src: Option<String>,
+    pub uri: Option<String>,
+    pub cid: Option<String>,
+    pub val: Option<String>,
+    pub cts: Option<String>,
+    pub neg: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -289,8 +297,14 @@ pub struct Viewer {
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct Record {
+    //pub langs: Option<Langs>,
     pub text: Option<String>,
     pub createdAt: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Langs {
 }
 
 #[derive(Serialize, Deserialize)]

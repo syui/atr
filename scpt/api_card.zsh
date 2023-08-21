@@ -69,6 +69,31 @@ echo "
 ⠚⠉⠉⠁⠉⠑⠳⢯⣿⣿⣿⡽⠽⠛⠉⠉⠉⠙⠙"
 }
 
+function study_card() {
+	card=$1
+	cp=$2
+	s=normal
+	skill=study
+	author=$username
+	count=1
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -n "$card_check" ];then
+		echo "you already have"
+		exit
+	fi
+	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\",\"author\":\"$author\",\"count\":$count}" -s $url/cards`
+	card=`echo $tmp|jq -r .card`
+	cp=`echo $tmp|jq -r .cp`
+	ascii_moji_b
+	echo "---"
+	echo "[card]"
+	echo "id : ${card}"
+	echo "cp : ${cp}"
+	echo "count : $count"
+	echo "author : ${author}"
+}
+
 function yui_card() {
 	card=$1
 	cp=$2
@@ -96,7 +121,7 @@ function yui_card() {
 	echo "id : ${card}"
 	echo "cp : ${cp}"
 	echo "status : ${s}"
-	echo "skill : ${s}"
+	echo "skill : ${skill}"
 }
 
 function moji_mode_card() {
@@ -396,31 +421,32 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		s=`echo $(($RANDOM % 400))`
+		s=`echo $(($RANDOM % 1400))`
+		#s=1
 		if [ $s -eq 1 ];then
-			card_t=46
-			echo "[new]"
-			echo id : $card_t
+			card_t=28
 			card_check=`echo $data_u|jq -r ".[]|select(.card == $card_t)"`
+			card=$card_t
+			cp=`echo $(($RANDOM % 1000 + 400))`
+			s=`echo $(($RANDOM % 5))`
+			if [ $s -eq 1 ];then
+				s=super
+				skill=critical
+				plus=`echo $(($RANDOM % 1000 + 300))`
+				cp=$((cp + plus))
+			else
+				s=normal
+				skill=critical
+			fi
+
 			if [ -z "$card_check" ];then
-				card=$card_t
-				cp=`echo $(($RANDOM % 1000 + 400))`
-				s=`echo $(($RANDOM % 5))`
-				if [ $s -eq 1 ];then
-					s=super
-					skill=ten
-					plus=`echo $(($RANDOM % 1000 + 300))`
-					cp=$((cp + plus))
-				else
-					s=normal
-					skill=ten
-				fi
+				echo "[new]"
+				echo id : $card_t
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
 			fi
 		fi
 
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
-
 		card=`echo $tmp|jq -r .card`
 		card_url=`echo $tmp|jq -r .url`
 		cp=`echo $tmp|jq -r .cp`
@@ -831,6 +857,16 @@ fi
 if [ "$3" = "chou" ] || [ "$3" = "-chou" ];then
 	cp=$(($RANDOM % 1500 + 500))
 	yui_card 60 $cp 
+	exit
+fi
+
+if [ "$3" = "study" ] || [ "$3" = "-study" ];then
+	cp=0
+	if [ `echo $(($RANDOM % 2))` -eq 1 ];then
+		study_card 61 $cp 
+	else
+		study_card 62 $cp 
+	fi
 	exit
 fi
 

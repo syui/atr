@@ -74,8 +74,8 @@ if ! echo $3|grep "bsky.app/profile/">/dev/null 2>&1;then
 	exit
 fi
 
-if ! echo $4|grep "https://cdn.bsky.social/imgproxy/">/dev/null 2>&1;then
-	echo "please url : cdn.bsky.social/imgproxy"
+if ! echo $4|grep "av-cdn.bsky.app/img/">/dev/null 2>&1;then
+	echo "please url : av-cdn.bsky.app/img"
 	exit
 fi
 

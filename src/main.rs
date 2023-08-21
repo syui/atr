@@ -1257,7 +1257,7 @@ fn cid_write(cid :String) -> bool {
 
 fn nn_cid() {
     let h = async {
-        let str = at_notify_limit::get_request(100);
+        let str = at_notify_limit::get_request(20);
         let notify: Notify = serde_json::from_str(&str.await).unwrap();
         let n = notify.notifications;
         let length = &n.len();
@@ -1272,7 +1272,7 @@ fn nn_cid() {
 
 fn n(c: &Context) {
     aa().unwrap();
-    let limit = 50;
+    let limit = 10;
     if c.bool_flag("latest") {
         let limit = 1;
         nn(c, limit, true);
@@ -2328,6 +2328,76 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     cid_write(cid.to_string());
                                 }
                             }
+                        } else if { com == "gift" || com == "/gift" } && cccc_ch == false {
+                            let prompt = &vec[2..].join(" ");
+                            let file = "/.config/atr/scpt/api_gift.zsh";
+                            let mut f = shellexpand::tilde("~").to_string();
+                            f.push_str(&file);
+                            use std::process::Command;
+                            let cc_ch = cid_check(cid.to_string());
+                            if cc_ch == false {
+                                if vec.len() == 4 {
+                                    let option = &vec[2..].join(" ");
+                                    let sub_option = &vec[3..].join(" ");
+                                    let output = Command::new(&f).arg(&handle).arg(&did).arg(&option).arg(&sub_option).output().expect("zsh");
+                                    let d = String::from_utf8_lossy(&output.stdout);
+                                    let handlev: Vec<&str> = handle.split('.').collect();
+                                    let handlev = handlev[0].trim().to_string();
+                                    let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                    let s = 0;
+                                    let e = link.chars().count();
+                                    println!("{}", link);
+                                    println!("{}", e);
+                                    let dd = "\n".to_owned() + &d.to_string();
+                                    let text_limit = char_c(dd);
+                                    println!("{}", text_limit);
+                                    if text_limit.len() > 3 {
+                                        if d.contains("handle") == false {
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            println!("{}", str_rep);
+                                        } else {
+                                            let handlev = handle.replace(".", "-").to_string();
+                                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                            let s = 0;
+                                            let e = link.chars().count();
+                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            println!("{}", str_rep);
+                                        }
+                                        let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                        println!("{}", str_notify);
+                                        cid_write(cid.to_string());
+                                    }
+                                } else {
+                                    let output = Command::new(&f).arg(&handle).arg(&did).arg(&prompt).output().expect("zsh");
+                                    let d = String::from_utf8_lossy(&output.stdout);
+                                    let handlev: Vec<&str> = handle.split('.').collect();
+                                    let handlev = handlev[0].trim().to_string();
+                                    let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                    let s = 0;
+                                    let e = link.chars().count();
+                                    println!("{}", link);
+                                    println!("{}", e);
+                                    let dd = "\n".to_owned() + &d.to_string();
+                                    let text_limit = char_c(dd);
+                                    println!("{}", text_limit);
+                                    if text_limit.len() > 3 {
+                                        if d.contains("handle") == false {
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            println!("{}", str_rep);
+                                        } else {
+                                            let handlev = handle.replace(".", "-").to_string();
+                                            let link = "https://card.syui.ai/".to_owned() + &handlev;
+                                            let s = 0;
+                                            let e = link.chars().count();
+                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            println!("{}", str_rep);
+                                        }
+                                        let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                        println!("{}", str_notify);
+                                        cid_write(cid.to_string());
+                                    }
+                                }
+                            }
                         } else if { com == "fav" || com == "/fav" || com == "/fab" || com == "fab" } && cccc_ch == false {
                             let prompt = &vec[2..].join(" ");
                             let file = "/.config/atr/scpt/api_fav.zsh";
@@ -2531,7 +2601,7 @@ fn bot(c: &Context) {
                 bot_run(c,l,admin, mode);
             }
         } else {
-            bot_run(c,20, admin, mode);
+            bot_run(c,100, admin, mode);
         }
         thread::sleep(time::Duration::from_secs(5));
     }

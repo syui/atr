@@ -89,6 +89,16 @@ function ten_skill_yui() {
 	fi
 }
 
+function card_son_check() {
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == $1)"`
+	if [ -n "$card_yui_check" ];then
+		echo true
+	else
+		echo false
+	fi
+}
+
 function card_yui_check() {
 	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
 	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == 47)"`
@@ -112,7 +122,7 @@ function card_chou_check() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK|IIK)
+		OUY|AIK|IIK|AIS)
 			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
@@ -122,7 +132,7 @@ function ten_yak_check() {
 				export ten_yak_ok="☑"
 			fi
 			;;
-		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*|IIK)
+		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
 			export ten_yak_ok="⚠"
 			;;
 	esac
@@ -302,7 +312,7 @@ function ten_start() {
 	echo "---"
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":0,\"ten_su\":$first_ten,\"ten\": true,\"token\":\"$token\"}" -s $host/users/$uid`
 	text_one=`echo $ten_data|jq -r .username,.ten_su`
-	echo $text_one
+	#echo $text_one
 	exit
 }
 
@@ -418,7 +428,13 @@ function ten_yak_shutdown() {
 			;;
 		YUI)
 			card=36
-			if [ `ten_skill $ten_char` = false ];then
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		AIS)
+			card=22
+			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
 			;;
@@ -501,13 +517,25 @@ function card_post() {
 		fi
 	fi
 
+	if [ $card -eq 22 ];then
+		if [ "`card_son_check 22`" = "true" ];then
+			cten=${card}00
+			body=`repeat $rr; echo "🔸 +2200"`
+			img="bafkreiatrky4ilyvdt6gib33obof6rdrvqyt363z5wrjg6b5nzn6sgqsge"
+			desc="+$cten (+${card_yui_ten})"
+			title=`echo $j|jq -r .h`
+			title="[${title}・技]"
+		fi
+	fi
+
 	if [ $card -eq 60 ] || [ $card -eq 14 ];then
 		if [ `card_chou_check` -ne 0 ];then
 			cten=${card}00
 			card_chou_check=`card_chou_check`
 			rr=$(($card_chou_check * 1400))
 			body=`echo "⚡ +${rr}"`
-			img="bafkreidox3x356r43ujmrer3zwjneiet6eako3drt4ln3lawawbyyu4w6i"
+			#img="bafkreidox3x356r43ujmrer3zwjneiet6eako3drt4ln3lawawbyyu4w6i"
+			img="bafkreideb7vp4y35wn6vtixy3kvoj4isw5ru6gcnw3g46yan6f4ugtxw5u"
 			desc="+$cten (+${card_chou_ten})"
 			title=`echo $j|jq -r .h`
 			title="[${title}]"
@@ -527,6 +555,14 @@ function ten_plus() {
 	ten_shutdown
 	ten_kai=$((ten_kai + 1))
 	ten_su=$((ten_su + $1))
+
+	if [ $card -eq 22 ];then
+		if [ "`card_son_check 22`" = "true" ];then
+			rr=$(($RANDOM % 6 + 1))
+			card_yui_ten=$((2200 * rr))
+			ten_su=$((card_yui_ten + ten_su))
+		fi
+	fi
 
 	if [ $card -eq 36 ];then
 		if [ "`card_yui_check`" = "true" ];then
@@ -724,6 +760,12 @@ function ten_yak() {
 				ten_plus ${card}00
 			fi
 			;;
+		AIS)
+			card=22
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
 		YUI)
 			card=36
 			if `ten_skill $ten_post`;then
@@ -738,8 +780,8 @@ function ten_yak() {
 			;;
 		IIK)
 			card=46
-			if [ `ten_skill $ten_char` = false ];then
-				unset card
+			if [ `ten_skill $ten_post` ];then
+				ten_plus ${card}00
 			fi
 			;;
 	esac
