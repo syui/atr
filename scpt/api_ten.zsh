@@ -99,6 +99,16 @@ function card_son_check() {
 	fi
 }
 
+function card_ar_check() {
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == $1)|select(.status == \"3d\")"`
+	if [ -n "$card_yui_check" ];then
+		echo true
+	else
+		echo false
+	fi
+}
+
 function card_yui_check() {
 	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
 	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == 47)"`
@@ -265,6 +275,16 @@ function ten_start() {
 	ten_yak_check $ten_char
 
 	if [ -z "$ten_yak_ok" ];then
+		if `ten_skill IIK`;then
+			card=46
+			ten_char=IIK
+			export ten_yak_ok="☑"
+		else
+			unset card
+		fi
+	fi
+
+	if [ -z "$ten_yak_ok" ];then
 		if `ten_skill YUI`;then
 			card=36
 			ten_char=YUI
@@ -273,11 +293,6 @@ function ten_start() {
 			unset card
 		fi
 	fi
-
-	##test
-	#card=36
-	#ten_char=YUI
-	#export ten_yak_ok="☑"
 
 	if [ -z "$ten_yak_ok" ];then
 		if `ten_skill AIK`;then
@@ -298,7 +313,6 @@ function ten_start() {
 			unset card
 		fi
 	fi
-
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
@@ -422,18 +436,24 @@ function ten_yak_shutdown() {
 			;;
 		ACH)
 			card=60
-			if [ `ten_skill $ten_char` = false ];then
+			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
 			;;
 		YUI)
 			card=36
-			if [ `ten_skill_yui $ten_char` = false ];then
+			if [ `ten_skill $ten_char` = false ];then
 				unset card
 			fi
 			;;
 		AIS)
 			card=22
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		EKS)
+			card=67
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
@@ -622,25 +642,38 @@ function ten_plus() {
 	if [ $card -eq 36 ] && [ $ran_cm -eq 0 ];then
 		ten_char=IKT
 	fi
-	if [ $card -eq 13 ];then
-		ten_char=EMY
+	if [ $card -eq 14 ] && [ $((RANDOM % 2)) -eq 1 ];then
+		ten_char=ACH
 	fi
-	if [ $card -eq 46 ] || [ $card -eq 60 ];then
+	if [ $card -eq 36 ] && [ $((RANDOM % 2)) -eq 1 ];then
+		ten_char=CHO
+	fi
+	if [ $card -eq 13 ] && [ $((RANDOM % 2)) -eq 1 ];then
+		ten_char=AIS
+	fi
+	if [ $card -eq 46 ] && [ $((RANDOM % 2)) -eq 1 ];then
 		ten_char=YUI
 	fi
+	if [ $card -eq 67 ] && [ $((RANDOM % 3)) -eq 1 ];then
+		ten_char=IIK
+	fi
+
 	ten_yak_check $ten_char
 
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"ten_post\": \"$ten_char\", \"ten_kai\":$ten_kai,\"ten_su\":$ten_su, \"token\":\"$token\"}" -s $host/users/$uid`
 
-	if [ $ran_z -eq 1 ] && [ $card -ne 0 ] && [ -n "$card" ];then
+	#if [ $ran_z -eq 1 ] && [ $card -ne 0 ] && [ -n "$card" ];then
+	if [ `$((RANDOM % 5))` -eq 1 ] && [ $card -eq 1 ] && [ "`card_ar_check`" = "false" ];then
 		echo "$ten_kai : $ten_su ---> $ten_char $ten_yak_ok"
-		skill=ten
+		skill=3d
+		st=3d
 		cp=${card}00
 		cp=$(($RANDOM % 1200 + 200))
-		echo "[card] ---> 14%"
+		echo "[card] ---> 20%"
 		echo "id:${card}"
+		echo "status: ${st}"
 		echo "skill:${skill}"
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"normal\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 	fi
 
 	if [ $card -ne 0 ] && [ -n "$card" ];then
@@ -780,7 +813,13 @@ function ten_yak() {
 			;;
 		IIK)
 			card=46
-			if [ `ten_skill $ten_post` ];then
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		EKS)
+			card=67
+			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi
 			;;

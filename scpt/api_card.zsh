@@ -237,7 +237,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 80000))
+	boss_cp=$((boss_cp + 120000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -305,7 +305,7 @@ function battle_raid(){
 		cp_i=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].cp"`
 		cid=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].id"`
 		skill=`echo $data_u |jq -r "sort_by(.cp) | reverse|.[0].skill"`
-		ss=$(($RANDOM % 2))
+		ss=$(($RANDOM % 4))
 		sss=$(($RANDOM % 3))
 		ss_post=$(($RANDOM % 2))
 		if [ "$skill" = "critical" ] && [ $ss -eq 1 ];then
@@ -421,29 +421,25 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		s=`echo $(($RANDOM % 1400))`
-		#s=1
-		if [ $s -eq 1 ];then
-			card_t=28
-			card_check=`echo $data_u|jq -r ".[]|select(.card == $card_t)"`
+		ran_s=`echo $((RANDOM % 100))`
+		if [ $ran_s -eq 0 ] || [ 0 -ge $cp_bb ];then
+			thd=`echo $((RANDOM % 12))`
+			skill=3d
+			card_t=$thd
+			card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
 			card=$card_t
 			cp=`echo $(($RANDOM % 1000 + 400))`
-			s=`echo $(($RANDOM % 5))`
-			if [ $s -eq 1 ];then
-				s=super
-				skill=critical
-				plus=`echo $(($RANDOM % 1000 + 300))`
-				cp=$((cp + plus))
-			else
-				s=normal
-				skill=critical
-			fi
+			st=3d
 
 			if [ -z "$card_check" ];then
 				echo "[new]"
-				echo id : $card_t
-				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
+				echo "id : $card_t"
+				echo "cp : $cp"
+				echo "status : $st"
+				echo "skill : $skill"
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
 			fi
+
 		fi
 
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"password\":\"$pass\"}" -s $url/cards`
@@ -505,12 +501,12 @@ function battle_server(){
 
 	if [ -f $f_server_start_time ];then
 		server_start=`cat $f_server_start_time`
-		server_time=`date -d "$server_start 5 min" +"%H%M"`
+		server_time=`date -d "$server_start 30 min" +"%H%M"`
 	fi
 
-	echo "time:`date -d "$server_time" +"%H:%M"`"
+	#echo "time:`date -d "$server_time" +"%H:%M"`"
 
-	if [ $raid_at -ge $d ];then
+	if [ $server_at -ge $d ];then
 		echo "limit battle"
 		exit
 	fi
@@ -576,7 +572,7 @@ function battle_server(){
 	fi
 
 	echo $cp_all >! $f_server_at
-
+	echo
 	echo "[${a_team}] ${cp_all}"
 	echo "┣ @${username}"
 	echo "┗ @${commit_user_at}"
@@ -592,7 +588,7 @@ function battle_server(){
 
 	if [ $rr -gt $server_time ];then
 		echo "----"
-		echo "timeup!"
+		echo "time up!"
 		body="${cp_all}/${a_team} vs ${cp_ap}/${b_team}"
 		tmp=`$HOME/.cargo/bin/atr p "$body"`
 		echo 1 >! $f_server
@@ -604,12 +600,34 @@ function battle_server(){
 	fi
 
 	echo "----"
-	cp_plus=$(($RANDOM % 100 + 1))
+	cp_plus=$(($RANDOM % 30 + 1))
 	cp=$((cp_ii + cp_plus))
 	body="level up!"
 	echo "${body} ✧${cp}(+${cp_plus})"
 	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+
+	ran_s=`echo $((RANDOM % 60))`
+	if [ $ran_s -eq 0 ];then
+		echo "----"
+		thd=`echo $((RANDOM % 12))`
+		skill=3d
+		card_t=$thd
+		card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
+		card=$card_t
+		cp=`echo $(($RANDOM % 1000 + 400))`
+		st=3d
+
+		if [ -z "$card_check" ];then
+			echo "[new]"
+			echo "id : $card_t"
+			echo "cp : $cp"
+			echo "status : $st"
+			echo "skill : $skill"
+			tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
+		fi
+	fi
+
 	exit
 }
 
@@ -727,6 +745,9 @@ updated_at=`date -d "$updated_at" +"%Y%m%d"`
 raid_at=`echo $data|jq -r .raid_at`
 raid_at=`date -d "$raid_at" +"%Y%m%d"`
 raid_at_n=`date --iso-8601=seconds`
+server_at=`echo $data|jq -r .server_at`
+server_at=`date -d "$server_at" +"%Y%m%d"`
+server_at_n=`date --iso-8601=seconds`
 day_m=`date +"%H%M"`
 day_mm=`date +"%H%M" -d "-1 min"`
 day_mmm=`date +"%H%M" -d "-2 min"`
@@ -816,6 +837,44 @@ if [ "admin" = "`echo $3|cut -d = -f 1`" ];then
 		echo no admin
 	fi
 	exit
+fi
+
+if [ "room" = "`echo $3|cut -d = -f 1`" ];then
+	room=`echo $3|cut -d = -f 2`
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card >= 1 and .card <= 14).card"|sort|uniq|wc -l`
+
+	if [ $room -ge 123 ] && [ $room -le 123 ];then
+		if [ $card_check -ne 14 ];then
+			echo "card 1-14 key is required"
+			exit
+		fi
+	fi
+
+	if { [ $room -ge 123 ] && [ $room -le 123 ] && [ $card_check -eq 14 ] } || [ $room -eq 0 ] || { [ $room -ge 1 ] && [ $room -le 3 ] }; then
+		if [ $room -ge 123 ] && [ $room -le 123 ];then
+			echo "welcome to secret room !"
+		else
+			echo "welcome to room"
+		fi
+
+		tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"room\": $room,\"token\":\"$token\"}" -s $url/users/$uid`
+
+		if [ $room -ge 123 ] && [ $room -le 123 ];then
+			card=65
+			cp=0
+			s=super
+			card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+			if [ -n "$card_check" ];then
+				echo "you already have"
+			else
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+			fi
+		fi
+
+		exit
+
+	fi
 fi
 
 if [ "$3" = "-raid" ] || [ "$3" = "-r" ] || [ "$3" = "r" ];then
@@ -1221,7 +1280,7 @@ if [ "$skill" != "normal" ];then
 	echo skill : $skill
 fi
 t=`echo $tmp|jq -r .card`
-tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\"}" -s $url/users/$uid`
+tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
 
 s=`echo $(($RANDOM % 3))`
 luck_at_d=`date +"%Y%m%d"`

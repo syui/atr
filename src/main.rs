@@ -2603,7 +2603,7 @@ fn bot(c: &Context) {
         } else {
             bot_run(c,100, admin, mode);
         }
-        thread::sleep(time::Duration::from_secs(5));
+        thread::sleep(time::Duration::from_secs(15));
     }
 }
 

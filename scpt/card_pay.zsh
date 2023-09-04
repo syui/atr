@@ -16,7 +16,7 @@ username=`echo $1|cut -d . -f 1`
 did=$2
 cid=$3
 uri=$4
-pay=30000
+pay=40000
 
 echo $handle
 
@@ -40,6 +40,7 @@ function card_d(){
 	else
 		s=normal
 	fi
+	#card=1;skill=3d;s=3d
 	body_d=`echo "[card]\nid : $card\ncp : $cp\nstatus : $s\nskill : $skill"`
 }
 
@@ -65,11 +66,18 @@ function card_user(){
 function card_check(){
 	data_uu=`curl -sL "$host/users/$uid/card?itemsPerPage=2000"`
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
-	if [ -n "$card_check" ];then
+	card_check_skill=`echo $card_check|jq "select(.skill == \"$skill\")"`
+	if [ -n "$card_check" ] && [ -n "$card_check_skill" ];then
 		card=0
 		cp=1
 		s=super
 		skill=lost
+		if [ `echo $((RANDOM % 6))` -eq 0 ];then
+			card=`echo $((RANDOM % 14))`
+			cp=0
+			s=3d
+			skill=3d
+		fi
 		echo "$body_user"
 		echo "lost, you chose the card you already have..."
 		echo "try again next time!"

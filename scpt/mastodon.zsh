@@ -70,6 +70,10 @@ function card_env() {
 	raid_at=`echo $data|jq -r .raid_at`
 	raid_at=`date -d "$raid_at" +"%Y%m%d"`
 	raid_at_n=`date --iso-8601=seconds`
+	server_at=`echo $data|jq -r .server_at`
+	server_at=`date -d "$server_at" +"%Y%m%d"`
+	server_at_n=`date --iso-8601=seconds`
+
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y%m%d"`
 	updated_at_n=`date --iso-8601=seconds`
@@ -200,7 +204,7 @@ function card_b() {
 		fi
 
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"updated_at\":\"$updated_at_n\",\"token\":\"$token\"}" -sL $host/users/$uid`
-	}
+}
 
 function card_s(){
 	card_env $1
@@ -232,12 +236,12 @@ function card_s(){
 
 	if [ -f $f_server_start_time ];then
 		server_start=`cat $f_server_start_time`
-		server_time=`date -d "$server_start 5 min" +"%H%M"`
+		server_time=`date -d "$server_start 30 min" +"%H%M"`
 	fi
 
-	echo "time:`date -d "$server_time" +"%H:%M"`"
+	#echo "time:`date -d "$server_time" +"%H:%M"`"
 
-	if [ $raid_at -ge $d ] || [ "$raid_at" = "$d" ];then
+	if [ $server_at -ge $d ] || [ "$server_at" = "$d" ];then
 		echo "limit battle"
 		exit
 	fi
@@ -291,7 +295,7 @@ function card_s(){
 	fi
 
 	echo $cp_all >! $f_server_ap
-
+	echo 
 	echo "[${a_team}] ${cp_all}"
 	echo "┣ @${username}"
 	echo "┗ @${commit_user_ap}"
@@ -306,8 +310,8 @@ function card_s(){
 	#echo "${username} --> $cp_all/$a_team"
 
 	if [ $rr -gt $server_time ];then
-		echo "----"
-		echo "timeup!"
+		#echo "----"
+		#echo "timeup!"
 		echo 1 >! $f_server
 		rm $f_server_start_time
 		rm $f_server_at
@@ -322,7 +326,7 @@ function card_s(){
 	body="level up!"
 	echo "${body} ✧${cp}(+${cp_plus})"
 	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $host/cards/$fav`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"raid_at\":\"$raid_at_n\", \"token\":\"$token\"}" -s $host/users/$uid`
+	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\", \"token\":\"$token\"}" -s $host/users/$uid`
 }
 
 function mastodon_notify() {
