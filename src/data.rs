@@ -118,6 +118,8 @@ pub struct BaseUrl {
     pub record_create: String,
     pub record_delete: String,
     pub session_create: String,
+    pub session_refresh: String,
+    pub session_get: String,
     pub timeline_get: String,
     pub timeline_author: String,
     pub upload_blob: String,
@@ -150,6 +152,8 @@ pub fn url(s: &str) -> String {
         describe: "com.atproto.repo.describeRepo".to_string(),
         record_list: "com.atproto.repo.listRecords".to_string(),
         session_create: "com.atproto.server.createSession".to_string(),
+        session_refresh: "com.atproto.server.refreshSession".to_string(),
+        session_get: "com.atproto.server.getSession".to_string(),
         timeline_get: "app.bsky.feed.getTimeline".to_string(),
         timeline_author: "app.bsky.feed.getAuthorFeed".to_string(),
         like: "app.bsky.feed.like".to_string(),
@@ -173,6 +177,8 @@ pub fn url(s: &str) -> String {
         "record_create" => t.to_string() + &baseurl.record_create,
         "record_delete" => t.to_string() + &baseurl.record_delete,
         "session_create" => t.to_string() + &baseurl.session_create,
+        "session_refresh" => t.to_string() + &baseurl.session_refresh,
+        "session_get" => t.to_string() + &baseurl.session_get,
         "timeline_get" => t.to_string() + &baseurl.timeline_get,
         "timeline_author" => t.to_string() + &baseurl.timeline_get,
         "upload_blob" => t.to_string() + &baseurl.upload_blob,
@@ -236,6 +242,12 @@ pub struct AlsoKnownAs {
 #[derive(Serialize, Deserialize)]
 pub struct Timeline {
     pub feed: Vec<Feed>
+}
+#[derive(Serialize, Deserialize)]
+pub struct Session {
+    pub did: String,
+    pub email: String,
+    pub handle: String,
 }
 #[derive(Serialize, Deserialize)]
 pub struct Follow {

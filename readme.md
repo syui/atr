@@ -216,6 +216,18 @@ $ atr ss -s
 $ atr ss -d
 ```
 
+### rate limit
+
+https://atproto.com/blog/rate-limits-pds-v3
+
+```sh
+# 1ヶ月に1回、tokenを更新する(createSession)
+$ atr token
+
+# 毎回、getsessionで確認しreqwestがerrならrefreshSessionする
+$ atr a
+```
+
 ### ref
 
 openai : https://github.com/syui/msr/tree/openai

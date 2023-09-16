@@ -23,6 +23,7 @@ use data::Handle as Handle;
 use data::Deep as Deeps;
 use data::Open as Opens;
 use crate::data::Timeline;
+//use crate::data::Session;
 use crate::data::url;
 use crate::data::cfg;
 use crate::data::token_file;
@@ -33,11 +34,12 @@ use std::fs::OpenOptions;
 use std::io::Read;
 use std::io::Write;
 
-use std::{thread, time};
+//use std::{thread, time};
 
 pub mod openai;
 pub mod openai_char;
 pub mod deepl;
+pub mod at_refresh;
 pub mod at_notify_limit;
 pub mod at_notify_read;
 pub mod at_reply;
@@ -147,6 +149,18 @@ fn main() {
             .description("auth\n\t\t\t$ atr a\n\t\t\t$ cat ~/.config/atr/token.json")
             .alias("a")
             .action(a),
+            )
+        .command(
+            Command::new("token")
+            .usage("atr token")
+            .description("token\n\t\t\t$ atr refresh")
+            .action(a_token),
+            )
+        .command(
+            Command::new("refresh")
+            .usage("atr refresh")
+            .description("refresh\n\t\t\t$ atr refresh")
+            .action(refresh),
             )
         .command(
             Command::new("swich")
@@ -655,28 +669,76 @@ fn f(c: &Context) {
     ff(c);
 }
 
-#[tokio::main]
-async fn aa() -> reqwest::Result<()> {
-    let f = token_file(&"json");
-    let handle = cfg(&"user");
-    let pass = cfg(&"pass");
-    let mut map = HashMap::new();
+//fn refresh_c() {
+//    let h = async {
+//        let str = at_refresh::post_request();
+//        println!("{}",str.await);
+//    };
+//    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+//    return res
+//}
 
-    let url = url(&"session_create");
-    //map.insert("did", &did);
-    map.insert("identifier", &handle);
-    map.insert("password", &pass);
+#[tokio::main]
+async fn c_refresh() -> reqwest::Result<()> {
+    let host = cfg(&"host");
+    let f = token_file(&"json");
+    let refresh = token_toml(&"refresh");
+    let url = "https://".to_string() + &host.to_string() + &"/xrpc/com.atproto.server.refreshSession".to_string();
     let client = reqwest::Client::new();
     let res = client
         .post(url)
-        .json(&map)
+        .header("Authorization", "Bearer ".to_owned() + &refresh)
         .send()
         .await?
         .text()
         .await?;
     let j = Json::from_str(&res).unwrap();
     let j = j.to_string();
-    //println!("{}", j);
+    println!("{}", j);
+    let mut f = fs::File::create(f).unwrap();
+    if j != "" {
+        f.write_all(&j.as_bytes()).unwrap();
+    }
+
+    let f = token_file(&"toml");
+    let json: Token = serde_json::from_str(&res).unwrap();
+    let tokens = Tokens {
+        did: json.did.to_string(),
+        access: json.accessJwt.to_string(),
+        refresh: json.refreshJwt.to_string(),
+        handle: json.handle.to_string(),
+    };
+
+    let toml = toml::to_string(&tokens).unwrap();
+    let mut f = fs::File::create(f.clone()).unwrap();
+    f.write_all(&toml.as_bytes()).unwrap();
+
+    Ok(())
+}
+
+fn refresh(_c: &Context) {
+    c_refresh().unwrap();
+    //refresh_c();
+}
+
+#[tokio::main]
+async fn w_refresh() -> reqwest::Result<()> {
+    let host = cfg(&"host");
+    // refresh token
+    let f = token_file(&"json");
+    let refresh = token_toml(&"refresh");
+    let url = "https://".to_string() + &host.to_string() + &"/xrpc/com.atproto.server.refreshSession".to_string();
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .header("Authorization", "Bearer ".to_owned() + &refresh)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let j = Json::from_str(&res).unwrap();
+    let j = j.to_string();
+    println!("{}", j);
     let mut f = fs::File::create(f).unwrap();
     if j != "" {
         f.write_all(&j.as_bytes()).unwrap();
@@ -693,7 +755,109 @@ async fn aa() -> reqwest::Result<()> {
     let toml = toml::to_string(&tokens).unwrap();
     let mut f = fs::File::create(f.clone()).unwrap();
     f.write_all(&toml.as_bytes()).unwrap();
+    Ok(())
+}
 
+#[tokio::main]
+async fn w_token() -> reqwest::Result<()> {
+    let host = cfg(&"host");
+    // create session
+    let url = "https://".to_string() + &host.to_string() + &"/xrpc/com.atproto.server.createSession".to_string();
+    let f = token_file(&"json");
+    let handle = cfg(&"user");
+    let pass = cfg(&"pass");
+    let mut map = HashMap::new();
+
+    //map.insert("did", &did);
+    map.insert("identifier", &handle);
+    map.insert("password", &pass);
+    let client = reqwest::Client::new();
+    let res = client
+        .post(url)
+        .json(&map)
+        .send()
+        .await?
+        .text()
+        .await?;
+    let j = Json::from_str(&res).unwrap();
+    let j = j.to_string();
+    println!("{}", j);
+    let mut f = fs::File::create(f).unwrap();
+    if j != "" {
+        f.write_all(&j.as_bytes()).unwrap();
+    }
+
+    let f = token_file(&"toml");
+    let json: Token = serde_json::from_str(&res).unwrap();
+    let tokens = Tokens {
+        did: json.did.to_string(),
+        access: json.accessJwt.to_string(),
+        refresh: json.refreshJwt.to_string(),
+        handle: json.handle.to_string(),
+    };
+
+    let toml = toml::to_string(&tokens).unwrap();
+    let mut f = fs::File::create(f.clone()).unwrap();
+    f.write_all(&toml.as_bytes()).unwrap();
+    Ok(())
+}
+
+fn a_token(_c: &Context) {
+    w_token().unwrap();
+    w_refresh().unwrap();
+}
+
+#[tokio::main]
+async fn aa() -> reqwest::Result<()> {
+    let host = cfg(&"host");
+    let url = url(&"session_get");
+    let access = token_toml(&"access");
+    let client = reqwest::Client::new();
+    let res = client
+        .get(url)
+        .header("Authorization", "Bearer ".to_owned() + &access)
+        .send()
+        .await?;
+    let status_ref = res.error_for_status_ref();
+    match status_ref {
+        Ok(_) => {
+        },
+        Err(_e) => {
+            // refresh token
+            let f = token_file(&"json");
+            let refresh = token_toml(&"refresh");
+            let url = "https://".to_string() + &host.to_string() + &"/xrpc/com.atproto.server.refreshSession".to_string();
+            let client = reqwest::Client::new();
+            let res = client
+                .post(url)
+                .header("Authorization", "Bearer ".to_owned() + &refresh)
+                .send()
+                .await?
+                .text()
+                .await?;
+            let j = Json::from_str(&res).unwrap();
+            let j = j.to_string();
+            println!("{}", j);
+            let mut f = fs::File::create(f).unwrap();
+            if j != "" {
+                f.write_all(&j.as_bytes()).unwrap();
+            }
+
+            let f = token_file(&"toml");
+            let json: Token = serde_json::from_str(&res).unwrap();
+            let tokens = Tokens {
+                did: json.did.to_string(),
+                access: json.accessJwt.to_string(),
+                refresh: json.refreshJwt.to_string(),
+                handle: json.handle.to_string(),
+            };
+
+            let toml = toml::to_string(&tokens).unwrap();
+            let mut f = fs::File::create(f.clone()).unwrap();
+            f.write_all(&toml.as_bytes()).unwrap();
+        }
+    }
+    
     Ok(())
 }
 
@@ -2603,7 +2767,7 @@ fn bot(c: &Context) {
         } else {
             bot_run(c,100, admin, mode);
         }
-        thread::sleep(time::Duration::from_secs(15));
+        //thread::sleep(time::Duration::from_secs(15));
     }
 }
 
