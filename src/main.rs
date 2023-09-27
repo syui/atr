@@ -857,7 +857,6 @@ async fn aa() -> reqwest::Result<()> {
             f.write_all(&toml.as_bytes()).unwrap();
         }
     }
-    
     Ok(())
 }
 

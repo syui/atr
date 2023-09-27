@@ -237,7 +237,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 120000))
+	boss_cp=$((boss_cp + 80000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -421,9 +421,9 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		ran_s=`echo $((RANDOM % 100))`
+		ran_s=`echo $((RANDOM % 1200))`
 		if [ $ran_s -eq 0 ] || [ 0 -ge $cp_bb ];then
-			thd=`echo $((RANDOM % 12))`
+			thd=`echo $((RANDOM % 11 + 1))`
 			skill=3d
 			card_t=$thd
 			card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
@@ -439,6 +439,20 @@ function battle_raid(){
 				echo "skill : $skill"
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
 			fi
+
+			#if [ -n "$card_check" ];then
+			#	card=68
+			# card_t=$card
+			# skill=normal
+			#	st=super
+			#	cp=0
+			#	echo "[new]"
+			#	echo "id : $card_t"
+			#	echo "cp : $cp"
+			#	echo "status : $st"
+			#	echo "skill : $skill"
+			#	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
+			#fi
 
 		fi
 
@@ -607,10 +621,10 @@ function battle_server(){
 	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 
-	ran_s=`echo $((RANDOM % 60))`
+	ran_s=`echo $((RANDOM % 1200))`
 	if [ $ran_s -eq 0 ];then
 		echo "----"
-		thd=`echo $((RANDOM % 12))`
+		thd=`echo $((RANDOM % 11 + 1))`
 		skill=3d
 		card_t=$thd
 		card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
@@ -851,7 +865,7 @@ if [ "room" = "`echo $3|cut -d = -f 1`" ];then
 		fi
 	fi
 
-	if { [ $room -ge 123 ] && [ $room -le 123 ] && [ $card_check -eq 14 ] } || [ $room -eq 0 ] || { [ $room -ge 1 ] && [ $room -le 3 ] }; then
+	if { [ $room -ge 123 ] && [ $room -le 123 ] && [ $card_check -eq 14 ] } || [ $room -eq 0 ] || { [ $room -ge 1 ] && [ $room -le 3 ] } || [ $room -eq 124 ]; then
 		if [ $room -ge 123 ] && [ $room -le 123 ];then
 			echo "welcome to secret room !"
 		else
@@ -1024,6 +1038,15 @@ fi
 
 if [ "$3" = "zen" ] || [ "$3" = "-zen" ];then
 	yui_card 20 123
+	exit
+fi
+
+if [ "$3" = "g15" ] || [ "$3" = "-g15" ];then
+	plus=$(($RANDOM % 1800 + 400))
+	cp=$((cp + plus))
+	skill=ten
+	st=super
+	moji_mode_card 69 $cp $skill $st
 	exit
 fi
 

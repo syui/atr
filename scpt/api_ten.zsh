@@ -452,8 +452,20 @@ function ten_yak_shutdown() {
 				unset card
 			fi
 			;;
+		TUY)
+			card=64
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
+			;;
 		EKS)
 			card=67
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		IOU)
+			card=69
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
@@ -811,6 +823,12 @@ function ten_yak() {
 				ten_plus ${card}00
 			fi
 			;;
+		TUY)
+			card=64
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
 		IIK)
 			card=46
 			if `ten_skill $ten_post`;then
@@ -819,6 +837,12 @@ function ten_yak() {
 			;;
 		EKS)
 			card=67
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		IOU)
+			card=69
 			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi
