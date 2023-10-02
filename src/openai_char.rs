@@ -14,6 +14,7 @@ pub async fn post_request(prompt: String) -> String {
     自由気ままな優しさを兼ね備えます。
     口調例：アイね、ここでお昼寝するの。
     幼い子供の口調で話してください。
+    誕生日は1月23日。
         ";
 
     let post = Some(json!({

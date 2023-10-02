@@ -30,6 +30,19 @@ host_card_json=`curl -sL $host_card`
 n_cid=$HOME/.config/atr/txt/tmp_notify_cid.txt
 f_cfg=$HOME/.config/atr/txt/tmp_ten_config.txt
 
+function moon_check(){
+	moon_now=`date +"%Y%m%d"`
+	moon_j=$HOME/.config/atr/scpt/full_moon.j
+	if [ -f $moon_j ];then
+		moon_t=`cat $moon_j|jq ".[]|select(.data == \"$moon_now\")"`
+		if [ -n "$moon_t" ];then
+			echo true
+		else
+			echo false
+		fi
+	fi
+}
+
 if [ ! -f $f_cfg ];then
 	echo $host_card_json |jq -r ".[]|select(.ten != null)|.ten" |tr -d '\n' >! $f_cfg
 fi
@@ -55,7 +68,6 @@ username=`echo $1|cut -d . -f 1`
 cid=$3
 uri=$4
 option=$5
-
 
 sub_option=$6
 ten_kai=0
@@ -132,17 +144,17 @@ function card_chou_check() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK|IIK|AIS)
+		OUY|AIK|IIK|AIS|ACH|ACC|IOU|EKS|TUY)
 			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
-		YUI|ACH)
+		YUI|ACH|ACC|IOU|EKS)
 			if `ten_skill_yui $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
-		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
+		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*|ACH|ACC|TUY|EKS|IOU|ACC|AAC|AEK)
 			export ten_yak_ok="⚠"
 			;;
 	esac
@@ -313,6 +325,7 @@ function ten_start() {
 			unset card
 		fi
 	fi
+
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
@@ -439,6 +452,9 @@ function ten_yak_shutdown() {
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
 			;;
 		YUI)
 			card=36
@@ -466,6 +482,24 @@ function ten_yak_shutdown() {
 			;;
 		IOU)
 			card=69
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		ACC)
+			card=76
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		AAC)
+			card=77
+			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		AEK)
+			card=78
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
@@ -540,12 +574,21 @@ function card_post() {
 
 	if [ $card -eq 36 ];then
 		if [ "`card_yui_check`" = "true" ];then
-			cten=${card}00
-			body=`repeat $rr; echo "⚡ +1000"`
-			img="bafkreieh2j3nbnetmux5xaid7iefv2vfgsjwkx5bx66ce6h35rq2oebo54"
-			desc="+$cten (+${card_yui_ten})"
-			title=`echo $j|jq -r .h`
-			title="[${title}・技]"
+			if [ "`moon_check`" = "true" ];then
+				cten=${card}00
+				body=`repeat $rr; echo "🌓 +10000"`
+				img="bafkreieh2j3nbnetmux5xaid7iefv2vfgsjwkx5bx66ce6h35rq2oebo54"
+				desc="+$cten (+${card_yui_ten})"
+				title="月見(新月/満月)"
+				title="[${title}・技]"
+			else
+				cten=${card}00
+				body=`repeat $rr; echo "⚡ +1000"`
+				img="bafkreieh2j3nbnetmux5xaid7iefv2vfgsjwkx5bx66ce6h35rq2oebo54"
+				desc="+$cten (+${card_yui_ten})"
+				title=`echo $j|jq -r .h`
+				title="[${title}・技]"
+			fi
 		fi
 	fi
 
@@ -566,14 +609,49 @@ function card_post() {
 			card_chou_check=`card_chou_check`
 			rr=$(($card_chou_check * 1400))
 			body=`echo "⚡ +${rr}"`
-			#img="bafkreidox3x356r43ujmrer3zwjneiet6eako3drt4ln3lawawbyyu4w6i"
-			img="bafkreideb7vp4y35wn6vtixy3kvoj4isw5ru6gcnw3g46yan6f4ugtxw5u"
+			img=bafkreighntijp47dejknvtrxbqocsy542vgpxcb3zaqxpc2vc52hy7bkw4
 			desc="+$cten (+${card_chou_ten})"
 			title=`echo $j|jq -r .h`
 			title="[${title}]"
 		fi
 		if [ $card -eq 14 ];then
 			img="bafkreig7qapoudilekw6bxfkj3in3owjhh2v23rx7abbgnszvkxi5dqbly"
+		fi
+	fi
+
+	if [ $card -eq 76 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			cten=${card}00
+			card_chou_check=`card_chou_check`
+			body=`echo "⚡ +???"`
+			img=bafkreicmeuljtkl3jx4toudpuxagvjpdcgflhuwhbe3vh4e4fnlruawfyy
+			desc="+$cten (+???)"
+			title=`echo $j|jq -r .h`
+			title="[${title}]"
+		fi
+	fi
+
+	if [ $card -eq 77 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			cten=${card}00
+			card_chou_check=`card_chou_check`
+			body=`echo "⚡ +???"`
+			img="bafkreiarpxioqr5ulnwvukin6qrv5gyyymsggv255oc7wmfedsqpah4qcy"
+			desc="+$cten (+???)"
+			title=`echo $j|jq -r .h`
+			title="[${title}]"
+		fi
+	fi
+
+	if [ $card -eq 78 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			cten=${card}00
+			card_chou_check=`card_chou_check`
+			body=`echo "⚡ +???"`
+			img="bafkreicbiujlv6hiluzc5db25j5phg7u2m2pu5h4qinxnpizq226n4hbae"
+			desc="+$cten (+???)"
+			title=`echo $j|jq -r .h`
+			title="[${title}]"
 		fi
 	fi
 
@@ -598,16 +676,43 @@ function ten_plus() {
 
 	if [ $card -eq 36 ];then
 		if [ "`card_yui_check`" = "true" ];then
-			rr=$(($RANDOM % 5 + 1))
-			card_yui_ten=$((1000 * rr))
-			ten_su=$((card_yui_ten + ten_su))
+			if [ "`moon_check`" = "true" ];then
+				rr=$(($RANDOM % 5 + 1))
+				card_yui_ten=$((10000 * rr))
+				ten_su=$((card_yui_ten + ten_su))
+			else
+				rr=$(($RANDOM % 5 + 1))
+				card_yui_ten=$((1000 * rr))
+				ten_su=$((card_yui_ten + ten_su))
+			fi
 		fi
 	fi
 
 	if [ $card -eq 60 ] || [ $card -eq 14 ];then
 		if [ `card_chou_check` -ne 0 ];then
 			card_chou_check=`card_chou_check`
-			rr=$(($card_chou_check * 1400))
+			rr=$(($card_chou_check * 2400))
+			ten_su=$((rr + ten_su))
+		fi
+	fi
+
+	if [ $card -eq 76 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			rr=$(($RANDOM % 10000 + 700))
+			ten_su=$((rr + ten_su))
+		fi
+	fi
+
+	if [ $card -eq 77 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			rr=$(($RANDOM % 20000 + 700))
+			ten_su=$((rr + ten_su))
+		fi
+	fi
+
+	if [ $card -eq 78 ];then
+		if [ "`card_yui_check`" = "true" ];then
+			rr=$(($RANDOM % 30000 + 700))
 			ten_su=$((rr + ten_su))
 		fi
 	fi
@@ -645,6 +750,9 @@ function ten_plus() {
 	if [ $card -eq 7 ] && [ $ran_cm -eq 0 ];then
 		ten_char=AAA
 	fi
+	if [ $card -eq 7 ] && [ $ran_cm -eq 1 ];then
+		ten_char=ACC
+	fi
 	if [ $card -eq 12 ] && [ $ran_cm -eq 0 ];then
 		ten_char=OSZ
 	fi
@@ -668,6 +776,12 @@ function ten_plus() {
 	fi
 	if [ $card -eq 67 ] && [ $((RANDOM % 3)) -eq 1 ];then
 		ten_char=IIK
+	fi
+	if [ $card -eq 76 ] && [ $((RANDOM % 2)) -eq 1 ];then
+		ten_char=AAC
+	fi
+	if [ $card -eq 77 ] && [ $((RANDOM % 3)) -eq 1 ];then
+		ten_char=AEK
 	fi
 
 	ten_yak_check $ten_char
@@ -822,6 +936,9 @@ function ten_yak() {
 			if `ten_skill_yui $ten_post`;then
 				ten_plus ${card}00
 			fi
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
 			;;
 		TUY)
 			card=64
@@ -837,12 +954,45 @@ function ten_yak() {
 			;;
 		EKS)
 			card=67
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
 			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi
 			;;
 		IOU)
 			card=69
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		ACC)
+			card=76
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		AAC)
+			card=77
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		AEK)
+			card=78
+			if `ten_skill_yui $ten_post`;then
+				ten_plus ${card}00
+			fi
 			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
 			fi

@@ -94,11 +94,72 @@ function study_card() {
 	echo "author : ${author}"
 }
 
+function field_card() {
+	card=73
+	cp=0
+	s=field
+	skill=field
+
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card and .cp == $cp and .skill == \"field\")"`
+	if [ -z "$card_check" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+		ascii_moji_b
+		echo "---"
+		echo "[card]"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+		echo "status : ${s}"
+		echo "skill : ${skill}"
+	fi
+
+	cp=$1
+
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card and .cp == $cp and .skill == \"field\")"`
+	if [ -z "$card_check" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+		ascii_moji_b
+		echo "---"
+		echo "[card]"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+		echo "status : ${s}"
+		echo "skill : ${skill}"
+	else
+		echo "you already have"
+		exit
+	fi
+}
+
+function yui_card_add() {
+	card=$1
+	cp=$2
+	s=yui
+	skill=yui
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	if [ -z "$card_check" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+		#ascii_moji_b
+		echo "---"
+		echo "[card]"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+		echo "status : ${s}"
+		echo "skill : ${skill}"
+	fi
+}
+
 function yui_card() {
 	card=$1
 	cp=$2
-	echo no open
-	exit
 	s=yui
 	skill=yui
 	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
@@ -1041,12 +1102,16 @@ if [ "$3" = "zen" ] || [ "$3" = "-zen" ];then
 	exit
 fi
 
+if [ "$3" = "field" ] || [ "$3" = "-field" ];then
+	field_card $(($RANDOM % 9 + 1))
+	exit
+fi
+
 if [ "$3" = "g15" ] || [ "$3" = "-g15" ];then
 	plus=$(($RANDOM % 1800 + 400))
 	cp=$((cp + plus))
-	skill=ten
 	st=super
-	moji_mode_card 69 $cp $skill $st
+	moji_mode_card 71 $cp $skill $st
 	exit
 fi
 
@@ -1304,6 +1369,35 @@ if [ "$skill" != "normal" ];then
 fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
+
+### new card
+card=60
+if [ $(($RANDOM % 5)) -eq 0 ];then
+	cp=$(($RANDOM % 3000 + 200))
+	yui_card_add $card $cp 
+	exit
+fi
+
+card=67
+if [ $(($RANDOM % 5)) -eq 0 ];then
+	cp=$(($RANDOM % 3000 + 200))
+	yui_card_add $card $cp 
+	exit
+fi
+
+card=77
+if [ $(($RANDOM % 15)) -eq 0 ];then
+	cp=$(($RANDOM % 3000 + 200))
+	yui_card_add $card $cp 
+	exit
+fi
+
+card=78
+if [ $(($RANDOM % 15)) -eq 0 ];then
+	cp=$(($RANDOM % 3000 + 200))
+	yui_card_add $card $cp 
+	exit
+fi
 
 s=`echo $(($RANDOM % 3))`
 luck_at_d=`date +"%Y%m%d"`

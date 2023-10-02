@@ -108,9 +108,15 @@ function fav_battle() {
 	card_skill=`echo $fav_card|jq -r ".skill"`
 
 	if [ $cp_i -gt $cp_b ];then
-		cp_plus=$(($RANDOM % 37 + 1))
+		if [ $cp_i -ge 9000 ];then
+			cp_plus=$(($RANDOM % 27 + 1))
+		elif [ $cp_i -ge 7000 ];then
+			cp_plus=$(($RANDOM % 47 + 1))
+		else
+			cp_plus=$(($RANDOM % 237 + 1))
+		fi
 	else
-		cp_plus=$(($RANDOM % 7 + 1))
+		cp_plus=$(($RANDOM % 17 + 1))
 	fi
 	echo "\n✧${cp_i} vs $cp_b"
 	echo "----"
@@ -123,10 +129,10 @@ function fav_battle() {
 }
 
 function fav_add() {
-	card_status=fourth
+	card_status=fifth
 	u_data=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=2555"|jq -r ".[]|select(.status == \"$card_status\")"`
 	if [ -z "$u_data" ];then
-		d_data=`curl -sL $host/cards/$cid|jq -r "select(.status == \"first\" or .status == \"second\" or .status == \"third\" or .status == \"yui\" or .status == \"fourth\")"`
+		d_data=`curl -sL $host/cards/$cid|jq -r "select(.status == \"first\" or .status == \"second\" or .status == \"third\" or .status == \"yui\" or .status == \"fourth\" or .status == \"$card_status\")"`
 		if [ -z "$d_data" ];then
 			echo status $card_status
 			tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"status\":\"$card_status\",\"token\":\"$token\"}" $host/cards/$cid`
