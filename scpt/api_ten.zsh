@@ -326,6 +326,16 @@ function ten_start() {
 		fi
 	fi
 
+	if [ -z "$ten_yak_ok" ];then
+		if `ten_skill ACC`;then
+			card=76
+			ten_char=ACC
+			export ten_yak_ok="☑"
+		else
+			unset card
+		fi
+	fi
+
 	ten_user=`echo $ten_data|jq -r .username`
 	find_user=`echo $ten_user|grep $username`
 	first_ten=1000
@@ -479,10 +489,16 @@ function ten_yak_shutdown() {
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
 			;;
 		IOU)
 			card=69
 			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			if [ `ten_skill $ten_char` = false ];then
 				unset card
 			fi
 			;;
@@ -491,16 +507,25 @@ function ten_yak_shutdown() {
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
 			;;
 		AAC)
 			card=77
 			if [ `ten_skill_yui $ten_char` = false ];then
 				unset card
 			fi
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
 			;;
 		AEK)
 			card=78
 			if [ `ten_skill_yui $ten_char` = false ];then
+				unset card
+			fi
+			if [ `ten_skill $ten_char` = false ];then
 				unset card
 			fi
 			;;

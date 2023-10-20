@@ -298,7 +298,7 @@ function battle_raid(){
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
 	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 80000))
+	boss_cp=$((boss_cp + 120000))
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
@@ -482,9 +482,10 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		ran_s=`echo $((RANDOM % 1200))`
+		ran_s=`echo $((RANDOM % 3))`
 		if [ $ran_s -eq 0 ] || [ 0 -ge $cp_bb ];then
-			thd=`echo $((RANDOM % 11 + 1))`
+			thd=13
+			#thd=`echo $((RANDOM % 11 + 1))`
 			skill=3d
 			card_t=$thd
 			card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
@@ -492,14 +493,14 @@ function battle_raid(){
 			cp=`echo $(($RANDOM % 1000 + 400))`
 			st=3d
 
-			if [ -z "$card_check" ];then
+			#if [ -z "$card_check" ];then
 				echo "[new]"
 				echo "id : $card_t"
 				echo "cp : $cp"
 				echo "status : $st"
 				echo "skill : $skill"
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
-			fi
+			#fi
 
 			#if [ -n "$card_check" ];then
 			#	card=68
@@ -682,10 +683,11 @@ function battle_server(){
 	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
 	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 
-	ran_s=`echo $((RANDOM % 1200))`
+	ran_s=`echo $((RANDOM % 5))`
 	if [ $ran_s -eq 0 ];then
 		echo "----"
-		thd=`echo $((RANDOM % 11 + 1))`
+		thd=13
+		#thd=`echo $((RANDOM % 11 + 1))`
 		skill=3d
 		card_t=$thd
 		card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
@@ -1371,33 +1373,12 @@ t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
 
 ### new card
-card=60
-if [ $(($RANDOM % 5)) -eq 0 ];then
-	cp=$(($RANDOM % 3000 + 200))
-	yui_card_add $card $cp 
-	exit
-fi
-
-card=67
-if [ $(($RANDOM % 5)) -eq 0 ];then
-	cp=$(($RANDOM % 3000 + 200))
-	yui_card_add $card $cp 
-	exit
-fi
-
-card=77
-if [ $(($RANDOM % 15)) -eq 0 ];then
-	cp=$(($RANDOM % 3000 + 200))
-	yui_card_add $card $cp 
-	exit
-fi
-
-card=78
-if [ $(($RANDOM % 15)) -eq 0 ];then
-	cp=$(($RANDOM % 3000 + 200))
-	yui_card_add $card $cp 
-	exit
-fi
+#card=13
+#if [ $(($RANDOM % 5)) -eq 0 ];then
+#	cp=$(($RANDOM % 3000 + 200))
+#	yui_card_add $card $cp 
+#	exit
+#fi
 
 s=`echo $(($RANDOM % 3))`
 luck_at_d=`date +"%Y%m%d"`
