@@ -2,6 +2,7 @@
 
 # raid-boss-admin
 cfg=$HOME/.config/atr/scpt/card_config.json
+cfg_ai=$HOME/.config/atr/scpt/card_config_ai.json
 # {
 # "raid_admin":"yui.bsky.social",
 #	"raid_time": "",
@@ -133,6 +134,27 @@ function field_card() {
 	else
 		echo "you already have"
 		exit
+	fi
+}
+
+function card_add_origin() {
+	card=$1
+	cp=$2
+	s=$3
+	skill=$3
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)|select(.skill == \"$skill\")"`
+	if [ -z "$card_check" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+		#ascii_moji_b
+		echo "---"
+		echo "[card] ✨"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+		echo "status : ${s}"
+		echo "skill : ${skill}"
 	fi
 }
 
@@ -297,19 +319,31 @@ function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
-	boss_cp=$(($RANDOM % 100000))
-	boss_cp=$((boss_cp + 120000))
+	boss_cp=$((RANDOM % 300000))
+
+	if [ `date +%u` -ge 6 ];then
+		boss_cp=$((boss_cp + 100000))
+	else
+		boss_cp=$((boss_cp + 200000))
+	fi
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
 		boss_user_bsky=$raid_boss_admin
-		boss_cp=100000
+		boss_cp=200000
 		boss_id=$raid_boss_id
 		boss_card=23
 		boss_card_win=24
 	fi
 
 	if [ -n "$raid_boss_admin" ] && [ ! -f $f_raid ] && [ "$raid_run" = "true" ];then
+		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
+		boss_cp=$((${boss_l/%?/}))
+	fi
+
+	if [ -f "$cfg_ai" ];then
+		boss_user_ai=ai
+		boss_id=2
 		boss_l=`curl -sL "https://api.syui.ai/users/${boss_id}/card?itemsPerPage=2550"|jq ".[]|.cp"|sed 's/^0$/10000/g'|tr "\n" "+"`
 		boss_cp=$((${boss_l/%?/}))
 	fi
@@ -387,6 +421,9 @@ function battle_raid(){
 		cp_b=`cat $f_raid`
 		cp_bb=`expr $cp_b - $cp_i`
 		echo "[raid battle]"
+		if [ -f "$cfg_ai" ];then
+			echo "@ai\nhttps://card.syui.ai/${boss_user_ai}\nhttps://vrm.syui.ai"
+		fi
 		if [ -n "$boss_user_bsky" ];then
 			echo "@${boss_user_bsky}\nhttps://card.syui.ai/${boss_user}"
 		fi
@@ -439,6 +476,9 @@ function battle_raid(){
 				if [ "$raid_run" = "true" ];then
 					rm $cfg
 				fi
+				if [ -f "$cfg_ai" ];then
+					rm $cfg_ai
+				fi
 			else
 				raid_end=`date +"%H:%M"`
 				raid_body=`echo "[raid status]\ncp : $raid_start_cp\nstart/$raid_start\nend/$raid_end\nlast : $raid_last"`
@@ -482,25 +522,32 @@ function battle_raid(){
 			echo "status : ${s}"
 		fi
 
-		ran_s=`echo $((RANDOM % 3))`
-		if [ $ran_s -eq 0 ] || [ 0 -ge $cp_bb ];then
-			thd=13
+		if [ `date +%u` -ge 6 ];then
+			ran_s=`echo $((RANDOM % 12))`
+		else
+			ran_s=`echo $((RANDOM % 120))`
+		fi
+		if [ $ran_s -eq 0 ];then
+			thd=7
 			#thd=`echo $((RANDOM % 11 + 1))`
-			skill=3d
+			skill=model
 			card_t=$thd
 			card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
 			card=$card_t
 			cp=`echo $(($RANDOM % 1000 + 400))`
-			st=3d
+			st=yui
 
-			#if [ -z "$card_check" ];then
-				echo "[new]"
+			if [ -z "$card_check" ];then
+				echo "[new] ✨"
 				echo "id : $card_t"
 				echo "cp : $cp"
 				echo "status : $st"
 				echo "skill : $skill"
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
-			#fi
+
+				# model true
+				tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"model_limit\":1, \"model\":true, \"model_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+			fi
 
 			#if [ -n "$card_check" ];then
 			#	card=68
@@ -553,12 +600,20 @@ function battle_server(){
 	rr=`date +"%H%M"`
 	a_team=bluesky
 	b_team=mastodon
+	f_server_prezent=$HOME/.config/atr/txt/card_server_prezent.txt
 	f_server=$HOME/.config/atr/txt/card_server.txt
 	f_server_user_at=$HOME/.config/atr/txt/card_server_user_at.txt
 	f_server_user_ap=$HOME/.config/atr/txt/card_server_user_ap.txt
 	f_server_ap=$HOME/.config/atr/txt/card_server_ap.txt
 	f_server_at=$HOME/.config/atr/txt/card_server_at.txt
 	f_server_start_time=$HOME/.config/atr/txt/card_server_start_time.txt
+
+	at_endpoint=`curl -sL https://plc.directory/$did|jq -r ".service.[].serviceEndpoint"|cut -d . -f 1-2|cut -d / -f 3`
+	at_endpoint_f=$HOME/.config/atr/txt/at_endpoint_${at_endpoint}_.txt
+	touch $at_endpoint_f
+	a_team=$at_endpoint
+	f_server_at=$at_endpoint_f
+	echo $username >> ${at_endpoint_f}.commit
 
 	if [ `cat $f_server` -eq 1 ];then
 		echo shutdown server battle
@@ -625,7 +680,12 @@ function battle_server(){
 		cp_i=$((cp_i + ten_su))
 	fi
 
-	cp_all=$((cp_i + cp_at))
+	if [ ! -f $f_server_prezent ];then
+		cp_all=$((cp_i + cp_at))
+	else
+		cp_all=$((cp_at - cp_i))
+	fi
+
 	if [ "$skill" = "critical" ];then
 		echo "⚡  $cp_i ---> $cp_at"
 	elif [ "$skill" = "post" ];then
@@ -650,13 +710,32 @@ function battle_server(){
 	echo $cp_all >! $f_server_at
 	echo
 	echo "[${a_team}] ${cp_all}"
-	echo "┣ @${username}"
-	echo "┗ @${commit_user_at}"
-	echo
-	echo "┏━ vs ━┛"
-	echo
-	echo "[${b_team}] ${cp_ap}"
-	echo "┗ @${commit_user_ap}"
+	echo "┗ @${username}"
+	#echo "┣ @${username}"
+	#echo "┗ @${commit_user_at}"
+	#
+	#mastodon
+	#echo
+	#echo "┏━ vs ━┛"
+	#echo
+	#echo "[${b_team}] ${cp_ap}"
+	#echo "┗ @${commit_user_ap}"
+	#echo "----"
+	#mastodon
+	at_end_t=`ls $HOME/.config/atr/txt/at_endpoint_*.txt`
+	at_end_n=`echo "$at_end_t"|wc -l`
+	for ((ati=1;ati<=$at_end_n;ati++))
+	do
+		t=`echo "$at_end_t"|awk "NR==$ati"`
+		tt=`echo $t|cut -d _ -f 3|cut -d . -f 1`
+		cp_end=`cat $t`
+		commit_user_end=`cat ${t}.commit|tail -n 1`
+		if [ "$tt" != "`echo $a_team|cut -d . -f 1`" ];then
+			echo "${tt} ${cp_end}"
+			echo "┗ @${commit_user_end}"
+		fi
+	done
+	
 	#echo "[log]"
 	#echo "${commit_user_at} --> ${cp_at}/$a_team"
 	#echo "${cp_ap}/$b_team <-- ${commit_user_ap}"
@@ -676,12 +755,20 @@ function battle_server(){
 	fi
 
 	echo "----"
-	cp_plus=$(($RANDOM % 30 + 1))
-	cp=$((cp_ii + cp_plus))
-	body="level up!"
-	echo "${body} ✧${cp}(+${cp_plus})"
-	tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+
+	if [ ! -f $f_server_prezent ];then
+		cp_plus=$(($RANDOM % 30 + 1))
+		cp=$((cp_ii + cp_plus))
+		body="level up!"
+		echo "${body} ✧${cp}(+${cp_plus})"
+		tmp=`curl -sL -X PATCH -H "Content-Type: application/json" -d "{\"cp\":$cp,\"token\":\"$token\"}" $url/cards/$fav`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+	else
+		aiten_plus=$((aiten + cp_i))
+		#echo "aiten : ${aiten}"
+		echo "aiten +${cp_i}"
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"aiten\":${aiten_plus}, \"server_at\":\"$server_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+	fi
 
 	ran_s=`echo $((RANDOM % 5))`
 	if [ $ran_s -eq 0 ];then
@@ -811,6 +898,18 @@ fi
 
 if [ "$delete" = "true" ];then
 	echo change account $did
+	did_all=`curl -sL "$url/users?itemsPerPage=3000"|jq ".[]|select(.did == \"$did\")"|jq -r .id`
+	did_n=`echo $did_all|wc -l`
+	for ((i=1;i<=$did_n;i++))
+	do
+		tid=`echo "$did_all"|awk "NR==$i"`
+		if [ "$uid" = "$tid" ];then
+			ds=false
+		else
+			ds=true
+		fi
+		curl -X PATCH -H "Content-Type: application/json" -d "{\"delete\":$ds,\"token\":\"$token\"}" -s $url/users/$tid
+	done
 	exit
 fi
 
@@ -900,7 +999,30 @@ if [ "atp" = "`echo $3|cut -d = -f 1`" ];then
 	esac
 fi
 
+if [ "server_battle_mode" = "$3" ];then
+	f_server_prezent=$HOME/.config/atr/txt/card_server_prezent.txt
+	if [ "syui.ai" != "$1" ];then
+		no admin
+		exit
+	fi
+	echo "aiten reduction mode : "
+	if [ -f $f_server_prezent ];then
+		echo "[disable]"
+		rm $f_server_prezent
+	else
+		echo "[enable]"
+		touch $f_server_prezent
+	fi
+	exit
+fi
+
 if [ "admin" = "`echo $3|cut -d = -f 1`" ];then
+	if [ "`echo $3|cut -d = -f 1`" = "ai" ] && [ "syui.ai" = "$1" ];then
+		touch $cfg_ai
+		registration boss
+		exit
+	fi
+
 	if [ "syui.ai" = "$1" ] || [ "ai" = "$1" ];then
 		echo "
 		{
@@ -1110,9 +1232,9 @@ if [ "$3" = "field" ] || [ "$3" = "-field" ];then
 fi
 
 if [ "$3" = "g15" ] || [ "$3" = "-g15" ];then
-	plus=$(($RANDOM % 1800 + 400))
-	cp=$((cp + plus))
+	cp=0
 	st=super
+	skill=book
 	moji_mode_card 71 $cp $skill $st
 	exit
 fi
@@ -1372,11 +1494,13 @@ fi
 t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
 
-### new card
-#card=13
-#if [ $(($RANDOM % 5)) -eq 0 ];then
-#	cp=$(($RANDOM % 3000 + 200))
-#	yui_card_add $card $cp 
+## new card
+#card=7
+#skill=model
+#if [ $(($RANDOM % 50)) -eq 0 ];then
+#	cp=$(($RANDOM % 1400 + 400))
+#	card_add_origin $card $cp $skill
+#	ここにmodelをtrueする処理を入れなければいけない
 #	exit
 #fi
 

@@ -277,6 +277,10 @@ function card_s(){
 	fi
 
 	cp_all=$((cp_i + cp_ap))
+
+ # サーバーバトルの還元期間
+	#cp_all=$((cp_ap - cp_i))
+
 	if [ "$skill" = "critical" ];then
 		echo "⚡  $cp_i ---> $cp_ap"
 	elif [ "$skill" = "post" ];then

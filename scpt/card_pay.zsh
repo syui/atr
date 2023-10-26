@@ -49,6 +49,11 @@ function card_user(){
 	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
 	uid=`echo $data|jq -r .id`
 	aiten=`echo $data|jq -r .aiten`
+	model=`echo $data|jq -r .model`
+	model_mode=`echo $data|jq -r .model_mode`
+	model_attack=`echo $data|jq -r .model_attack`
+	model_skill=`echo $data|jq -r .model_skill`
+	model_limit=`echo $data|jq -r .model_limit`
 	ten_data=`echo $all_data|jq ".|sort_by(.aiten)|reverse|.[]|select(.aiten >= $pay)"`
 	if [ -z "$ten_data" ] || [ -z "$aiten" ] || [ $aiten -le $pay ];then
 		echo "aiten : $aiten >= $pay [1/${n_leng}]"
@@ -68,24 +73,54 @@ function card_check(){
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
 	card_check_skill=`echo $card_check|jq "select(.skill == \"$skill\")"`
 	if [ -n "$card_check" ] && [ -n "$card_check_skill" ];then
+
+		echo "$body_user"
+		echo "lost, you chose the card you already have..."
+		echo "ai[model] Lv up!"
+
+		s_up=$((RANDOM % 3 + 1))
+		case `echo $((RANDOM % 4))` in
+			0)
+				model_mode=$((model_mode + s_up))
+				json="{\"token\":\"$token\", \"model_mode\": $model_mode}"
+				echo "\"mode\": Lv${model_mode}"
+				;;
+			1)
+				model_attack=$((model_attack + s_up))
+				json="{\"token\":\"$token\", \"model_attack\": $model_attack}"
+				echo "\"attack\": Lv${model_attack}"
+				;;
+			2)
+				model_skill=$((model_skill + s_up))
+				json="{\"token\":\"$token\", \"model_skill\": $model_skill}"
+				echo "\"skill\": Lv${model_skill}"
+				;;
+			3)
+				model_limit=$((model_limit + s_up))
+				json="{\"token\":\"$token\", \"model_limit\": $model_limit}"
+				echo "\"burst\": Lv${model_limit}"
+				;;
+			*)
+				model_limit=$((model_limit + s_up))
+				json="{\"token\":\"$token\", \"model_limit\": $model_limit}"
+				echo "\"burst\": Lv${model_limit}"
+				;;
+		esac
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "$json" -s $host/users/$uid`
+
 		card=0
 		cp=1
 		s=super
 		skill=lost
-		if [ `echo $((RANDOM % 6))` -eq 0 ];then
-			card=`echo $((RANDOM % 14))`
-			cp=0
-			s=3d
-			skill=3d
-		fi
-		echo "$body_user"
-		echo "lost, you chose the card you already have..."
-		echo "try again next time!"
+		#echo "try again next time!"
+
 		echo "[card]"
 		echo "id : $card"
 		echo "cp : $cp"
 		echo "skill : $skill"
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+		if [ "$handle" != "ai" ];then
+			tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+		fi
 		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 		exit
 	fi
@@ -95,7 +130,9 @@ function card_pay(){
 	link=https://card.syui.ai/$username
 	text=`echo "$body_user\n$body_d"`
 	desc="[$ten]"
-	tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+	if [ "$handle" != "ai" ];then
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 	echo "$text"
 	#echo "$atr reply-og \"$text\" --cid $cid --uri $uri --img $img --title \"$title\" --description \"$desc\" --link $link"

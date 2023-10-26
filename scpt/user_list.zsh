@@ -6,7 +6,7 @@ url=https://plc.directory
 url_at=https://$host_at/xrpc/com.atproto.repo.listRecords
 dir=$HOME/.config/atr/txt
 file=$dir/user_list.txt
-
+atr=$HOME/.cargo/bin/atr
 
 unset timed
 
@@ -98,7 +98,9 @@ fi
 
 function first(){
 	#https://bsky.app/profile/$1/post/$e
-	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$1&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value.text,.value.createdAt"
+	handle=$2
+	did="$atr did $2"
+	curl -sL "https://bsky.social/xrpc/com.atproto.repo.listRecords?repo=$handle&collection=app.bsky.feed.post&reverse=true" |jq -r ".[]|.[0]?|.uri,.value.text,.value.createdAt"
 }
 
 if [ "$2" = "-f" ] || [ "$2" = "f" ];then

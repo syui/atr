@@ -144,17 +144,17 @@ function card_chou_check() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK|IIK|AIS|ACH|ACC|IOU|EKS|TUY)
+		OUY|AIK|IIK|AIS|ACH|ACC|IOU|EKS|TUY|AAC|AEK)
 			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
-		YUI|ACH|ACC|IOU|EKS)
+		YUI|ACH|IOU|EKS)
 			if `ten_skill_yui $1`;then
 				export ten_yak_ok="☑"
 			fi
 			;;
-		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*|ACH|ACC|TUY|EKS|IOU|ACC|AAC|AEK)
+		EMY|KOS|CHI|AIT|OYZ|IKY|AKM|KUY|AW*|AHK|IKT|AAM|OSZ|CHO|AAA|AA*|AI*)
 			export ten_yak_ok="⚠"
 			;;
 	esac
@@ -365,6 +365,17 @@ function user_env() {
 	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
 	uid=`echo $data|jq -r .id`
 	aiten=`echo $data|jq -r .aiten`
+	model=`echo $data|jq -r .model`
+	# card=2
+	model_mode=`echo $data|jq -r .model_mode`
+	# card=8
+	model_attack=`echo $data|jq -r .model_attack`
+	# card=3
+	model_skill=`echo $data|jq -r .model_skill`
+	# card=7
+	model_limit=`echo $data|jq -r .model_limit`
+	model_critical=`echo $data|jq -r .model_critical`
+	model_critical_d=`echo $data|jq -r .model_critical_d`
 	ten_post=`echo $data|jq -r .ten_post`
 	ten_bool=`echo $data|jq -r .ten`
 	day_at=`date +"%Y%m%d"`
@@ -568,6 +579,22 @@ function ten_shutdown(){
 				echo "[card]"
 				echo "id : $card"
 				echo "cp : $cp"
+
+				if [ $model = "true" ];then
+					echo "---"
+					echo "ai[model] status up!"
+					if [ $(($RANDOM % 2)) -eq 0 ];then
+						model_critical=$((model_critical + 1))
+						json_model="{\"model_critical\":$model_critical, \"token\":\"$token\"}"
+						echo "critical : ${model_critical}%"
+					else
+						model_critical_d=$((model_critical_d + 10))
+						json_model="{\"model_critical_d\":$model_critical_d, \"token\":\"$token\"}"
+						echo "critical_d : ${model_critical_d}%"
+					fi
+					tmp=`curl -X PATCH -H "Content-Type: application/json" -d "$json_model" -s $host/users/$uid`
+				fi
+
 			fi
 			echo "---"
 			echo "user : $u_a"
@@ -671,13 +698,52 @@ function card_post() {
 	if [ $card -eq 78 ];then
 		if [ "`card_yui_check`" = "true" ];then
 			cten=${card}00
-			card_chou_check=`card_chou_check`
 			body=`echo "⚡ +???"`
 			img="bafkreicbiujlv6hiluzc5db25j5phg7u2m2pu5h4qinxnpizq226n4hbae"
 			desc="+$cten (+???)"
 			title=`echo $j|jq -r .h`
 			title="[${title}]"
 		fi
+	fi
+
+	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ];then
+		cten=${card}00
+		model_ten=$((model_attack * 10))
+		body=`echo "🎮 x${model_ten}"`
+		img="bafkreibrrikzsexsktw3xov2jts7zfwusnjnhjudqryj5v4flffpf3hxaq"
+		desc="+$cten (x${model_ten})"
+		title=`echo $j|jq -r .h`
+		title="[${title}]"
+	fi
+
+	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ];then
+		cten=${card}00
+		model_ten=$((model_mode * 10))
+		body=`echo "🎮 x${model_ten}"`
+		img="bafkreigosm3kxxkgyoxxapufcxn2uulqnj2lgrwsfccimmwafhulztqrhu"
+		desc="+$cten (x${model_ten})"
+		title=`echo $j|jq -r .h`
+		title="[${title}]"
+	fi
+
+	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ];then
+		cten=${card}00
+		model_ten=$((model_skill * 10))
+		body=`echo "🎮 x${model_ten}"`
+		img="bafkreiagpsr6dcr3zs3365yesm5deydlalarojbdx3fhbadbz64gznanzu"
+		desc="+$cten (x${model_ten})"
+		title=`echo $j|jq -r .h`
+		title="[${title}]"
+	fi
+
+	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ];then
+		cten=${card}00
+		model_ten=$((model_limit * 10))
+		body=`echo "🎮 x${model_ten}"`
+		img="bafkreianbnrsuerymlddh3lsxqzp7h33aifj5owofme34q2ilhliuippze"
+		desc="+$cten (x${model_ten})"
+		title=`echo $j|jq -r .h`
+		title="[${title}]"
 	fi
 
 	link="https://card.syui.ai/${username}"
@@ -690,6 +756,26 @@ function ten_plus() {
 	ten_shutdown
 	ten_kai=$((ten_kai + 1))
 	ten_su=$((ten_su + $1))
+
+	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ];then
+		card_yui_ten=$((card * 100 * 10 * $model_attack))
+		ten_su=$((card_yui_ten + ten_su))
+	fi
+
+	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ];then
+		card_yui_ten=$((card * 100 * 10 * $model_mode))
+		ten_su=$((card_yui_ten + ten_su))
+	fi
+
+	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ];then
+		card_yui_ten=$((card * 100 * 10 * $model_skill))
+		ten_su=$((card_yui_ten + ten_su))
+	fi
+
+	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ];then
+		card_yui_ten=$((card * 100 * 10 * $model_limit))
+		ten_su=$((card_yui_ten + ten_su))
+	fi
 
 	if [ $card -eq 22 ];then
 		if [ "`card_son_check 22`" = "true" ];then
