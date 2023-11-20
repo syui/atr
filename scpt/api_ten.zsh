@@ -144,7 +144,7 @@ function card_chou_check() {
 function ten_yak_check() {
 	unset ten_yak_ok
 	case "$1" in
-		OUY|AIK|IIK|AIS|ACH|ACC|IOU|EKS|TUY|AAC|AEK)
+		OUY|AIK|IIK|AIS|ACH|ACC|IOU|EKS|TUY|AAC|AEK|ETU|ETW)
 			if `ten_skill $1`;then
 				export ten_yak_ok="☑"
 			fi
@@ -449,6 +449,18 @@ function ten_yak_shutdown() {
 			;;
 		CHO)
 			card=14
+			;;
+		ETU)
+			card=86
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
+			;;
+		ETW)
+			card=89
+			if [ `ten_skill $ten_char` = false ];then
+				unset card
+			fi
 			;;
 		OUY)
 			card=29
@@ -1011,6 +1023,18 @@ function ten_yak() {
 		CHO)
 			card=14
 			ten_plus ${card}00
+			;;
+		ETU)
+			card=86
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
+			;;
+		ETW)
+			card=89
+			if `ten_skill $ten_post`;then
+				ten_plus ${card}00
+			fi
 			;;
 		OUY)
 			card=29

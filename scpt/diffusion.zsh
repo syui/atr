@@ -22,9 +22,6 @@ case "$1" in
 		sd_prompt_a="$sd_prompt_a, $rp $rdp $rcp $rbp"
 		echo $sd_prompt_a >! $f
 		;;
-	"")
-		exit
-		;;
 	*)
 		echo $sd_prompt_a $* >! $f
 		;;
@@ -42,8 +39,8 @@ function run(){
 	ssh win "conda activate ldm;cd ./stable-diffusion/;python optimizedSD/optimized_txt2img.py --prompt \"${q}\" --H 512 --W 512 --seed $seed --n_iter 1 --n_samples 1 --ddim_steps 50"
 	diff_dir=`ssh win ls stable-diffusion/outputs/txt2img-samples -Name|cut -b 1-2`
 	ssh win "cd stable-diffusion/outputs/txt2img-samples;mv $diff_dir* $diff_dir -Force;mv $diff_dir/*.png ~/msbot/t.png -Force"
-	ssh win ".\scoop\apps\imagemagick\current\convert.exe msbot/t.png msbot/t.jpg"
-	scp -r win:msbot/t.jpg $dir/png/t.jpg
+	ssh win ".\scoop\apps\imagemagick\current\convert.exe msbot/t.png msbot/t.png"
+	scp -r win:msbot/t.png $dir/png/t.png
 }
 
 #run > /dev/null 2>&1

@@ -1117,7 +1117,7 @@ fn m(c: &Context) {
 async fn img_upload_run(c: &Context) -> reqwest::Result<()> {
     let token = token_toml(&"access");
     let atoken = "Authorization: Bearer ".to_owned() + &token;
-    let con = "Content-Type: image/jpeg";
+    let con = "Content-Type: image/png";
     //let did = token_toml(&"did");
 
     //let host = cfg(&"host");
@@ -1143,7 +1143,7 @@ fn img_post(c: &Context) {
         if let Ok(cid) = c.string_flag("cid") {
             if let Ok(uri) = c.string_flag("uri") {
                 let h = async {
-                    let itype = "image/jpeg";
+                    let itype = "image/png";
                     let str = at_img_reply::post_request(m.to_string(),link.to_string(),cid.to_string(),uri.to_string(), itype.to_string());
                     println!("{}",str.await);
                 };
@@ -2169,7 +2169,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
-                                } else if com == "/diffusion" && { handle == &admin } {
+                                } else if com == "/stable_diffusion" && { handle == &admin } {
                                     let prompt = &vec[2..].join(" ");
                                     println!("cmd:{}, prompt:{}", com, prompt);
                                     let file = "/.config/atr/scpt/diffusion.zsh";
@@ -2183,13 +2183,12 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let file = "/.config/atr/scpt/at_img.zsh";
                                     let mut f = shellexpand::tilde("~").to_string();
                                     f.push_str(&file);
-                                    let output = Command::new(&f).output().expect("zsh");
+                                    let output = Command::new(&f).arg(&cid).arg(&uri).output().expect("zsh");
                                     let d = String::from_utf8_lossy(&output.stdout);
-                                    let link =  d.to_string();
-                                    let text_limit = "#stablediffusion";
-                                    let itype = "image/jpeg";
-                                    let str_rep = at_img_reply::post_request(text_limit.to_string(), link.to_string(), cid.to_string(), uri.to_string(), itype.to_string()).await;
-                                    println!("{}", str_rep);
+                                    let d =  d.to_string();
+                                    println!("{}", d);
+                                    //let str_rep = at_img_reply::post_request(text.to_string(),d.to_string(),cid.to_string(),uri.to_string(), itype.to_string()).await;
+                                    //println!("{}", str_rep);
                                     let str_notify = at_notify_read::post_request(time.to_string()).await;
                                     println!("{}", str_notify);
                                     cid_write(cid.to_string());
@@ -2841,7 +2840,7 @@ fn test(_c: &Context) {
     let e = link.chars().count();
     let handle = "syui.cf";
     let mid = "bafyreid27zk7lbis4zw5fz4podbvbs4fc5ivwji3dmrwa6zggnj4bnd57u";
-    let itype = "image/jpeg";
+    let itype = "image/png";
 
     //pub mod openai;
     let h = async {

@@ -24,6 +24,8 @@ function user_data(){
 	did=`echo $data|jq -r .did`
 	next=`echo $data|jq -r .next`
 	aiten=`echo $data|jq -r .aiten`
+	model_mode=`echo $data|jq -r .model_mode`
+	model_limit=`echo $data|jq -r .model_limit`
 	ten_su=`echo $data|jq -r .ten_su`
 	fav=`echo $data|jq -r .fav`
 	d=`date +"%Y%m%d"`
@@ -319,18 +321,18 @@ function battle_raid(){
 	f_raid_user=$HOME/.config/atr/txt/card_raid_user.txt
 	f_raid_start_cp=$HOME/.config/atr/txt/card_raid_start_cp.txt
 	f_raid_start_time=$HOME/.config/atr/txt/card_raid_start_time.txt
-	boss_cp=$((RANDOM % 300000))
+	boss_cp=150000
 
 	if [ `date +%u` -ge 6 ];then
-		boss_cp=$((boss_cp + 100000))
+		boss_cp=$(($RANDOM % 150000 + boss_cp))
 	else
-		boss_cp=$((boss_cp + 200000))
+		boss_cp=$(($RANDOM % 50000 + boss_cp))
 	fi
 
 	if [ -n "$raid_boss_admin" ] && [ "$raid_run" = "true" ];then
 		boss_user=`echo $raid_boss_admin | cut -d . -f 1`
 		boss_user_bsky=$raid_boss_admin
-		boss_cp=200000
+		boss_cp=100000
 		boss_id=$raid_boss_id
 		boss_card=23
 		boss_card_win=24
@@ -528,7 +530,7 @@ function battle_raid(){
 			ran_s=`echo $((RANDOM % 120))`
 		fi
 		if [ $ran_s -eq 0 ];then
-			thd=7
+			thd=2
 			#thd=`echo $((RANDOM % 11 + 1))`
 			skill=model
 			card_t=$thd
@@ -546,7 +548,7 @@ function battle_raid(){
 				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -sL $url/cards`
 
 				# model true
-				tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"model_limit\":1, \"model\":true, \"model_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+				tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"model_mode\":$(($model_mode + 1)), \"model\":true, \"model_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
 			fi
 
 			#if [ -n "$card_check" ];then
@@ -1495,14 +1497,23 @@ t=`echo $tmp|jq -r .card`
 tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"next\":\"$nd\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
 
 ## new card
-#card=7
-#skill=model
-#if [ $(($RANDOM % 50)) -eq 0 ];then
-#	cp=$(($RANDOM % 1400 + 400))
-#	card_add_origin $card $cp $skill
-#	ここにmodelをtrueする処理を入れなければいけない
-#	exit
-#fi
+card=86
+skill=ten
+if [ $(($RANDOM % 130)) -eq 0 ];then
+	cp=$(($RANDOM % 4400 + 1000))
+	card_add_origin $card $cp $skill
+	#ここにmodelをtrueする処理を入れなければいけない
+	exit
+fi
+
+card=89
+skill=ten
+if [ $(($RANDOM % 120)) -eq 0 ];then
+	cp=$(($RANDOM % 4400 + 1000))
+	card_add_origin $card $cp $skill
+	#ここにmodelをtrueする処理を入れなければいけない
+	exit
+fi
 
 s=`echo $(($RANDOM % 3))`
 luck_at_d=`date +"%Y%m%d"`
