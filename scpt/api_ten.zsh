@@ -131,6 +131,30 @@ function card_yui_check() {
 	fi
 }
 
+function card_kyoku_check() {
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	card_kyoku_check=`echo $data_user_card|jq -r ".[]|select(.card == 90)"`
+	if [ -n "$card_kyoku_check" ];then
+		card_kyoku_o_check=`echo $data_user_card|jq -r ".[]|select(.card == 15)"`
+		if [ -n "$card_kyoku_o_check" ];then
+			echo origin
+		else
+			echo true
+		fi
+	else
+		echo false
+	fi
+}
+
+function card_kyoku_o_check() {
+	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
+	if [ -n "$card_kyoku_o_check" ];then
+		echo true
+	else
+		echo false
+	fi
+}
+
 function card_chou_check() {
 	data_user_card=`curl -sL "$host/users/$uid/card?itemsPerPage=3000"`
 	card_yui_check=`echo $data_user_card|jq -r ".[]|select(.card == 14)"|jq -s length`
@@ -276,6 +300,21 @@ function ten_start() {
 		ten_char=A${ten_char}
 	fi
 	ten_yak_check $ten_char
+
+	if [ -z "$ten_yak_ok" ];then
+		if [ "`card_kyoku_check`" = "true" ];then
+			card=89
+			ten_char=ETW
+			export ten_yak_ok="☑"
+		elif [ "`card_kyoku_check`" = "origin" ];then
+			card=89
+			ten_char=ETW
+			export ten_yak_ok='⚠'
+		else
+			unset card
+		fi
+	fi
+
 	if [ -z "$ten_yak_ok" ] && [ $ran_first -eq 1 ];then
 		ten_char=EMY
 	fi
@@ -656,6 +695,28 @@ function card_post() {
 		fi
 	fi
 
+	if [ $card -eq 89 ];then
+		if [ "`card_kyoku_check`" = "false" ];then
+			desc="+$cten (secret command -> /card kyoku)"
+		fi
+		if [ "`card_kyoku_check`" = "true" ];then
+			cten=${card}00
+			body=`repeat $rr; echo "⚡ +8900 +900"`
+			img="bafkreihgubbbwcsvpl6hj5h4ijfzqy5yyqpvjsqkry4rtjs7rcjjqzun5a"
+			desc="+$cten (+${card_kyoku_ten})"
+			title=`echo $j|jq -r .h`
+			title="[${title}・極]"
+		fi
+		if [ "`card_kyoku_check`" = "origin" ];then
+			cten=${card}00
+			body=`repeat $rr; echo "⚡⚡ +8900 +900 +1500"`
+			img="bafkreihgubbbwcsvpl6hj5h4ijfzqy5yyqpvjsqkry4rtjs7rcjjqzun5a"
+			desc="+$cten (+${card_kyoku_ten})"
+			title=`echo $j|jq -r .h`
+			title="[${title}・極]"
+		fi
+	fi
+
 	if [ $card -eq 22 ];then
 		if [ "`card_son_check 22`" = "true" ];then
 			cten=${card}00
@@ -718,7 +779,7 @@ function card_post() {
 		fi
 	fi
 
-	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		cten=${card}00
 		model_ten=$((model_attack * 10))
 		body=`echo "🎮 x${model_ten}"`
@@ -728,7 +789,7 @@ function card_post() {
 		title="[${title}]"
 	fi
 
-	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		cten=${card}00
 		model_ten=$((model_mode * 10))
 		body=`echo "🎮 x${model_ten}"`
@@ -738,7 +799,7 @@ function card_post() {
 		title="[${title}]"
 	fi
 
-	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		cten=${card}00
 		model_ten=$((model_skill * 10))
 		body=`echo "🎮 x${model_ten}"`
@@ -748,7 +809,7 @@ function card_post() {
 		title="[${title}]"
 	fi
 
-	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		cten=${card}00
 		model_ten=$((model_limit * 10))
 		body=`echo "🎮 x${model_ten}"`
@@ -769,22 +830,27 @@ function ten_plus() {
 	ten_kai=$((ten_kai + 1))
 	ten_su=$((ten_su + $1))
 
-	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ];then
+	if [ $((RANDOM % 6)) -eq 0 ];then
+		model_rr=true
+	else
+		model_rr=false
+	fi
+	if [ $card -eq 9 ] && [ $model_attack -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		card_yui_ten=$((card * 100 * 10 * $model_attack))
 		ten_su=$((card_yui_ten + ten_su))
 	fi
 
-	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 2 ] && [ $model_mode -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		card_yui_ten=$((card * 100 * 10 * $model_mode))
 		ten_su=$((card_yui_ten + ten_su))
 	fi
 
-	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 3 ] && [ $model_skill -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		card_yui_ten=$((card * 100 * 10 * $model_skill))
 		ten_su=$((card_yui_ten + ten_su))
 	fi
 
-	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ];then
+	if [ $card -eq 7 ] && [ $model_limit -ge 1 ] && [ $model = "true" ] && [ $model_rr = "true" ];then
 		card_yui_ten=$((card * 100 * 10 * $model_limit))
 		ten_su=$((card_yui_ten + ten_su))
 	fi
@@ -808,6 +874,19 @@ function ten_plus() {
 				card_yui_ten=$((1000 * rr))
 				ten_su=$((card_yui_ten + ten_su))
 			fi
+		fi
+	fi
+
+	if [ $card -eq 89 ];then
+		if [ "`card_kyoku_check`" = "true" ];then
+			rr=$(($RANDOM % 5 + 1))
+			card_kyoku_ten=$((9800 * rr))
+			ten_su=$((card_kyoku_ten + ten_su))
+		fi
+		if [ "`card_kyoku_check`" = "origin" ];then
+			rr=$(($RANDOM % 7 + 1))
+			card_kyoku_ten=$((11300 * rr))
+			ten_su=$((card_kyoku_ten + ten_su))
 		fi
 	fi
 

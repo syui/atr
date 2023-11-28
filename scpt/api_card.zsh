@@ -181,6 +181,36 @@ function yui_card_add() {
 	fi
 }
 
+function card_add_kyoku() {
+	cp=$1
+	card=90
+	s=kyoku
+	skill=yui
+	data_uu=`curl -sL "$url/users/$uid/card?itemsPerPage=3000"`
+	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
+	card_check_tenkuu=`echo $data_uu|jq -r ".[]|select(.card == 89)"`
+	if [ -n "$card_check" ];then
+		echo "you already have [id:90]"
+		exit
+	fi
+	if [ -z "$card_check_tenkuu" ];then
+		echo "need a card with [id:89]"
+		exit
+	fi
+	if [ -z "$card_check" ] && [ -n "$card_check_tenkuu" ];then
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $url/cards`
+		card=`echo $tmp|jq -r .card`
+		cp=`echo $tmp|jq -r .cp`
+		ascii_moji_b
+		echo "---"
+		echo "[card]"
+		echo "id : ${card}"
+		echo "cp : ${cp}"
+		echo "status : ${s}"
+		echo "skill : ${skill}"
+	fi
+}
+
 function yui_card() {
 	card=$1
 	cp=$2
@@ -525,9 +555,9 @@ function battle_raid(){
 		fi
 
 		if [ `date +%u` -ge 6 ];then
-			ran_s=`echo $((RANDOM % 12))`
+			ran_s=`echo $((RANDOM % 3))`
 		else
-			ran_s=`echo $((RANDOM % 120))`
+			ran_s=`echo $((RANDOM % 30))`
 		fi
 		if [ $ran_s -eq 0 ];then
 			thd=2
@@ -1111,6 +1141,12 @@ fi
 if [ "$3" = "yui" ] || [ "$3" = "-yui" ];then
 	cp=$(($RANDOM % 2000 + 500))
 	yui_card 47 $cp 
+	exit
+fi
+
+if [ "$3" = "kyoku" ] || [ "$3" = "-kyoku" ];then
+	cp=$(($RANDOM % 4000 + 1500))
+	card_add_kyoku $cp 
 	exit
 fi
 

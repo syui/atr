@@ -16,7 +16,7 @@ username=`echo $1|cut -d . -f 1`
 did=$2
 cid=$3
 uri=$4
-pay=50000
+pay=60000
 
 echo $handle
 
