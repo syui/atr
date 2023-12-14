@@ -23,16 +23,20 @@ pub async fn post_request(text: String, link: String, s: i32, e: i32) -> String 
         "record": {
             "text": link.to_string() + &" ".to_string() + &text.to_string(),
             "createdAt": d.to_string(),
-            "entities": [
+            "facets": [
             {
-                "type": "link".to_string(),
                 "index": {
-                    "end": e,
-                    "start": s
+                    "byteStart": s,
+                    "byteEnd": e
                 },
-                "value": link.to_string()
+                "features": [
+                {
+                    "$type": "app.bsky.richtext.facet#link",
+                    "uri": link.to_string()
+                }
+                ]
             }
-            ]
+            ],
         },
     }));
 
