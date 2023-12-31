@@ -559,6 +559,32 @@ function battle_raid(){
 		else
 			ran_s=`echo $((RANDOM % 30))`
 		fi
+
+		# happy new year !
+		if [ `date +%m%d` -eq 1231 ];then
+			thd=87
+			count=1
+			author=ai
+			skill=yui
+			card_t=$thd
+			card_check=`curl -sL "https://api.syui.ai/users/$uid/card?itemsPerPage=3000"|jq -r ".[]|select(.card == $card_t)|select(.skill == \"$skill\")"`
+			card=$card_t
+			cp=`echo $(($RANDOM % $(date +%Y) * 2))`
+			st=yui
+
+			if [ -z "$card_check" ];then
+				echo "[happy new year] ✨"
+				echo "id : $card_t"
+				echo "cp : $cp"
+				echo "status : $st"
+				echo "skill : $skill"
+				tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$st\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\",\"author\":\"$author\", \"count\":$count}" -sL $url/cards`
+
+				# model true
+				tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"model_mode\":$(($model_mode + 1)), \"model\":true, \"model_at\":\"$raid_at_n\",\"token\":\"$token\"}" -s $url/users/$uid`
+			fi
+		fi
+
 		if [ $ran_s -eq 0 ];then
 			thd=2
 			#thd=`echo $((RANDOM % 11 + 1))`
