@@ -19,6 +19,7 @@ use data::Notify as Notify;
 use data::Token as Token;
 use data::Cid as Cid;
 use data::Profile as Profile;
+use data::ProfileIdentityResolve as ProfileIdentityResolve;
 use data::Handle as Handle;
 use data::Deep as Deeps;
 use data::Open as Opens;
@@ -1233,9 +1234,10 @@ fn mention(c: &Context) {
     let m = c.args[0].to_string();
     let h = async {
         let str = at_profile::get_request(m.to_string()).await;
-        let profile: Profile = serde_json::from_str(&str).unwrap();
+        let profile: ProfileIdentityResolve = serde_json::from_str(&str).unwrap();
         let udid = profile.did;
-        let handle = profile.handle;
+        let handle = m.to_string();
+        //println!("{} {}",udid, handle);
         let at = "@".to_owned() + &handle;
         let e = at.chars().count();
         let s = 0;
@@ -2169,14 +2171,13 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
-                                } else if com == "/stable_diffusion" && { handle == &admin } {
+                                } else if com == "/diffusers" {
                                     let prompt = &vec[2..].join(" ");
-                                    println!("cmd:{}, prompt:{}", com, prompt);
-                                    let file = "/.config/atr/scpt/diffusion.zsh";
+                                    let file = "/.config/atr/scpt/diffusers.zsh";
                                     let mut f = shellexpand::tilde("~").to_string();
                                     f.push_str(&file);
                                     use std::process::Command;
-                                    let output = Command::new(&f).arg(&prompt).output().expect("zsh");
+                                    let output = Command::new(&f).arg(&did).arg(&prompt).output().expect("zsh");
                                     let d = String::from_utf8_lossy(&output.stdout);
                                     let d =  d.to_string();
                                     println!("{}", d);

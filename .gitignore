@@ -13,3 +13,4 @@ json
 *.png
 *.jpg
 memo.md
+scpt/stable_diffusion_*.txt

@@ -900,16 +900,30 @@ data_did_check=`echo $data|jq -r .did`
 data_did=`echo "$data_tmp"|jq ".[]|select(.did == \"$2\")"`
 data_did_check_b=`echo $data_did|jq -r .did`
 raid_last=$1
+uid=`echo $data|jq -r ".id"|tail -n 1`
 
 # user create (did)
+#if [ -n "$data" ] && [ -z "$data_did" ];then
+#	username=`echo $handle|tr '.' '-'`
+#	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\",\"handle\": true}" -s "$url/users"`
+#	handle_change=true
+#	if [ -n "$data_did" ];then
+#		uid=`echo $data|jq -r ".id"|tail -n 1`
+#		l_cards
+#	fi
+#fi
+#next=`echo $data|jq -r .next`
+#fav=`echo $data|jq -r .fav`
+#aiten=`echo $data|jq -r .aiten`
+#ten_su=`echo $data|jq -r .ten_su`
+#if [ "$next" = "null" ];then
+#	echo null error
+#	exit
+#fi
+
+# user create api2(did)
 if [ -n "$data" ] && [ -z "$data_did" ];then
-	username=`echo $handle|tr '.' '-'`
-	data=`curl -X POST -H "Content-Type: application/json" -d "{\"username\":\"$username\",\"password\":\"$pass\",\"did\":\"$2\",\"handle\": true}" -s "$url/users"`
-	handle_change=true
-	if [ -n "$data_did" ];then
-		uid=`echo $data|jq -r ".id"|tail -n 1`
-		l_cards
-	fi
+	data=`curl -X PATCH -H "Content-Type: application/json" -d "{\"did\":\"$did\",\"token\":\"$token\",\"room\":0}" -s $url/users/$uid`
 fi
 next=`echo $data|jq -r .next`
 fav=`echo $data|jq -r .fav`
@@ -947,29 +961,29 @@ did=`echo $data|jq -r ".did"`
 handle_change=`echo $data|jq -r ".handle"`
 
 # check did
-if [ "$data_did_check" != "$2" ] && [ "$data_did_check_b" = "$2" ] && [ "$handle_change" = "true" ];then
-	data=$data_did
-	new_handle=`echo $data|jq -r .username`
-	echo "handle : $username -> $new_handle"
-	username=$new_handle
-fi
+#if [ "$data_did_check" != "$2" ] && [ "$data_did_check_b" = "$2" ] && [ "$handle_change" = "true" ];then
+#	data=$data_did
+#	new_handle=`echo $data|jq -r .username`
+#	echo "handle : $username -> $new_handle"
+#	username=$new_handle
+#fi
 
-if [ "$delete" = "true" ];then
-	echo change account $did
-	did_all=`curl -sL "$url/users?itemsPerPage=3000"|jq ".[]|select(.did == \"$did\")"|jq -r .id`
-	did_n=`echo $did_all|wc -l`
-	for ((i=1;i<=$did_n;i++))
-	do
-		tid=`echo "$did_all"|awk "NR==$i"`
-		if [ "$uid" = "$tid" ];then
-			ds=false
-		else
-			ds=true
-		fi
-		curl -X PATCH -H "Content-Type: application/json" -d "{\"delete\":$ds,\"token\":\"$token\"}" -s $url/users/$tid
-	done
-	exit
-fi
+#if [ "$delete" = "true" ];then
+#	echo change account $did
+#	did_all=`curl -sL "$url/users?itemsPerPage=3000"|jq ".[]|select(.did == \"$did\")"|jq -r .id`
+#	did_n=`echo $did_all|wc -l`
+#	for ((i=1;i<=$did_n;i++))
+#	do
+#		tid=`echo "$did_all"|awk "NR==$i"`
+#		if [ "$uid" = "$tid" ];then
+#			ds=false
+#		else
+#			ds=true
+#		fi
+#		curl -X PATCH -H "Content-Type: application/json" -d "{\"delete\":$ds,\"token\":\"$token\"}" -s $url/users/$tid
+#	done
+#	exit
+#fi
 
 # battle
 updated_at=`echo $data|jq -r .updated_at`

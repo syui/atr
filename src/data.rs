@@ -146,7 +146,7 @@ pub fn url(s: &str) -> String {
     };
     let t = "https://".to_string() + &data.host.to_string() + &"/xrpc/".to_string();
     let baseurl = BaseUrl {
-        profile_get: "app.bsky.actor.getProfile".to_string(),
+        profile_get: "com.atproto.identity.resolveHandle".to_string(),
         record_create: "com.atproto.repo.createRecord".to_string(),
         record_delete: "com.atproto.repo.deleteRecord".to_string(),
         describe: "com.atproto.repo.describeRepo".to_string(),
@@ -382,6 +382,12 @@ pub struct Handle {
 //    pub muted: bool,
 //    pub blockedBy: bool,
 //}
+//
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct ProfileIdentityResolve {
+    pub did: String,
+}
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
