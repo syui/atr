@@ -113,6 +113,7 @@ pub fn token_toml(s: &str) -> String {
 #[derive(Serialize, Deserialize)]
 pub struct BaseUrl {
     pub profile_get: String,
+    pub thread_get: String,
     pub describe: String,
     pub record_list: String,
     pub record_create: String,
@@ -147,6 +148,7 @@ pub fn url(s: &str) -> String {
     let t = "https://".to_string() + &data.host.to_string() + &"/xrpc/".to_string();
     let baseurl = BaseUrl {
         profile_get: "com.atproto.identity.resolveHandle".to_string(),
+        thread_get: "app.bsky.feed.getPostThread".to_string(),
         record_create: "com.atproto.repo.createRecord".to_string(),
         record_delete: "com.atproto.repo.deleteRecord".to_string(),
         describe: "com.atproto.repo.describeRepo".to_string(),
@@ -172,6 +174,7 @@ pub fn url(s: &str) -> String {
 
     match &*s {
         "profile_get" => t.to_string() + &baseurl.profile_get,
+        "thread_get" => t.to_string() + &baseurl.thread_get,
         "describe" => t.to_string() + &baseurl.describe,
         "record_list" => t.to_string() + &baseurl.record_list,
         "record_create" => t.to_string() + &baseurl.record_create,
@@ -271,6 +274,21 @@ pub struct Notifications {
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
+pub struct Thread {
+    pub r#type: String,
+    pub post: String,
+    pub root: String,
+    pub author: Author,
+    pub reason: String,
+    //pub reasonSubject: String,
+    pub record: Record,
+    pub isRead: bool,
+    pub indexedAt: String,
+    //pub labels: Labels,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct Author {
     pub did: String,
     //pub declaration: Declaration,
@@ -308,10 +326,35 @@ pub struct Viewer {
 
 #[derive(Serialize, Deserialize)]
 #[allow(non_snake_case)]
+#[derive(Debug)]
 pub struct Record {
-    //pub langs: Option<Langs>,
     pub text: Option<String>,
     pub createdAt: String,
+    pub reply: Option<Reply>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct Reply {
+    pub parent: ReplyParent,
+    pub root: ReplyRoot,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct ReplyRoot {
+    pub cid: String,
+    pub uri: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[allow(non_snake_case)]
+#[derive(Debug)]
+pub struct ReplyParent {
+    pub cid: String,
+    pub uri: String,
 }
 
 #[derive(Serialize, Deserialize)]

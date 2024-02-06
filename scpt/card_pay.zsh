@@ -41,10 +41,7 @@ function card_d(){
 		s=normal
 	fi
 	#card=1;skill=3d;s=3d
-	body_d=`echo "[card]\nid : $card\ncp : $cp\nstatus : $s\nskill : $skill"`
-}
-
-function card_user(){
+	
 	all_data=`curl -sL "$host/users?itemsPerPage=3000"`
 	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
 	uid=`echo $data|jq -r .id`
@@ -54,7 +51,16 @@ function card_user(){
 	model_attack=`echo $data|jq -r .model_attack`
 	model_skill=`echo $data|jq -r .model_skill`
 	model_limit=`echo $data|jq -r .model_limit`
+	model_critical=`echo $data|jq -r .model_critical`
+	model_critical_d=`echo $data|jq -r .model_critical_d`
 	ten_data=`echo $all_data|jq ".|sort_by(.aiten)|reverse|.[]|select(.aiten >= $pay)"`
+
+	model_critical=$((RANDOM % 10 + model_critical))
+	json_model="{\"model_critical\":$model_critical, \"token\":\"$token\"}"
+	body_d=`echo "[card]\nid : $card\ncp : $cp\nstatus : $s\nskill : $skill\n---\n[model]\ncritical : ${model_critical}%"`
+}
+
+function card_user(){
 	if [ -z "$ten_data" ] || [ -z "$aiten" ] || [ $aiten -le $pay ];then
 		echo "aiten : $aiten >= $pay [1/${n_leng}]"
 		exit
@@ -131,7 +137,10 @@ function card_pay(){
 	text=`echo "$body_user\n$body_d"`
 	desc="[$ten]"
 	if [ "$handle" != "ai" ];then
-		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s}" -s $host/users/$uid`
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $pay_s, \"model_critical\": $model_critical}" -s $host/users/$uid`
+	else
+		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": 10000000, \"model_critical\": $model_critical}" -s $host/users/$uid`
+		echo $tmp
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 	echo "$text"

@@ -4,7 +4,7 @@ use crate::url;
 use serde_json::json;
 use iso8601_timestamp::Timestamp;
 
-pub async fn post_request(text: String, cid: String, uri: String) -> String {
+pub async fn post_request(text: String, cid: String, uri: String, cid_b: String, uri_b: String) -> String {
 
     let token = token_toml(&"access");
     let did = token_toml(&"did");
@@ -26,8 +26,8 @@ pub async fn post_request(text: String, cid: String, uri: String) -> String {
             "createdAt": d.to_string(),
             "reply": {
                 "root": {
-                    "cid": cid.to_string(),
-                    "uri": uri.to_string()
+                    "cid": cid_b.to_string(),
+                    "uri": uri_b.to_string()
                 },
                 "parent": {
                     "cid": cid.to_string(),

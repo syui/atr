@@ -237,6 +237,7 @@ function ten_data_reset() {
 	#ten_n_tmp=5
 	for ((i=0;i<$ten_n_tmp;i++))
 	do
+		u_i=`echo $ten_u_tmp|jq -r ".[$i].id"`
 		u_a=`echo $ten_u_tmp|jq -r ".[$i].username"`
 		u_s=`echo $ten_u_tmp|jq -r ".[$i].ten_su"`
 		echo "---"

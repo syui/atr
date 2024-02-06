@@ -19,6 +19,7 @@ use data::Notify as Notify;
 use data::Token as Token;
 use data::Cid as Cid;
 use data::Profile as Profile;
+//use data::ReplyRoot as ReplyRoot;
 use data::ProfileIdentityResolve as ProfileIdentityResolve;
 use data::Handle as Handle;
 use data::Deep as Deeps;
@@ -50,6 +51,7 @@ pub mod at_reply_og;
 pub mod at_post;
 pub mod at_post_link;
 pub mod at_profile;
+pub mod at_get_post_thread;
 pub mod at_mention;
 pub mod at_timeline;
 pub mod at_timeline_author;
@@ -572,6 +574,10 @@ fn main() {
                         .description("set admin")
                         .alias("a"),
                         )
+                    )
+                .command(
+                    Command::new("bot-test")
+                    .action(bot_test)
                     )
                 .command(
                     Command::new("bot-ch")
@@ -1601,10 +1607,10 @@ fn rr(c: &Context) {
                 if let Ok(link) = c.string_flag("link") {
                     let s = 0;
                     let e = link.chars().count();
-                    let str = at_reply_link::post_request(m.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                    let str = at_reply_link::post_request(m.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid.to_string(), uri.to_string()).await;
                     println!("{}", str);
                 } else {
-                    let str = at_reply::post_request(m.to_string(), cid.to_string(), uri.to_string()).await;
+                    let str = at_reply::post_request(m.to_string(), cid.to_string(), uri.to_string(), cid.to_string(), uri.to_string()).await;
                     println!("{}", str);
                 }
             } 
@@ -1822,7 +1828,15 @@ fn bot_run_change(_c: &Context, mode: bool) {
                     let cc_ch = cid_check(cid.to_string());
                     if cc_ch == false {
                         let text_limit = "change -> @yui.syui.ai\n/off";
-                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                        let cid_b = cid;
+                        let uri_b = uri;
+                        //if ! n[i].record.reply.is_none() {
+                        //    cid = &n[i].record.reply.as_ref().unwrap().parent.cid;
+                        //    uri = &n[i].record.reply.as_ref().unwrap().parent.uri;
+                        //    cid_b = &n[i].record.reply.as_ref().unwrap().root.cid;
+                        //    uri_b = &n[i].record.reply.as_ref().unwrap().root.uri;
+                        //}
+                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                         println!("{}", str_rep);
                         cid_write(cid.to_string());
                     }
@@ -1908,8 +1922,18 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                     let did = &n[i].author.did;
                     let read = n[i].isRead;
                     let cid = &n[i].cid;
+                    let uri = &n[i].uri;
                     let c_ch = cid_check(cid.to_string());
                     let c_ch_run = cid_check_run(cid.to_string());
+                    let mut cid_b = cid;
+                    let mut uri_b = uri;
+
+                    // thread
+                    if ! n[i].record.reply.is_none() {
+                        cid_b = &n[i].record.reply.as_ref().unwrap().root.cid;
+                        uri_b = &n[i].record.reply.as_ref().unwrap().root.uri;
+                    }
+                    
                     println!("{}", read);
                     if c_ch_run == false && { reason == "mention" || reason == "reply" } || mode == true && c_ch_run == true && c_ch == false && { reason == "mention" || reason == "reply" } {
                         cid_write_run(cid.to_string());
@@ -1917,8 +1941,17 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                             println!("---\nmode:{}\ncid:{}\n---", mode, cid);
                         }
                         let time = &n[i].indexedAt;
-                        let uri = &n[i].uri;
                         if ! n[i].record.text.is_none() { 
+                            // https://www.docs.bsky.app/docs/tutorials/creating-a-post
+                            //root: {
+                            //    uri: threadRootPost.uri,
+                            //    cid: threadRootPost.cid,
+                            //},
+                            //parent: {
+                            //    uri: postReplyingTo.uri,
+                            //    cid: postReplyingTo.cid,
+                            //}
+                            
                             let text = &n[i].record.text.as_ref().unwrap();
                             let vec: Vec<&str> = text.split_whitespace().collect();
                             let rep_com = &vec[0..].join(" ");
@@ -1982,14 +2015,14 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
                                         if d.contains("handle") == false {
-                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                         } else {
                                             let handlev = handle.replace(".", "-").to_string();
                                             let link = "https://card.syui.ai/".to_owned() + &handlev;
                                             let s = 0;
                                             let e = link.chars().count();
-                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                         }
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
@@ -2018,7 +2051,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(dd);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2050,7 +2083,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(d);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2083,7 +2116,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(d);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2114,7 +2147,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
 
                                 let cc_ch = cid_check(cid.to_string());
                                 if cc_ch == false {
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
                                 }
@@ -2132,7 +2165,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let str_openai = openai::post_request(prompt.to_string(),model.to_string()).await;
                                     println!("{}", str_openai);
                                     let text_limit = char_c(str_openai);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     let str_notify = at_notify_read::post_request(time.to_string()).await;
                                     println!("{}", str_notify);
@@ -2146,7 +2179,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let str_deepl = deepl::post_request(prompt.to_string(),lang.to_string()).await;
                                     println!("{}", str_deepl);
                                     let text_limit = char_c(str_deepl);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     let str_notify = at_notify_read::post_request(time.to_string()).await;
                                     println!("{}", str_notify);
@@ -2168,7 +2201,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let d =  d.to_string();
                                     println!("{}", d);
                                     let text_limit = char_c(d);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
                                 } else if com == "/diffusers" {
@@ -2209,7 +2242,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let d =  d.to_string();
                                     println!("{}", d);
                                     let text_limit = char_c(d);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
                                 } else if com == "/reset" {
@@ -2224,7 +2257,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let d =  d.to_string();
                                     println!("{}", d);
                                     let text_limit = char_c(d);
-                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                    let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                     println!("{}", str_rep);
                                     cid_write(cid.to_string());
                                 } else if com == "date" || com == "/date" {
@@ -2234,7 +2267,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(d);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2253,7 +2286,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     println!("{}", text_limit);
 
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2283,7 +2316,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     println!("{}", text_limit);
 
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2312,7 +2345,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     println!("{}", e);
 
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2341,7 +2374,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     println!("{}", e);
 
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2361,7 +2394,26 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(d);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
+                                        println!("{}", str_rep);
+                                        let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                        println!("{}", str_notify);
+                                        cid_write(cid.to_string());
+                                    }
+                                } else if com == "whoami" || com == "/whoami" || com == "who" || com == "/who" || com == "/w" || com == "w" {
+                                    //let prompt = &vec[2..].join(" ");
+                                    let file = "/.config/atr/scpt/user_service.zsh";
+                                    let mut f = shellexpand::tilde("~").to_string();
+                                    f.push_str(&file);
+                                    use std::process::Command;
+                                    let output = Command::new(&f).arg(&did).output().expect("zsh");
+                                    let d = String::from_utf8_lossy(&output.stdout);
+                                    let d = "\n".to_owned() + &d.to_string();
+                                    println!("{}", d);
+                                    let text_limit = char_c(d);
+                                    println!("{}", text_limit);
+                                    if text_limit.len() > 3 {
+                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2383,7 +2435,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let text_limit = char_c(d);
                                     println!("{}", text_limit);
                                     if text_limit.len() > 3 {
-                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         let str_notify = at_notify_read::post_request(time.to_string()).await;
                                         println!("{}", str_notify);
@@ -2497,7 +2549,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(d);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2529,14 +2581,14 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
                                             if d.contains("handle") == false {
-                                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                 println!("{}", str_rep);
                                             } else {
                                                 let handlev = handle.replace(".", "-").to_string();
                                                 let link = "https://card.syui.ai/".to_owned() + &handlev;
                                                 let s = 0;
                                                 let e = link.chars().count();
-                                                let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                 println!("{}", str_rep);
                                             }
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
@@ -2569,14 +2621,14 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                             println!("{}", text_limit);
                                             if text_limit.len() > 3 {
                                                 if d.contains("handle") == false {
-                                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                     println!("{}", str_rep);
                                                 } else {
                                                     let handlev = handle.replace(".", "-").to_string();
                                                     let link = "https://card.syui.ai/".to_owned() + &handlev;
                                                     let s = 0;
                                                     let e = link.chars().count();
-                                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                     println!("{}", str_rep);
                                                 }
                                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
@@ -2598,14 +2650,14 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                             println!("{}", text_limit);
                                             if text_limit.len() > 3 {
                                                 if d.contains("handle") == false {
-                                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                    let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                     println!("{}", str_rep);
                                                 } else {
                                                     let handlev = handle.replace(".", "-").to_string();
                                                     let link = "https://card.syui.ai/".to_owned() + &handlev;
                                                     let s = 0;
                                                     let e = link.chars().count();
-                                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                     println!("{}", str_rep);
                                                 }
                                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
@@ -2635,7 +2687,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(dd);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2663,7 +2715,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(dd);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2684,7 +2736,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(dd);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2714,7 +2766,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(d);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2743,7 +2795,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                             let text_limit = char_c(d);
                                             println!("{}", text_limit);
                                             if text_limit.len() > 3 {
-                                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                                let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                                 println!("{}", str_rep);
                                                 let str_notify = at_notify_read::post_request(time.to_string()).await;
                                                 println!("{}", str_notify);
@@ -2763,7 +2815,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let text_limit = char_c(d);
                                         println!("{}", text_limit);
                                         if text_limit.len() > 3 {
-                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string()).await;
+                                            let str_rep = at_reply_link::post_request(text_limit.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                             println!("{}", str_rep);
                                             let str_notify = at_notify_read::post_request(time.to_string()).await;
                                             println!("{}", str_notify);
@@ -2790,7 +2842,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     Command::new(&f).arg(&handle).arg(&did).arg(&text_limit).output().expect("zsh");
                                     let cc_ch = cid_check(cid.to_string());
                                     if cc_ch == false {
-                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string()).await;
+                                        let str_rep = at_reply::post_request(text_limit.to_string(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
                                         println!("{}", str_rep);
                                         cid_write(cid.to_string());
                                     }
@@ -2870,7 +2922,7 @@ fn test(_c: &Context) {
     //pub mod at_reply;
     let h = async {
         println!("{}","at_reply");
-        let str = at_reply::post_request(prompt.to_string(), cid.to_string(), uri.to_string());
+        let str = at_reply::post_request(prompt.to_string(), cid.to_string(), uri.to_string(), cid.to_string(), uri.to_string());
         println!("{}",str.await);
     };
     tokio::runtime::Runtime::new().unwrap().block_on(h);
@@ -2941,4 +2993,55 @@ fn test(_c: &Context) {
         println!("{}",str.await);
     };
     tokio::runtime::Runtime::new().unwrap().block_on(h);
+}
+
+
+fn bot_test_run() {
+    let h = async {
+        let token = token_toml(&"access");
+        let url = url(&"notify_list");
+        let client = reqwest::Client::new();
+        let tres = client
+            .get(url)
+            .query(&[("limit", 50)])
+            .header("Authorization", "Bearer ".to_owned() + &token)
+            .send()
+            .await
+            .unwrap();
+        let status_ref = tres.error_for_status_ref();
+        match status_ref {
+            Ok(_) => {
+                let str = tres.text().await.unwrap();
+                let notify: Notify = serde_json::from_str(&str).unwrap();
+                let n = notify.notifications;
+                let length = &n.len();
+                let su = 0..*length;
+                for i in su {
+                    let uri = &n[i].uri;
+                    let mut root = "none";
+                    let mut parent = "none";
+                    if ! n[i].record.reply.is_none() { 
+                        root = &n[i].record.reply.as_ref().unwrap().root.uri;
+                        parent = &n[i].record.reply.as_ref().unwrap().parent.uri;
+                    } 
+                    println!("{}", uri);
+                    println!("{} {}", root, parent);
+
+                }
+            },
+            Err(_) => todo!()
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+
+    //let h = async {
+    //    let thread = at_get_post_thread::get_request("at://did:plc:wm3of54mit35jpvohxr32jbb/app.bsky.feed.post/3kkobrui3us2y".to_string());
+    //    println!("{}",thread.await);
+    //};
+    //let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+}
+
+fn bot_test(_c: &Context) {
+    bot_test_run();
 }

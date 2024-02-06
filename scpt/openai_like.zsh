@@ -42,7 +42,7 @@ echo like $like
 
 if { [ $like -eq 1 ] && echo $text|grep -e "ありがとう" -e "うれしい" } || [ $nolike -eq 1 ];then
 	echo ok
-	$atr @ $handle -p "♡"
+	#$atr @ $handle -p "♡"
 	like=$((1 + like_old))
 	curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"like\": $like}" -s $url/users/$uid
 fi
