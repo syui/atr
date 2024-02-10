@@ -1,10 +1,10 @@
 extern crate reqwest;
-use crate::token_toml;
+use crate::data_toml;
 use crate::url;
 
 pub async fn get_request(actor: String) -> String {
 
-    let token = token_toml(&"access");
+    let token = data_toml(&"access");
     let url = url(&"record_list");
 
     let actor = actor.to_string();

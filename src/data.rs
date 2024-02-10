@@ -1,85 +1,12 @@
 use config::{Config, ConfigError, File};
 use serde_derive::{Deserialize, Serialize};
-//use std::borrow::Cow;
+use std::fs;
+use std::io::Write;
+use std::io::Read;
+use std::fs::OpenOptions;
+use std::path::Path;
 
-#[derive(Debug, Deserialize)]
-#[allow(unused)]
-pub struct Data {
-    pub host: String,
-    pub pass: String,
-    pub user: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-pub struct Token {
-    pub did: String,
-    pub accessJwt: String,
-    pub refreshJwt: String,
-    pub handle: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[allow(non_snake_case)]
-pub struct Tokens {
-    pub did: String,
-    pub access: String,
-    pub refresh: String,
-    pub handle: String,
-}
-
-impl Data {
-    pub fn new() -> Result<Self, ConfigError> {
-        let d = shellexpand::tilde("~") + "/.config/atr/config.toml";
-        let s = Config::builder()
-            .add_source(File::with_name(&d))
-            .add_source(config::Environment::with_prefix("APP"))
-            .build()?;
-        s.try_deserialize()
-    }
-}
-
-impl Tokens {
-    pub fn new() -> Result<Self, ConfigError> {
-        let d = shellexpand::tilde("~") + "/.config/atr/token.toml";
-        let s = Config::builder()
-            .add_source(File::with_name(&d))
-            .add_source(config::Environment::with_prefix("APP"))
-            .build()?;
-        s.try_deserialize()
-    }
-}
-// config.data
-pub fn cfg(s: &str) -> String { 
-    // cfg.dir
-    let dir = "/.config/atr";
-    let mut d = shellexpand::tilde("~").to_string();
-    d.push_str(&dir);
-
-    let file = "/.config/atr/config.toml";
-    let mut f = shellexpand::tilde("~").to_string();
-    f.push_str(&file);
-
-    //cfg.toml
-    let s = String::from(s);
-    let data = Data::new().unwrap();
-    let data = Data {
-        host: data.host,
-        user: data.user,
-        pass: data.pass,
-    };
-    match &*s {
-        "user" => data.user,
-        "host" => data.host,
-        "pass" => data.pass,
-        "dir" => d,
-        "file" => f,
-        _ => s,
-    }
-}
-
-// tokne.file
-pub fn token_file(s: &str) -> String { 
+pub fn data_file(s: &str) -> String { 
     let file = "/.config/atr/token";
     let mut f = shellexpand::tilde("~").to_string();
     f.push_str(&file);
@@ -90,27 +17,63 @@ pub fn token_file(s: &str) -> String {
     }
 }
 
-pub fn token_toml(s: &str) -> String { 
-    let s = String::from(s);
-    let tokens = Tokens::new().unwrap();
-    let tokens = Tokens {
-        did: tokens.did,
-        access: tokens.access,
-        refresh: tokens.refresh,
-        handle: tokens.handle,
-    };
+pub fn log_file(s: &str) -> String { 
+    let file = "/.config/atr/txt/";
+    let mut f = shellexpand::tilde("~").to_string();
+    f.push_str(&file);
+    let path = Path::new(&f);
+    if path.is_dir() == false {
+        let _ = fs::create_dir_all(f.clone());
+    }
     match &*s {
-        "did" => tokens.did,
-        "access" => tokens.access,
-        "refresh" => tokens.refresh,
-        "handle" => tokens.handle,
-        _ => s,
+        "n1" => f + &"notify_cid.txt",
+        "n2" => f + &"notify_cid_run.txt",
+        _ => f + &s,
     }
 }
 
-// at://
-// https://atproto.com/lexicons/app-bsky-feed
-#[derive(Serialize, Deserialize)]
+impl Token {
+    pub fn new() -> Result<Self, ConfigError> {
+        let d = data_file("json");
+        let s = Config::builder()
+            .add_source(File::with_name(&d))
+            .add_source(config::Environment::with_prefix("APP"))
+            .build()?;
+        s.try_deserialize()
+    }
+}
+
+impl Data {
+    pub fn new() -> Result<Self, ConfigError> {
+        let d = data_file("toml");
+        let s = Config::builder()
+            .add_source(File::with_name(&d))
+            .add_source(config::Environment::with_prefix("APP"))
+            .build()?;
+        s.try_deserialize()
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Token {
+    pub did: String,
+    pub handle: String,
+    pub accessJwt: String,
+    pub refreshJwt: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[allow(non_snake_case)]
+pub struct Data {
+    pub host: String,
+    pub did: String,
+    pub handle: String,
+    pub access: String,
+    pub refresh: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct BaseUrl {
     pub profile_get: String,
     pub thread_get: String,
@@ -142,8 +105,10 @@ pub fn url(s: &str) -> String {
     let data = Data::new().unwrap();
     let data = Data {
         host: data.host,
-        user: data.user,
-        pass: data.pass,
+        handle: data.handle,
+        did: data.did,
+        access: data.access,
+        refresh: data.refresh,
     };
     let t = "https://".to_string() + &data.host.to_string() + &"/xrpc/".to_string();
     let baseurl = BaseUrl {
@@ -196,6 +161,26 @@ pub fn url(s: &str) -> String {
         "follow" => t.to_string() + &baseurl.follow,
         "follows" => t.to_string() + &baseurl.follows,
         "followers" => t.to_string() + &baseurl.followers,
+        _ => s,
+    }
+}
+
+pub fn data_toml(s: &str) -> String { 
+    let s = String::from(s);
+    let data = Data::new().unwrap();
+    let data = Data {
+        host: data.host,
+        handle: data.handle,
+        did: data.did,
+        access: data.access,
+        refresh: data.refresh,
+    };
+    match &*s {
+        "host" => data.handle,
+        "handle" => data.handle,
+        "did" => data.did,
+        "access" => data.access,
+        "refresh" => data.refresh,
         _ => s,
     }
 }
@@ -449,52 +434,66 @@ pub struct Profile {
     pub labels: Labels,
 }
 
-//
-//  "did": "did:plc:uqzpqmrjnptsxezjx4xuh2mn",
-//  "handle": "syui.ai",
-//  "displayName": "syui",
-//  "avatar": "https://cdn.bsky.social/imgproxy/aSbqSRpqXSxkXBRpRODZUEquXcWOdaBXiwtPcMvmXZM/rs:fill:1000:1000:1:0/plain/bafkreid6kcc5pnn4b3ar7mj6vi3eiawhxgkcrw3edgbqeacyrlnlcoetea@jpeg",
-//  "banner": "https://cdn.bsky.social/imgproxy/OAuuvXAKZpWzPm6pCcAC0R07npMexrWoOiNELnW_iw0/rs:fill:3000:1000:1:0/plain/bafkreih4axx4k243yd5zbj5zrehzm6cramzl6tsygubqgwzagxar7re34u@jpeg",
-//  "followsCount": 1083,
-//  "followersCount": 1044,
-//  "postsCount": 3925,
-//  "indexedAt": "2023-04-15T08:30:29.809Z",
-//  "viewer": {
-//    "muted": false,
-//    "blockedBy": false
-//  },
-//  "labels": []
-//
-#[derive(Debug, Deserialize)]
-#[allow(unused)]
-pub struct Deep {
-    pub api: String,
-}
-
-impl Deep {
-    pub fn new() -> Result<Self, ConfigError> {
-        let d = shellexpand::tilde("~") + "/.config/atr/deepl.toml";
-        let s = Config::builder()
-            .add_source(File::with_name(&d))
-            .add_source(config::Environment::with_prefix("APP"))
-            .build()?;
-        s.try_deserialize()
+pub fn c_char(i: String) -> String {
+    let l = 250;
+    let mut s = String::new();
+    for ii in i.chars().enumerate() {
+        match ii.0 {
+            n if n > l.try_into().unwrap() => {break}
+            _ => {s.push(ii.1)}
+        }
     }
+    return s
 }
 
-impl Open {
-    pub fn new() -> Result<Self, ConfigError> {
-        let d = shellexpand::tilde("~") + "/.config/atr/openai.toml";
-        let s = Config::builder()
-            .add_source(File::with_name(&d))
-            .add_source(config::Environment::with_prefix("APP"))
-            .build()?;
-        s.try_deserialize()
+pub fn w_cfg(h: &str, res: &str) {
+    let f = data_file(&"json");
+    let ff = data_file(&"toml");
+    let mut f = fs::File::create(f.clone()).unwrap();
+    let mut ff = fs::File::create(ff.clone()).unwrap();
+    f.write_all(&res.as_bytes()).unwrap();
+    let json: Token = serde_json::from_str(&res).unwrap();
+    let datas = Data {
+        host: h.to_string(),
+        did: json.did.to_string(),
+        handle: json.handle.to_string(),
+        access: json.accessJwt.to_string(),
+        refresh: json.refreshJwt.to_string(),
+    };
+    let toml = toml::to_string(&datas).unwrap();
+    ff.write_all(&toml.as_bytes()).unwrap();
+}
+
+pub fn w_cid(cid :String, file: String, t: bool) -> bool {
+    let f = file;
+    let mut file = match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .read(true)
+        .append(true)
+        .open(f.clone())
+        {
+            Err(why) => panic!("Couldn't open {}: {}", f, why),
+            Ok(file) => file,
+        };
+    let mut contents = String::new();
+
+    match file.read_to_string(&mut contents) {
+        Err(why) => panic!("Couldn't read {}: {}", f, why),
+        Ok(_) => (),
     }
-}
-
-#[derive(Debug, Deserialize)]
-#[allow(unused)]
-pub struct Open {
-    pub api: String,
+    if contents.contains(&cid) == false {
+        if t {
+            let cid = cid + "\n";
+            match file.write_all(cid.as_bytes()) {
+                Err(why) => panic!("Couldn't write \"{}\" to {}: {}", contents, f, why),
+                Ok(_) => println!("finished"),
+            }
+        }
+        let check = false;
+        return check
+    } else { 
+        let check = true;
+        return check 
+    }
 }
