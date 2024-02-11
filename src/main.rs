@@ -17,6 +17,8 @@ pub mod reply;
 pub mod reply_link;
 pub mod describe;
 pub mod timeline_author;
+pub mod post;
+pub mod post_link;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -56,7 +58,17 @@ fn main() {
             Command::new("did")
             .description("did <handle>")
             .action(did)
+        )
+        .command(
+            Command::new("post")
+            .description("p <text>")
+            .alias("p")
+            .action(post)
+            .flag(
+                Flag::new("link", FlagType::String)
+                .alias("l"),
             )
+        )
         ;
     app.run(args);
 }
@@ -126,6 +138,24 @@ fn timeline(c: &Context) {
         } else {
             let str = timeline_author::get_request(c.args[0].to_string());
             println!("{}",str.await);    
+        }
+    };
+    let res = tokio::runtime::Runtime::new().unwrap().block_on(h);
+    return res
+}
+
+fn post(c: &Context) {
+    refresh(c);
+    let m = c.args[0].to_string();
+    let h = async {
+        if let Ok(link) = c.string_flag("link") {
+            let e = link.chars().count();
+            let s = 0;
+            let str = post_link::post_request(m.to_string(), link.to_string(), s, e.try_into().unwrap());
+            println!("{}",str.await);
+        } else {
+            let str = post::post_request(m.to_string());
+            println!("{}",str.await);
         }
     };
     let res = tokio::runtime::Runtime::new().unwrap().block_on(h);

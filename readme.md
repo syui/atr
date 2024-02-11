@@ -79,3 +79,11 @@ $ atr t
 ```sh
 $ atr n
 ```
+
+### post
+
+```sh
+text="test"
+
+$ atr p $text
+```
