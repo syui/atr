@@ -19,11 +19,13 @@ esac
 fav_com=$HOME/.config/atr/scpt/api_fav.zsh
 
 function user_data(){
+
 	u=`echo $data|jq -r .username`
 	id=`echo $data|jq -r .id`
 	did=`echo $data|jq -r .did`
 	next=`echo $data|jq -r .next`
 	aiten=`echo $data|jq -r .aiten`
+	coin=`echo $data|jq -r .coin`
 	model_mode=`echo $data|jq -r .model_mode`
 	model_limit=`echo $data|jq -r .model_limit`
 	ten_su=`echo $data|jq -r .ten_su`
@@ -32,6 +34,42 @@ function user_data(){
 	updated_at=`echo $data|jq -r .updated_at`
 	updated_at=`date -d "$updated_at" +"%Y-%m-%d"`
 	next_at=`date -d "$next -1 day" +"%Y-%m-%d"`
+	coin_now=`curl -sL https://blockchain.info/ticker|jq -r .JPY.last|cut -d . -f 1`
+	coin_open=`echo $data|jq -r .coin_open`
+
+	coin_plus=$((coin_now - coin))
+	if [ $coin_plus -ge 100 ];then
+		aiten_plus=$((aiten * 1.1 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 1000 ];then 
+		aiten_plus=$((aiten * 1.2 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 10000 ];then 
+		aiten_plus=$((aiten * 1.5 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 50000 ];then 
+		aiten_plus=$((aiten * 3 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 100000 ];then 
+		aiten_plus=$((aiten * 10 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -1000 ];then
+		aiten_plus=$((aiten / 1.1))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -10000 ];then
+		aiten_plus=$((aiten / 1.2))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -100000 ];then
+		aiten_plus=$((aiten / 1.5))
+		aiten_san=$((aiten_plus - aiten))
+	else
+		aiten_plus=$aiten
+		aiten_san=0
+	fi
+
+	aiten_plus=`echo $aiten_plus|cut -d . -f 1`
+	aiten_san=`echo $aiten_san|cut -d . -f 1`
+
 	echo "user : $u"
 	echo "id : $id"
 	echo "$did"
@@ -40,6 +78,17 @@ function user_data(){
 	#echo "boss : $raid_cp"
 	echo "aiten : $aiten"
 	echo "ten : $ten_su"
+
+	if [ $aiten_san -ge 0 ];then
+		aiten_san="+${aiten_san}"
+	fi
+
+	if [ "$coin_open" = "true" ];then
+		echo "coin(now) : $coin_now"
+		echo "coin(start) : $coin"
+		echo "aiten : $aiten_san"
+	fi
+
 }
 
 function ascii_moji_a() {
@@ -1296,6 +1345,14 @@ if [ "$3" = "wa" ] || [ "$3" = "-wa" ];then
 	s=super
 	moji_mode_card 28 $cp $skill $s
 
+	exit
+fi
+
+if [ "$3" = "game-clear" ];then
+	cp=0
+	skill=normal
+	s=super
+	moji_mode_card 94 $cp $skill $s
 	exit
 fi
 

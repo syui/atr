@@ -23,6 +23,7 @@ if [ -z "$5" ];then
 fi
 
 card_pay=$HOME/.config/atr/scpt/card_pay.zsh
+card_coin=$HOME/.config/atr/scpt/card_coin.zsh
 atr=$HOME/.cargo/bin/atr
 host=https://api.syui.ai
 host_card=https://card.syui.ai/json/card.json
@@ -405,6 +406,7 @@ function user_env() {
 	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
 	uid=`echo $data|jq -r .id`
 	aiten=`echo $data|jq -r .aiten`
+	coin=`echo $data|jq -r .coin`
 	model=`echo $data|jq -r .model`
 	# card=2
 	model_mode=`echo $data|jq -r .model_mode`
@@ -430,6 +432,72 @@ function user_env() {
 		exit
 	fi
 	ten_kai=`echo $data|jq -r .ten_kai`
+}
+
+function coin_env() {
+	all_data=`curl -sL "$host/users?itemsPerPage=3000"`
+	ten_data=`echo $all_data|jq ".|sort_by(.ten_su)|reverse|.[]|select(.ten_su != 0)"`
+	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
+	uid=`echo $data|jq -r .id`
+	aiten=`echo $data|jq -r .aiten`
+	coin=`echo $data|jq -r .coin`
+	coin_open=`echo $data|jq -r .coin_open`
+
+	coin_now=`curl -sL https://blockchain.info/ticker|jq -r .JPY.last|cut -d . -f 1`
+	coin_plus=$((coin_now - coin))
+
+	echo "[check]"
+	echo "coin(now) : $coin_now"
+
+	if [ "$coin_open" = "false" ];then
+		echo "---"
+		echo "start : /ten coin"
+		exit
+	fi
+
+	if [ $coin_plus -ge 100 ];then
+		aiten_plus=$((aiten * 1.1 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 1000 ];then 
+		aiten_plus=$((aiten * 1.2 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 10000 ];then 
+		aiten_plus=$((aiten * 1.5 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 50000 ];then 
+		aiten_plus=$((aiten * 3 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -ge 100000 ];then 
+		aiten_plus=$((aiten * 10 + coin_plus))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -1000 ];then
+		aiten_plus=$((aiten / 1.1))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -10000 ];then
+		aiten_plus=$((aiten / 1.2))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -100000 ];then
+		aiten_plus=$((aiten / 1.5))
+		aiten_san=$((aiten_plus - aiten))
+	else
+		aiten_plus=$aiten
+		aiten_san=0
+	fi
+
+	aiten_plus=`echo $aiten_plus|cut -d . -f 1`
+	aiten_san=`echo $aiten_san|cut -d . -f 1`
+
+	if [ $aiten_san -ge 0 ];then
+		aiten_san="+${aiten_san}"
+	fi
+
+	if [ "$coin_open" = "true" ];then
+		echo "coin(start) : $coin"
+		echo "aiten : $aiten_san"
+		echo "---"
+		echo "exit : /ten coin"
+	fi
+
 }
 
 function ten_env() {
@@ -1296,6 +1364,14 @@ case "$option" in
 		;;
 	pay)
 		$card_pay $handle $did $cid $uri
+		exit
+		;;
+	coin)
+		$card_coin $handle $did $cid $uri
+		exit
+		;;
+	bit*)
+		coin_env
 		exit
 		;;
 	stop|close)
