@@ -94,9 +94,9 @@ function card_d() {
 	ten=`echo $j|jq -r ".[$n].ten"`
 	title=`echo $j|jq -r ".[$n].h"`
 	title="[$title]"
-	ran_a=$(($RANDOM % 1000))
+	ran_a=$(($RANDOM % 2000))
 	cp=$((ran_a + 500))
-	ran_s=$(($RANDOM % 5))
+	ran_s=$(($RANDOM % 15))
 	skill=ten
 	if [ $ran_s -eq 1 ];then
 		s=super
@@ -109,10 +109,11 @@ function card_d() {
 	card_check=`echo $data_uu|jq -r ".[]|select(.card == $card)"`
 	card_check_skill=`echo $card_check|jq "select(.skill == \"$skill\")"`
 
-	if [ -z "$card_check" ] && [ -z "$card_check_skill" ] && [ $coin_plus -ge 1000 ] && [ "$coin_open" = "true" ] && [ "$date_check" != "$coin_at" ];then
-		text="[card]\nid : $card\ncp : $cp"
-		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
-		echo "$text"
+	if [ $((RANDOM % 12)) -ne 0 ];then
+		card=0
+		cp=1
+		s=lost
+		skill=lost
 	fi
 
 }
@@ -132,6 +133,9 @@ function card_p() {
 	if [ "$coin_open" = "true" ];then
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"aiten\": $aiten_plus, \"coin\":0, \"coin_open\": false, \"coin_at\" : \"$coin_at_n\"}" -s $host/users/$uid`
 		echo -e "[exit]\ncoin(start) : $coin\ncoin(now) : $coin_now\naiten : $aiten_san ---> $aiten_plus"
+		echo "---"
+		tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
+		echo "[card] ... 12%\nid : $card\ncp : $cp\nskill : $skill"
 	fi
 }
 
