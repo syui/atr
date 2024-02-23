@@ -455,7 +455,7 @@ function coin_env() {
 		exit
 	fi
 
-	if [ $coin_plus -ge 100 ];then
+	if [ $coin_plus -ge 1 ];then
 		aiten_plus=$((aiten * 1.1 + coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -ge 1000 ];then 
@@ -471,19 +471,24 @@ function coin_env() {
 		aiten_plus=$((aiten * 10 + coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -1000 ];then
-		aiten_plus=$((aiten / 1.1))
+		aiten_plus=$((aiten - coin_now))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -10000 ] && [ $aiten -ge 100000 ];then
+		aiten_plus=$((aiten / 1.05 - coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -10000 ];then
-		aiten_plus=$((aiten / 1.2))
+		aiten_plus=$((aiten / 1.05))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -100000 ];then
-		aiten_plus=$((aiten / 1.5))
+		aiten_plus=$((aiten / 1.1))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -1000000 ];then
+		aiten_plus=$((aiten / 1.2))
 		aiten_san=$((aiten_plus - aiten))
 	else
 		aiten_plus=$aiten
 		aiten_san=0
 	fi
-
 	aiten_plus=`echo $aiten_plus|cut -d . -f 1`
 	aiten_san=`echo $aiten_san|cut -d . -f 1`
 

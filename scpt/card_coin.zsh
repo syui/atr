@@ -42,7 +42,7 @@ function card_s(){
 	fi
 
 	coin_plus=$((coin_now - coin))
-	if [ $coin_plus -ge 100 ];then
+	if [ $coin_plus -ge 1 ];then
 		aiten_plus=$((aiten * 1.1 + coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -ge 1000 ];then 
@@ -58,13 +58,19 @@ function card_s(){
 		aiten_plus=$((aiten * 10 + coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -1000 ];then
-		aiten_plus=$((aiten / 1.1))
+		aiten_plus=$((aiten - coin_now))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -10000 ] && [ $aiten -ge 100000 ];then
+		aiten_plus=$((aiten / 1.05 - coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -10000 ];then
-		aiten_plus=$((aiten / 1.2))
+		aiten_plus=$((aiten / 1.05))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -le -100000 ];then
-		aiten_plus=$((aiten / 1.5))
+		aiten_plus=$((aiten / 1.1))
+		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -1000000 ];then
+		aiten_plus=$((aiten / 1.2))
 		aiten_san=$((aiten_plus - aiten))
 	else
 		aiten_plus=$aiten
