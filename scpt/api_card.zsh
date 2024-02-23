@@ -65,6 +65,9 @@ function user_data(){
 	elif [ $coin_plus -ge -1000000 ];then
 		aiten_plus=$((aiten / 1.2))
 		aiten_san=$((aiten_plus - aiten))
+	elif [ $coin_plus -le -1000000 ];then
+		aiten_plus=$((aiten / 1.3))
+		aiten_san=$((aiten_plus - aiten))
 	else
 		aiten_plus=$aiten
 		aiten_san=0
