@@ -2092,6 +2092,21 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         println!("{}", str_notify);
                                     }
                                 }
+                            } else if reason == "reply" && rep_com.contains("help") == true {
+                                let cc_ch = cid_check(cid.to_string());
+                                if cc_ch == false {
+                                    let link = "https://git.syui.ai/ai/bot/wiki/help".to_string();
+                                    let s = 0;
+                                    let e = link.chars().count();
+                                    println!("{}", link);
+                                    println!("{}", e);
+                                    let d = "\n".to_owned();
+                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
+                                    println!("{}", str_rep);
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
+                                }
                             } else if reason == "reply" && rep_com.contains("chara") == true {
                                 let cc_ch = cid_check(cid.to_string());
                                 if cc_ch == false {
@@ -2292,6 +2307,18 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         println!("{}", str_notify);
                                         cid_write(cid.to_string());
                                     }
+                                } else if com == "help" || com == "/help" {
+                                    let link = "https://git.syui.ai/ai/bot/wiki/help".to_string();
+                                    let s = 0;
+                                    let e = link.chars().count();
+                                    println!("{}", link);
+                                    println!("{}", e);
+                                    let d = "\n".to_owned();
+                                    let str_rep = at_reply_link::post_request(d.to_string(), link.to_string(), s, e.try_into().unwrap(), cid.to_string(), uri.to_string(), cid_b.to_string(), uri_b.to_string()).await;
+                                    println!("{}", str_rep);
+                                    let str_notify = at_notify_read::post_request(time.to_string()).await;
+                                    println!("{}", str_notify);
+                                    cid_write(cid.to_string());
                                 } else if com == "handle" || com == "/handle" || com == "-h" {
                                     let user = &vec[2].to_string();
                                     let res = at_user_status::get_request(user.to_string()).await;
