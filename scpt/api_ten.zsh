@@ -24,6 +24,7 @@ fi
 
 card_pay=$HOME/.config/atr/scpt/card_pay.zsh
 card_coin=$HOME/.config/atr/scpt/card_coin.zsh
+card_aicoin=$HOME/.config/atr/scpt/card_aicoin.zsh
 atr=$HOME/.cargo/bin/atr
 host=https://api.syui.ai
 host_card=https://card.syui.ai/json/card.json
@@ -1392,6 +1393,10 @@ case "$option" in
 		;;
 	bit*)
 		coin_env
+		exit
+		;;
+	aicoin)
+		$card_aicoin $handle $did $cid $uri
 		exit
 		;;
 	stop|close)
