@@ -44,7 +44,7 @@ if [ -z $uid ] || [ "$uid" = "null" ];then
 fi
 
 data=`curl -sL "$url/users/$uid"`
-data_u=`curl -sL "$url/users/$uid/card?itemsPerPage=2000"`
+data_u=`curl -sl "$url/users/$uid/card?itemsperpage=2000"`
 luck_at=`echo $data|jq -r .luck_at`
 luck_at_n=`date --iso-8601=seconds`
 luck_at=`date -d "$luck_at" +"%Y%m%d"`
@@ -89,7 +89,8 @@ j=`curl -sL $url_j|jq ".[]|select(.id == $card)"`
 img=`echo $j|jq -r .img`
 
 if [ -z $img ] || [ "$img" = "null" ];then
-	exit
+	j=`curl -sL $url_j|jq ".[]|select(.id == 0)"`
+	img=`echo $j|jq -r .img`
 fi
 
 test_ran=`echo $(($RANDOM % 3))`
