@@ -471,7 +471,7 @@ function coin_env() {
 		aiten_plus=$((aiten * 10 + coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -ge -1000 ];then
-		aiten_plus=$((aiten - coin_now))
+		aiten_plus=$((aiten - coin_plus))
 		aiten_san=$((aiten_plus - aiten))
 	elif [ $coin_plus -ge -10000 ] && [ $aiten -ge 100000 ];then
 		aiten_plus=$((aiten / 1.05 - coin_plus))
