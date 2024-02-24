@@ -46,6 +46,11 @@ function card_d(){
 	data=`echo $all_data|jq ".[]|select(.username == \"$username\")"`
 	uid=`echo $data|jq -r .id`
 	aiten=`echo $data|jq -r .aiten`
+
+	if [ $aiten -lt 19999 ];then
+		pay=10000
+	fi
+
 	model=`echo $data|jq -r .model`
 	model_mode=`echo $data|jq -r .model_mode`
 	model_attack=`echo $data|jq -r .model_attack`
