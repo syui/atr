@@ -522,6 +522,13 @@ function ten_env() {
 	ten_at_n=`date --iso-8601=seconds`
 }
 
+function ten_env_check() {
+	if { [ $ten_su -eq 0 ] && [ "$ten_bool" = "true" ] } || { [ $aiten -eq 0 ] && [ "$ten_bool" = "true" ] } || [ -z "$ten_su" ] || [ -z "$aiten" ];then
+		user_env
+		ten_env
+	fi
+}
+
 function ten_yak_shutdown() {
 	unset card
 	case $ten_char in
@@ -1424,10 +1431,12 @@ user_env
 case "$option" in
 	p*)
 		ten_env
+		ten_env_check
 		ten_yak
 		;;
 	d*)
 		ten_env
+		ten_env_check
 		ten_yak_check $ten_char
 		ten_delete_get
 		;;
