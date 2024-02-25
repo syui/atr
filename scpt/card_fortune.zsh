@@ -34,7 +34,6 @@ uid=`curl -sL "$url/users?itemsPerPage=2000"|jq ".[]|select(.username == \"$user
 
 if [ -z $uid ] || [ "$uid" = "null" ];then
 	body=`$atr chat "$uranai" -c`
-	body=`echo "占いにはアイのカードが3枚以上必要です\n\n$body"`
 	if [ "`cat $tcid`" != "$cid" ];then
 		if $atr r "$body" -c $cid -u $uri;then
 			echo $cid >! $tcid
@@ -66,7 +65,6 @@ cp_n=`echo $cp_i|wc -l`
 
 if [ 3 -gt $cp_n ];then
 	body=`$atr chat "$uranai" -c`
-	body=`echo "占いにはアイのカードが3枚以上必要です\n\n$body"`
 	if [ "`cat $tcid`" != "$cid" ];then
 		if $atr r "$body" -c $cid -u $uri;then
 			echo $cid >! $tcid
