@@ -70,11 +70,11 @@ username=`echo $1|cut -d . -f 1`
 cid=$3
 uri=$4
 option=$5
-cid_b=$6
-uri_b=$7
-
 sub_option=$6
+cid_b=$7
+uri_b=$8
 ten_kai=0
+
 
 export LC_CTYPE=C
 export LC_ALL=C
