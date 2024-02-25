@@ -253,6 +253,12 @@ fn main() {
                 .description("uri(ex: $ atr repost <cid> -u <uri>)")
                 )
             .flag(
+                Flag::new("uri-root", FlagType::String)
+                )
+            .flag(
+                Flag::new("cid-root", FlagType::String)
+                )
+            .flag(
                 Flag::new("link", FlagType::String)
                 .description("uri(ex: $ atr repost <cid> -u <uri>)")
                 )
@@ -1171,14 +1177,18 @@ fn reply_og(c: &Context) {
     if let Ok(link) = c.string_flag("link") {
         if let Ok(cid) = c.string_flag("cid") {
             if let Ok(uri) = c.string_flag("uri") {
-                if let Ok(title) = c.string_flag("title") {
-                    if let Ok(description) = c.string_flag("description") {
-                        if let Ok(img) = c.string_flag("img") {
-                            let h = async {
-                                let str = at_reply_og::post_request(m.to_string(),link.to_string(),cid.to_string(),uri.to_string(), img.to_string(), title.to_string(), description.to_string());
-                                println!("{}",str.await);
-                            };
-                            tokio::runtime::Runtime::new().unwrap().block_on(h);
+                if let Ok(cid_b) = c.string_flag("cid-root") {
+                    if let Ok(uri_b) = c.string_flag("uri-root") {
+                        if let Ok(title) = c.string_flag("title") {
+                            if let Ok(description) = c.string_flag("description") {
+                                if let Ok(img) = c.string_flag("img") {
+                                    let h = async {
+                                        let str = at_reply_og::post_request(m.to_string(),link.to_string(),cid.to_string(),uri.to_string(), cid_b.to_string(),uri_b.to_string(), img.to_string(), title.to_string(), description.to_string());
+                                        println!("{}",str.await);
+                                    };
+                                    tokio::runtime::Runtime::new().unwrap().block_on(h);
+                                }
+                            }
                         }
                     }
                 }
@@ -2068,7 +2078,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                     let mut f = shellexpand::tilde("~").to_string();
                                     f.push_str(&file);
                                     use std::process::Command;
-                                    let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).output().expect("zsh");
+                                    let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).arg(&cid_b).arg(&uri_b).output().expect("zsh");
                                     let d = String::from_utf8_lossy(&output.stdout);
                                     // test reply link
                                     let handlev: Vec<&str> = handle.split('.').collect();
@@ -2835,7 +2845,7 @@ fn bot_run(_c: &Context, limit: i32, admin: String, mode: bool) {
                                         let file = "/.config/atr/scpt/api_ten.zsh";
                                         let mut f = shellexpand::tilde("~").to_string();
                                         f.push_str(&file);
-                                        let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).output().expect("zsh");
+                                        let output = Command::new(&f).arg(&handle).arg(&did).arg(&cid).arg(&uri).arg(&option).arg(&sub_option).arg(&cid_b).arg(&uri_b).output().expect("zsh");
                                         let d = String::from_utf8_lossy(&output.stdout);
                                         let d = "\n".to_owned() + &d.to_string();
                                         println!("{}", d);

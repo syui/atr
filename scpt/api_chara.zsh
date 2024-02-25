@@ -152,7 +152,7 @@ function chara_post(){
 		card=`echo $tmp|jq -r .card`
 		cp=`echo $tmp|jq -r .cp`
 	fi
-	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
+	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --cid-root $cid --uri-root $uri --img $img --title "$title" --description "$desc" --link $link`
  uri_post=`echo $tmp_atr|jq -r .uri|cut -d / -f 5`
 	post_url="https://bsky.app/profile/$yui_did/post/$uri_post"
 	ccid=`echo $tmp|jq -r .id`

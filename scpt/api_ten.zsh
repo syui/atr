@@ -70,6 +70,8 @@ username=`echo $1|cut -d . -f 1`
 cid=$3
 uri=$4
 option=$5
+cid_b=$6
+uri_b=$7
 
 sub_option=$6
 ten_kai=0
@@ -912,7 +914,7 @@ function card_post() {
 
 	link="https://card.syui.ai/${username}"
 	text=`echo "$title +${cten}\n$body\nten : $ten_su\n$ten_kai : $old_ten_char ---> $ten_char $ten_yak_ok"`
-	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
+	tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --cid-root $cid_b --uri-root $uri_b --img $img --title "$title" --description "$desc" --link $link`
 	ten_shutdown
 }
 

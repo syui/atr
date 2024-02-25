@@ -131,7 +131,7 @@ fi
 desc=`echo "lucky number ${luck}"`
 
 if [ "`cat $tcid`" != "$cid" ];then
-	if $atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link;then
+	if $atr reply-og "$text" --cid $cid --uri $uri --cid-root $cid --uri-root $uri --img $img --title "$title" --description "$desc" --link $link;then
 		echo $cid >! $tcid
 	fi
 fi

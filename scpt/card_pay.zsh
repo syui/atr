@@ -149,8 +149,6 @@ function card_pay(){
 	fi
 	tmp=`curl -X POST -H "Content-Type: application/json" -d "{\"owner\":$uid,\"card\":$card,\"status\":\"$s\",\"cp\":$cp,\"password\":\"$pass\",\"skill\":\"$skill\"}" -s $host/cards`
 	echo "$text"
-	#echo "$atr reply-og \"$text\" --cid $cid --uri $uri --img $img --title \"$title\" --description \"$desc\" --link $link"
-	#tmp_atr=`$atr reply-og "$text" --cid $cid --uri $uri --img $img --title "$title" --description "$desc" --link $link`
 }
 
 card_d
