@@ -599,7 +599,7 @@ function ten_yak_shutdown() {
 				unset card
 			fi
 			;;
-		IIK)
+		IIT)
 			card=121
 			if [ `ten_skill $ten_char` = false ];then
 				unset card
@@ -1225,7 +1225,7 @@ function ten_yak() {
 				ten_plus ${card}00
 			fi
 			;;
-		IIK)
+		IIT)
 			card=121
 			if `ten_skill $ten_post`;then
 				ten_plus ${card}00
