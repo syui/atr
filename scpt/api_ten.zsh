@@ -75,6 +75,10 @@ cid_b=$7
 uri_b=$8
 ten_kai=0
 
+if [ "$sub_option" = "coin" ];then
+	option=coin_com
+	sub_option=$5
+fi
 
 export LC_CTYPE=C
 export LC_ALL=C
@@ -1465,5 +1469,23 @@ case "$option" in
 		;;
 esac
 
+if [ "$option" = "coin_com" ];then
+	case $sub_option in
+		start|exit)
+			$card_coin $handle $did $cid $uri
+			exit
+			;;
+		bit)
+			coin_env
+			exit
+			;;
+		*)
+			echo no option
+			exit
+			;;
+	esac
+fi
+
 ten_shutdown
+
 exit
