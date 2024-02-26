@@ -414,6 +414,7 @@ function user_env() {
 	uid=`echo $data|jq -r .id`
 	aiten=`echo $data|jq -r .aiten`
 	coin=`echo $data|jq -r .coin`
+	coin_open=`echo $data|jq -r .coin_open`
 	model=`echo $data|jq -r .model`
 	# card=2
 	model_mode=`echo $data|jq -r .model_mode`
@@ -1471,7 +1472,19 @@ esac
 
 if [ "$option" = "coin_com" ];then
 	case $sub_option in
-		start|exit)
+		start)
+			if [ "$coin_open" = "true" ];then
+				echo currently open
+				exit
+			fi
+			$card_coin $handle $did $cid $uri
+			exit
+			;;
+		exit|close)
+			if [ "$coin_open" = "false" ];then
+				echo currently close
+				exit
+			fi
 			$card_coin $handle $did $cid $uri
 			exit
 			;;
