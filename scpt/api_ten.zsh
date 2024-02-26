@@ -511,7 +511,7 @@ function coin_env() {
 		echo "coin(start) : $coin"
 		echo "aiten : $aiten_san"
 		echo "---"
-		echo "exit : /coin start"
+		echo "exit : /coin exit"
 	fi
 
 }
