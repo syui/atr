@@ -1445,33 +1445,6 @@ case "$option" in
 		;;
 esac
 
-user_env
-
-case "$option" in
-	p*)
-		ten_env
-		ten_env_check
-		ten_yak
-		;;
-	d*)
-		ten_env
-		ten_env_check
-		ten_yak_check $ten_char
-		ten_delete_get
-		;;
-	start)
-		ten_char
-		ten_start
-		exit
-		;;
-	coin_com)
-		;;
-	*)
-		echo "no option"
-		exit
-		;;
-esac
-
 if [ "$option" = "coin_com" ];then
 	case $sub_option in
 		start)
@@ -1500,6 +1473,32 @@ if [ "$option" = "coin_com" ];then
 			;;
 	esac
 fi
+
+user_env
+case "$option" in
+	p*)
+		ten_env
+		ten_env_check
+		ten_yak
+		;;
+	d*)
+		ten_env
+		ten_env_check
+		ten_yak_check $ten_char
+		ten_delete_get
+		;;
+	start)
+		ten_char
+		ten_start
+		exit
+		;;
+	coin_com)
+		;;
+	*)
+		echo "no option"
+		exit
+		;;
+esac
 
 ten_shutdown
 
