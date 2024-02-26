@@ -35,8 +35,8 @@ function card_s(){
 	if [ "$coin_open" = "false" ];then
 		echo -e "[start]\ncoin(start) : $coin_now\naiten : +0"
 		echo "---"
-		echo "check : /ten bit"
-		echo "exit : /ten coin"
+		echo "check : /coin bit"
+		echo "exit : /coin exit"
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"coin\":$coin_now, \"coin_open\": true}" -s $host/users/$uid`
 		exit
 	fi

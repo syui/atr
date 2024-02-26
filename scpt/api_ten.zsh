@@ -459,7 +459,7 @@ function coin_env() {
 
 	if [ "$coin_open" = "false" ];then
 		echo "---"
-		echo "start : /ten coin"
+		echo "start : /coin start"
 		exit
 	fi
 
@@ -511,7 +511,7 @@ function coin_env() {
 		echo "coin(start) : $coin"
 		echo "aiten : $aiten_san"
 		echo "---"
-		echo "exit : /ten coin"
+		echo "exit : /coin start"
 	fi
 
 }
