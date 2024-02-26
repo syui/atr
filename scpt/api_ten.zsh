@@ -1464,6 +1464,8 @@ case "$option" in
 		ten_start
 		exit
 		;;
+	coin_com)
+		;;
 	*)
 		echo "no option"
 		exit
