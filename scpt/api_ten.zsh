@@ -1447,7 +1447,7 @@ esac
 
 if [ "$option" = "coin_com" ];then
 	case $sub_option in
-		start)
+		start|s|-s)
 			if [ "$coin_open" = "true" ];then
 				echo currently open
 				exit
@@ -1455,7 +1455,7 @@ if [ "$option" = "coin_com" ];then
 			$card_coin $handle $did $cid $uri
 			exit
 			;;
-		exit|close)
+		exit|close|e|-e)
 			if [ "$coin_open" = "false" ];then
 				echo currently close
 				exit
@@ -1463,7 +1463,7 @@ if [ "$option" = "coin_com" ];then
 			$card_coin $handle $did $cid $uri
 			exit
 			;;
-		bit)
+		bit|check|c|-c)
 			coin_env
 			exit
 			;;
