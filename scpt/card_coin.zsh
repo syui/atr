@@ -126,7 +126,7 @@ function card_p() {
 	if [ "$date_check" = "$coin_at" ];then
 		echo "coin(now) : $coin_now\ncoin(start) : $coin\naiten : $aiten_san ..."
 		echo "---"
-		echo "exit limit, next day!"
+		echo "exit limit!"
 		exit
 	fi
 
