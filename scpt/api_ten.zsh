@@ -1463,7 +1463,7 @@ if [ "$option" = "coin_com" ];then
 			$card_coin $handle $did $cid $uri
 			exit
 			;;
-		bit|check|c|-c)
+		bit|b|-b|check|c|-c)
 			coin_env
 			exit
 			;;
