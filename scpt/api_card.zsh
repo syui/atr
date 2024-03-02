@@ -37,44 +37,6 @@ function user_data(){
 	coin_now=`curl -sL https://blockchain.info/ticker|jq -r .JPY.last|cut -d . -f 1`
 	coin_open=`echo $data|jq -r .coin_open`
 
-	coin_plus=$((coin_now - coin))
-	if [ $coin_plus -ge 1 ];then
-		aiten_plus=$((aiten * 1.1 + coin_plus))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge 1000 ];then 
-		aiten_plus=$((aiten * 1.2 + coin_plus))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge 10000 ];then 
-		aiten_plus=$((aiten * 1.5 + coin_plus))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge 50000 ];then 
-		aiten_plus=$((aiten * 3 + coin_plus))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge 100000 ];then 
-		aiten_plus=$((aiten * 10 + coin_plus))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge -1000 ];then
-		aiten_plus=$((aiten - coin_now))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge -10000 ];then
-		aiten_plus=$((aiten / 1.05))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge -100000 ];then
-		aiten_plus=$((aiten / 1.1))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -ge -1000000 ];then
-		aiten_plus=$((aiten / 1.2))
-		aiten_san=$((aiten_plus - aiten))
-	elif [ $coin_plus -le -1000000 ];then
-		aiten_plus=$((aiten / 1.3))
-		aiten_san=$((aiten_plus - aiten))
-	else
-		aiten_plus=$aiten
-		aiten_san=0
-	fi
-	aiten_plus=`echo $aiten_plus|cut -d . -f 1`
-	aiten_san=`echo $aiten_san|cut -d . -f 1`
-
 	echo "user : $u"
 	echo "id : $id"
 	echo "$did"
@@ -83,16 +45,6 @@ function user_data(){
 	#echo "boss : $raid_cp"
 	echo "aiten : $aiten"
 	echo "ten : $ten_su"
-
-	if [ $aiten_san -ge 0 ];then
-		aiten_san="+${aiten_san}"
-	fi
-
-	if [ "$coin_open" = "true" ];then
-		echo "coin(now) : $coin_now"
-		echo "coin(start) : $coin"
-		echo "aiten : $aiten_san"
-	fi
 
 }
 
