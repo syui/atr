@@ -40,6 +40,9 @@ function card_s(){
 		tmp=`curl -X PATCH -H "Content-Type: application/json" -d "{\"token\":\"$token\", \"coin\":$coin_now, \"coin_open\": true}" -s $host/users/$uid`
 		exit
 	fi
+	if [ $aiten -lt 1000 ];then
+		aiten=1001
+	fi
 
 	coin_plus=$((coin_now - coin))
 	if [ $coin_plus -ge 1 ];then
